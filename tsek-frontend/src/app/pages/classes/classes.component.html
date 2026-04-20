@@ -1,0 +1,175 @@
+<div class="classes-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">Classes</h1>
+    <p class="page-subtitle">Check what's new with your classes and quizzes.</p>
+  </div>
+
+  <!-- Class Cards Carousel -->
+  <div class="carousel-section">
+    <div class="carousel-container" [class.can-scroll-left]="canScrollLeft" [class.can-scroll-right]="canScrollRight">
+      <div class="carousel-fade carousel-fade-left"></div>
+      <div class="carousel-fade carousel-fade-right"></div>
+      <button class="carousel-btn carousel-btn-left" [class.hidden]="!canScrollLeft" (click)="scrollCarousel('left')" title="Scroll Left">
+        <span class="material-icons-outlined">chevron_left</span>
+      </button>
+      <div class="carousel-track" #carouselTrack>
+        @for (cls of classes; track cls.section) {
+          <div class="class-card" (click)="openClassDetail(cls)">
+            <div class="class-card-header">
+              <div class="class-card-info">
+                <h3 class="class-card-subject">{{ cls.subject }}</h3>
+                <p class="class-card-section">{{ cls.section }}</p>
+              </div>
+              <span class="student-badge">{{ cls.students }} STUDENTS</span>
+            </div>
+            <div class="class-card-footer">
+              <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
+              <button class="class-card-arrow" title="View Class">
+                <span class="material-icons-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state-card">
+            <span class="material-icons-outlined">school</span>
+            <p>You haven't added any classes yet.</p>
+            <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
+          </div>
+        }
+      </div>
+      <button class="carousel-btn carousel-btn-right" [class.hidden]="!canScrollRight" (click)="scrollCarousel('right')" title="Scroll Right">
+        <span class="material-icons-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Created Exams Section -->
+  <div class="created-exams-section">
+    <div class="exams-header">
+      <div class="exams-header-left">
+        <div class="card-header-accent"></div>
+        <h2 class="section-title">Created Exams</h2>
+      </div>
+      <button class="add-class-btn" (click)="openAddClassModal()">
+        <span class="material-icons-outlined">add</span>
+        ADD CLASS
+      </button>
+    </div>
+
+    <div class="exams-grid">
+      @for (exam of createdExams; track exam.name + exam.date) {
+        <div class="exam-card">
+          <div class="exam-card-top">
+            <span class="exam-card-subject">{{ exam.subject }}</span>
+            <span class="exam-card-date">{{ exam.date }}</span>
+          </div>
+          <h4 class="exam-card-name">{{ exam.name }}</h4>
+          <p class="exam-card-types">{{ exam.types }}</p>
+          <span class="exam-status-badge" [class.active]="exam.status === 'ACTIVE'" [class.inactive]="exam.status === 'INACTIVE'">
+            {{ exam.status }}
+          </span>
+        </div>
+      } @empty {
+        <div class="empty-state-card full-width">
+          <span class="material-icons-outlined">inventory_2</span>
+          <p>No exams created yet.</p>
+          <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD CLASS MODAL ===== -->
+@if (showAddClassModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeAddClassModal()">
+    <div class="modal-container add-class-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+      <h2 class="modal-title">Adding class</h2>
+
+      <div class="modal-form-group">
+        <label class="modal-label">CLASS NAME</label>
+        <input
+          type="text"
+          class="modal-input"
+          placeholder="e.g., BSCS 1A&B"
+          [(ngModel)]="newClass.name"
+        >
+      </div>
+
+      <div class="modal-form-group">
+        <label class="modal-label">COURSE NAME</label>
+        <input
+          type="text"
+          class="modal-input"
+          placeholder="e.g., Statistics and Probability"
+          [(ngModel)]="newClass.course"
+        >
+      </div>
+
+      <div class="modal-form-group">
+        <label class="modal-label">CLASS SIZE</label>
+        <input
+          type="number"
+          class="modal-input"
+          placeholder="e.g., 67"
+          [(ngModel)]="newClass.size"
+        >
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn-cancel" (click)="closeAddClassModal()">CANCEL</button>
+        <button class="modal-btn-confirm" (click)="addClass()">ADD CLASS</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== CLASS DETAIL MODAL ===== -->
+@if (showClassDetailModal && selectedClass) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeClassDetailModal()">
+    <div class="modal-container class-detail-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="detail-header">
+        <h2 class="detail-title">{{ selectedClass.subject }} - {{ selectedClass.section }}</h2>
+        <button class="detail-close-btn" (click)="closeClassDetailModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="detail-table-wrapper">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>STUDENT NAME</th>
+              <th>STUDENT NUMBER</th>
+              @for (exam of selectedClassExams; track exam) {
+                <th>{{ exam }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of selectedClassStudents; track student.number) {
+              <tr>
+                <td class="student-name-cell">{{ student.name }}</td>
+                <td class="student-number-cell">{{ student.number }}</td>
+                @for (score of student.scores; track $index) {
+                  <td class="student-score-cell">{{ score }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-pagination">
+        <button class="pagination-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <span class="material-icons-outlined">chevron_left</span>
+        </button>
+        <span class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          <span class="material-icons-outlined">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

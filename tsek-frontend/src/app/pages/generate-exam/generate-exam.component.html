@@ -1,0 +1,240 @@
+<div class="generate-exam">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">Generate Exam</h1>
+    <p class="page-subtitle">Configure your exam layout.</p>
+  </div>
+
+  <div class="content-columns">
+    <!-- Left Column -->
+    <div class="left-column">
+
+      <!-- Global Settings -->
+      <div class="card">
+        <h2 class="card-section-title">GLOBAL SETTINGS</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">EXAM TITLE</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="e.g., Quiz #1 Physics 101"
+              [(ngModel)]="examTitle"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">CLASS / SECTION</label>
+            @if (classes.length > 0) {
+              <select class="form-select" [(ngModel)]="selectedClassId">
+                @for (cls of classes; track cls.id) {
+                  <option [value]="cls.id">{{ cls.subject }} ({{ cls.section }})</option>
+                }
+              </select>
+            } @else {
+              <div class="empty-inline">
+                <span>No classes found.</span>
+                <a routerLink="/classes" class="btn-text-inline">Create one first</a>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">PAPER SIZE</label>
+            <select class="form-select" [(ngModel)]="paperSize">
+              <option value="A4">A4</option>
+              <option value="Letter">Letter</option>
+              <option value="Legal">Legal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">DATE</label>
+            <input type="date" class="form-input date-input" [(ngModel)]="examDate">
+          </div>
+        </div>
+      </div>
+
+      <!-- Structure Setup -->
+      <div class="card">
+        <h2 class="card-section-title">STRUCTURE SETUP</h2>
+
+        @for (section of sections; track section.key) {
+          <div class="section-block" [class.disabled]="!section.enabled">
+            <div class="section-header">
+              <span class="section-label">{{ section.label }}</span>
+              <button
+                class="toggle-btn"
+                [class.active]="section.enabled"
+                (click)="toggleSection(section)"
+              >
+                <span class="toggle-knob"></span>
+              </button>
+            </div>
+
+            @if (section.key === 'multipleChoice') {
+              <div class="choices-row">
+                <span class="form-label">NO. OF CHOICES:</span>
+                <select class="form-select mini-select" [(ngModel)]="numberOfChoices">
+                  <option [value]="2">2</option>
+                  <option [value]="3">3</option>
+                  <option [value]="4">4</option>
+                  <option [value]="5">5</option>
+                </select>
+              </div>
+            }
+
+            <div class="option-pills">
+              @for (opt of section.options; track opt) {
+                <button
+                  class="pill"
+                  [class.selected]="section.selected === opt && section.enabled"
+                  [disabled]="!section.enabled"
+                  (click)="selectOption(section, opt)"
+                >
+                  {{ opt }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <button class="btn-primary generate-btn" (click)="generateExam()">
+          <span class="material-icons-outlined btn-icon">picture_as_pdf</span>
+          GENERATE & EXPORT PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <div class="card point-config-card">
+        <h2 class="card-section-title">Point Value Configuration</h2>
+        <p class="config-description">
+          Specify each scoring weight for each section. These values will be used to calculate the
+          total exam score and will be embedded in generated answer sheet metadata for automatic grading.
+        </p>
+
+        @for (pt of pointSections; track pt.key) {
+          <div class="point-row" @pointRowAnim>
+            <div class="point-info">
+              <span class="point-name">{{ pt.name }}</span>
+              <span class="point-range">{{ pt.itemRange }}</span>
+            </div>
+            <div class="point-input-group">
+              <input
+                type="number"
+                class="point-input"
+                [ngModel]="pt.pointsPerItem"
+                (ngModelChange)="pt.pointsPerItem = $event; onPointsChange(pt)"
+                step="0.5"
+                min="0"
+              >
+              <span class="point-unit">PTS / ITEM</span>
+            </div>
+          </div>
+        }
+
+        <div class="score-section">
+          <div class="total-score">
+            <span class="total-label">TOTAL POSSIBLE SCORE</span>
+            <span class="total-value">{{ totalPossibleScore.toFixed(1) }}</span>
+          </div>
+          <div class="score-note">
+            Exam layout is hidden in configuration mode.
+          </div>
+          <div class="score-actions">
+            <button class="btn-outline" (click)="clearValues()">CLEAR VALUES</button>
+            <button class="btn-primary" (click)="saveWeights()">SAVE WEIGHTS</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Area (Hidden on screen, Visible on print) -->
+  <div class="print-area">
+    <!-- Alignment markers -->
+    <div class="marker marker-tl"></div>
+    <div class="marker marker-tr"></div>
+    <div class="marker marker-bl"></div>
+    <div class="marker marker-br"></div>
+
+    <div class="print-header">
+      <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
+      <div class="student-info-grid">
+        <div class="info-field">
+          <label>FULL NAME (LN, FN, MI.)</label>
+          <div class="info-box"></div>
+        </div>
+        <div class="info-field">
+          <label>STUDENT NUMBER</label>
+          <div class="info-box"></div>
+        </div>
+        <div class="info-field">
+          <label>PROGRAM & BLOCK</label>
+          <div class="info-box"></div>
+        </div>
+        <div class="info-field">
+          <label>DATE</label>
+          <div class="info-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multiple Choice Section -->
+    @if (mcBlocks.length > 0) {
+      <div class="print-section">
+        <h2 class="section-title">PART I: MULTIPLE CHOICE</h2>
+        <div class="mc-blocks-container">
+          @for (block of mcBlocks; track $index) {
+            <div class="mc-grid">
+              @for (col of block; track $index) {
+                <div class="mc-column">
+                  @for (item of col; track item) {
+                    <div class="mc-item">
+                      <span class="item-num">{{ item }}.</span>
+                      <div class="bubbles">
+                        @for (letter of choiceLetters; track letter) {
+                          <div class="bubble-group">
+                            <div class="bubble"></div>
+                            <span class="bubble-label">{{ letter }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Identification Section -->
+    @if (idBlocks.length > 0) {
+      <div class="print-section pt-4">
+        <h2 class="section-title">PART II: IDENTIFICATION</h2>
+        <div class="id-blocks-container">
+          @for (block of idBlocks; track $index) {
+            <div class="id-grid">
+              @for (col of block; track $index) {
+                <div class="id-column">
+                  @for (item of col; track item) {
+                    <div class="id-item">
+                      <span class="item-num">{{ item }}.</span>
+                      <div class="id-box"></div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<aside class="sidebar" [class.open]="open">
+  <div class="sidebar-top">
+    <!-- User Profile -->
+    <div class="user-profile">
+      <div class="user-avatar">
+        <span class="avatar-text">{{ user.name.charAt(0) }}</span>
+      </div>
+      <div class="user-info">
+        <h3 class="user-name">{{ user.name }}</h3>
+        <p class="user-role">{{ user.role }} - {{ user.institution }}</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+          (click)="navClick.emit()"
+        >
+          <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+  </div>
+
+  <!-- Bottom Actions -->
+  <div class="sidebar-bottom">
+    <a
+      routerLink="/help"
+      class="nav-item bottom-item"
+      (click)="navClick.emit()"
+    >
+      <span class="material-icons-outlined nav-icon">help_outline</span>
+      <span class="nav-label">Help</span>
+    </a>
+    <button
+      class="nav-item bottom-item logout-btn"
+      (click)="logout()"
+    >
+      <span class="material-icons-outlined nav-icon">logout</span>
+      <span class="nav-label">Logout</span>
+    </button>
+  </div>
+
+</aside>

@@ -1,0 +1,10 @@
+<app-header (menuToggle)="toggleSidebar()"></app-header>
+<div
+  class="sidebar-overlay"
+  [class.visible]="sidebarOpen"
+  (click)="closeSidebar()"
+></div>
+<app-sidebar [open]="sidebarOpen" (navClick)="closeSidebar()"></app-sidebar>
+<main class="main-content">
+  <router-outlet></router-outlet>
+</main>

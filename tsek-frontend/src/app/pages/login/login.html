@@ -1,0 +1,97 @@
+<div class="login-wrapper">
+  <div class="login-page">
+    <!-- Top Navigation -->
+    <nav class="login-nav">
+      <div class="nav-left">
+        <span class="nav-brand">TSEK</span>
+      </div>
+      <div class="nav-center">
+        <a href="#" class="nav-link active">Features</a>
+        <a href="#" class="nav-link">Scanning</a>
+        <a href="#" class="nav-link">Classroom</a>
+      </div>
+      <div class="nav-right">
+        <button class="btn-get-started">GET STARTED</button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="login-content">
+      
+      <!-- Left Promotional Area -->
+      <div class="left-section">
+        <div class="brand-huge">
+          TSEK<img src="/checkmark.png" alt="Check" class="check-huge" />
+        </div>
+        <div class="feature-icon">
+          <span class="material-icons-outlined camera-icon">camera_enhance</span>
+        </div>
+        <h1 class="feature-title">Live OCR Scanning</h1>
+        <p class="feature-desc">
+          Capture and evaluate answer sheets instantly with our optical character recognition. High precision even in low-light conditions.
+        </p>
+        <ul class="feature-list">
+          <li><img src="/checkmark.png" alt="Check" class="check-small" /> Real-time Feedback Loop</li>
+          <li><img src="/checkmark.png" alt="Check" class="check-small" /> Handwriting Recognition</li>
+        </ul>
+      </div>
+
+      <!-- Right Login Form Area -->
+      <div class="right-section">
+        <div class="login-card">
+          <div class="card-header single-header">
+            <h2 class="card-title title-center">Login</h2>
+            <img src="/headdress.png" alt="School" class="graduation-icon float-icon" />
+          </div>
+
+          <form class="login-form" (ngSubmit)="login()">
+            
+            @if (errorMessage) {
+              <div @slideDownAnim class="error-banner">
+                <span class="material-icons-outlined" style="font-size: 1.1rem;">error_outline</span>
+                {{ errorMessage }}
+              </div>
+            }
+
+            <div class="form-group">
+              <label>SCHOOL EMAIL</label>
+              <input type="email" name="email" [(ngModel)]="email" class="form-control" />
+            </div>
+
+            <div class="form-group">
+              <label>PASSWORD</label>
+              <input type="password" name="password" [(ngModel)]="password" class="form-control" />
+            </div>
+            
+            <div class="forgot-wrapper">
+              <a href="#" class="forgot-link">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn-submit" [disabled]="isLoading">
+              {{ isLoading ? 'LOGGING IN...' : 'LOGIN' }}
+            </button>
+
+            <div class="divider"></div>
+
+            <div class="card-footer-inline">
+              Not part of TSEK yet? <a routerLink="/register">Create an account</a>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="login-footer">
+    <div class="footer-top">
+      <span>CREATED BY ZAKISAME</span>
+      <span>2026</span>
+    </div>
+    <div class="footer-bottom">
+      <span>COLLEGE OF COMPUTER STUDIES</span>
+      <span>MR. LOUDEL MANALOTO</span>
+      <span>MR. CHRIS ALLEN PINEDA</span>
+    </div>
+  </footer>
+</div>

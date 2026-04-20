@@ -1,0 +1,142 @@
+<div class="dashboard">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">Dashboard Overview</h1>
+    <p class="page-subtitle">Welcome back. Here's what's happening with your exams today.</p>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stat-cards">
+    @if (isLoadingStats) {
+      @for (s of [1,2,3,4]; track s) {
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="skeleton skeleton-text short" style="margin-bottom:0"></div>
+          </div>
+          <div class="skeleton skeleton-icon" style="margin-bottom: 6px;"></div>
+          <div class="stat-card-body">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text short"></div>
+          </div>
+          <div class="stat-card-bar" style="background: #e2e2e2"></div>
+        </div>
+      }
+    } @else {
+      @for (card of statCards; track card.title) {
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">{{ card.title }}</span>
+          </div>
+          <span class="material-icons-outlined stat-icon">{{ card.icon }}</span>
+          <div class="stat-card-body">
+            <span class="stat-value">{{ card.value }}</span>
+            @if (card.subtitle) {
+              <span class="stat-subtitle">{{ card.subtitle }}</span>
+            }
+          </div>
+          <div class="stat-card-bar"></div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Bottom Section: Recent Exams + Classes Panel -->
+  <div class="bottom-section">
+    <!-- Recent Exams -->
+    <div class="recent-exams-card">
+      <div class="card-header-section">
+        <div class="card-header-accent"></div>
+        <h2 class="card-title">Recent Exams</h2>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="exams-table">
+          <thead>
+            <tr>
+              <th>Exam Name</th>
+              <th>Subject</th>
+              <th>Volume</th>
+              <th>Status</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (isLoadingExams) {
+              @for (s of [1,2,3,4,5]; track s) {
+                <tr>
+                  <td><div class="skeleton skeleton-text medium" style="margin:0"></div></td>
+                  <td><div class="skeleton skeleton-text long" style="margin:0"></div></td>
+                  <td><div class="skeleton skeleton-text short" style="margin:0"></div></td>
+                  <td><div class="skeleton skeleton-badge"></div></td>
+                  <td><div class="skeleton skeleton-text medium" style="margin:0"></div></td>
+                </tr>
+              }
+            } @else {
+              @for (exam of recentExams; track exam.name + exam.subject) {
+                <tr>
+                  <td class="exam-name">{{ exam.name }}</td>
+                  <td class="exam-subject">{{ exam.subject }}</td>
+                  <td>{{ exam.volume }}</td>
+                  <td>
+                    <span class="status-badge" [class]="getStatusClass(exam.status)">
+                      {{ exam.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar" [style.width.%]="exam.progress"></div>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty-state-cell">
+                    <div class="empty-state">
+                      <span class="material-icons-outlined">inventory_2</span>
+                      <p>You haven't created any exams yet.</p>
+                      <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Classes Panel -->
+    <div class="classes-panel">
+      <div class="classes-panel-header">
+        <h3 class="classes-panel-title">CLASSES</h3>
+        <div class="classes-col-headers">
+          <span>BLOCK</span>
+          <span>NO. OF STUDENTS</span>
+        </div>
+      </div>
+      <div class="classes-list">
+        @if (isLoadingClasses) {
+          @for (s of [1,2,3]; track s) {
+            <div class="class-row">
+              <div class="skeleton skeleton-text medium" style="margin:0"></div>
+              <div class="skeleton skeleton-text short" style="margin:0; width: 20px;"></div>
+            </div>
+          }
+        } @else {
+          @for (cls of classBlocks; track cls.block) {
+            <div class="class-row">
+              <span class="class-block">{{ cls.block }}</span>
+              <span class="class-students">{{ cls.students }}</span>
+            </div>
+          } @empty {
+            <div class="empty-state small">
+              <span class="material-icons-outlined">school</span>
+              <p>No classes found.</p>
+              <button class="btn-text" routerLink="/classes">Add a class</button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

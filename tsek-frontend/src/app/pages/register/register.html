@@ -1,0 +1,112 @@
+<div class="register-page">
+  <!-- Top Navigation -->
+  <nav class="register-nav">
+    <div class="nav-left">
+      <span class="nav-brand">TSEK</span>
+    </div>
+    <div class="nav-center">
+      <a href="#" class="nav-link active">Features</a>
+      <a href="#" class="nav-link">Scanning</a>
+      <a href="#" class="nav-link">Classroom</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn-get-started">GET STARTED</button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <div class="register-content">
+    
+    <!-- Left Promotional Area -->
+    <div class="left-section">
+      <div class="brand-huge">
+        TSEK<img src="/checkmark.png" alt="Check" class="check-huge" />
+      </div>
+      <div class="feature-icon">
+        <span class="material-icons-outlined camera-icon">camera_enhance</span>
+      </div>
+      <h1 class="feature-title">Live OCR Scanning</h1>
+      <p class="feature-desc">
+        Capture and evaluate answer sheets instantly with our optical character recognition. High precision even in low-light conditions.
+      </p>
+      <ul class="feature-list">
+        <li><img src="/checkmark.png" alt="Check" class="check-small" /> Real-time Feedback Loop</li>
+        <li><img src="/checkmark.png" alt="Check" class="check-small" /> Handwriting Recognition</li>
+      </ul>
+    </div>
+
+    <!-- Right Registration Form Area -->
+    <div class="right-section">
+      <div class="register-card">
+        <div class="card-header">
+          <h2 class="card-title">Create Instructor Account</h2>
+          <img src="/headdress.png" alt="Headdress" class="graduation-icon" />
+        </div>
+        
+        <form class="register-form" (ngSubmit)="register()">
+          
+          @if (errorMessage) {
+            <div @slideDownAnim class="error-banner">
+              <span class="material-icons-outlined" style="font-size: 1.1rem;">error_outline</span>
+              {{ errorMessage }}
+            </div>
+          }
+
+          @if (successMessage) {
+            <div @slideDownAnim class="success-banner">
+              <span class="material-icons-outlined" style="font-size: 1.1rem;">check_circle</span>
+              {{ successMessage }}
+            </div>
+          }
+
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>FULL NAME</label>
+              <input type="text" placeholder="" class="form-control" name="fullName" [(ngModel)]="fullName" />
+            </div>
+            <div class="form-group flex-1">
+              <label>PREFIX</label>
+              <div class="select-wrapper">
+                <select class="form-control" name="prefix" [(ngModel)]="prefix">
+                  <option>Mr.</option>
+                  <option>Ms.</option>
+                  <option>Mrs.</option>
+                  <option>Dr.</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>SCHOOL EMAIL</label>
+            <input type="email" placeholder="" class="form-control" name="email" [(ngModel)]="email" />
+          </div>
+
+          <div class="form-group">
+            <label>PASSWORD</label>
+            <input type="password" class="form-control" name="password" [(ngModel)]="password" />
+          </div>
+
+          <div class="form-group">
+            <label>CONFIRM PASSWORD</label>
+            <input type="password" class="form-control" name="confirmPassword" [(ngModel)]="confirmPassword" />
+          </div>
+
+          <button type="submit" class="btn-submit" [disabled]="isLoading" [class.loading]="isLoading">
+            {{ isLoading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT' }}
+          </button>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="terms" name="agreedToTerms" [(ngModel)]="agreedToTerms" />
+            <label for="terms">I agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>.</label>
+          </div>
+        </form>
+
+        <div class="card-footer">
+          Already part of TSEK? <a routerLink="/login">Sign In</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

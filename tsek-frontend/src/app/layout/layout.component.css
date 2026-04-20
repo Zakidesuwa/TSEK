@@ -1,0 +1,30 @@
+.main-content {
+  margin-left: 0;
+  margin-top: var(--header-height);
+  padding: 28px 32px;
+  min-height: calc(100vh - var(--header-height));
+  background-color: var(--color-bg);
+  transition: margin-left var(--transition-normal);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility var(--transition-normal);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px 16px;
+  }
+}

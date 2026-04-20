@@ -1,0 +1,34 @@
+<div class="verify-page">
+  <div class="verify-card">
+    <div class="brand-header">
+      <span class="nav-brand">TSEK</span>
+    </div>
+
+    @if (status === 'LOADING') {
+      <div class="status-icon loading">
+        <span class="material-icons-outlined spin">hourglass_empty</span>
+      </div>
+      <h2 class="status-title">Verifying Email</h2>
+    }
+    
+    @if (status === 'SUCCESS') {
+      <div class="status-icon success">
+        <span class="material-icons-outlined">check_circle</span>
+      </div>
+      <h2 class="status-title">Verification Complete!</h2>
+    }
+
+    @if (status === 'ERROR') {
+      <div class="status-icon error">
+        <span class="material-icons-outlined">error</span>
+      </div>
+      <h2 class="status-title">Verification Failed</h2>
+    }
+
+    <p class="status-message">{{ message }}</p>
+
+    @if (status !== 'LOADING') {
+      <button class="btn-primary" routerLink="/login">RETURN TO LOGIN</button>
+    }
+  </div>
+</div>

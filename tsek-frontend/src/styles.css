@@ -1,0 +1,116 @@
+/* ===== GLOBAL STYLES ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Primary Colors */
+  --color-primary: #4a6741;
+  --color-primary-light: #5c7a52;
+  --color-primary-dark: #3a5233;
+  --color-primary-bg: rgba(74, 103, 65, 0.1);
+
+  /* Neutrals */
+  --color-bg: #f5f2ed;
+  --color-bg-card: #ffffff;
+  --color-bg-sidebar: #faf8f5;
+  --color-bg-header: #faf8f5;
+  --color-text-primary: #2c2c2c;
+  --color-text-secondary: #6b6b6b;
+  --color-text-muted: #999999;
+  --color-border: #e8e4df;
+  --color-border-light: #f0ece7;
+
+  /* Status Colors */
+  --color-success: #4a6741;
+  --color-warning: #d4a843;
+  --color-info: #5a7d9a;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  /* Spacing */
+  --sidebar-width: 240px;
+  --header-height: 56px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-muted);
+}
+
+/* ===== GLOBAL PRINT STYLES ===== */
+@media print {
+  app-sidebar,
+  app-header,
+  .sidebar-overlay {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

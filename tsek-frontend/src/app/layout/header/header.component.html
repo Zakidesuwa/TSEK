@@ -1,0 +1,42 @@
+<header class="header">
+  <div class="header-left">
+    <button class="header-icon-btn mobile-menu-btn" (click)="menuToggle.emit()" title="Menu">
+      <span class="material-icons-outlined">menu</span>
+    </button>
+    <div class="header-logo">
+      <div class="logo-circle">
+        <img src="/templogo.png" alt="TSEK Logo" class="logo-image">
+      </div>
+      <span class="header-title"><strong>TSEK</strong>: Test Scanning and Evaluation Kit</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="header-date">{{ currentDate }}</span>
+    <button class="header-icon-btn" title="Notifications">
+      <span class="material-icons-outlined">notifications</span>
+    </button>
+    <div class="profile-container">
+      <button class="header-icon-btn profile-btn" title="Profile" (click)="toggleDropdown($event)">
+        <span class="material-icons-outlined">account_circle</span>
+      </button>
+
+      @if (isDropdownOpen) {
+        <div class="profile-dropdown" @dropdownAnim (click)="$event.stopPropagation()">
+          <div class="dropdown-header">
+            <span class="user-name">{{ user.name }}</span>
+            <span class="user-email">{{ user.email }}</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item">
+            <span class="material-icons-outlined">settings</span>
+            Settings
+          </button>
+          <button class="dropdown-item" (click)="logout()">
+            <span class="material-icons-outlined">logout</span>
+            Log Out
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>

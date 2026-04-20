@@ -1,0 +1,186 @@
+import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef, OnInit, inject } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+
+interface ClassCard {
+  subject: string;
+  section: string;
+  students: number;
+  nextQuiz: string;
+}
+
+interface ExamCard {
+  subject: string;
+  date: string;
+  name: string;
+  types: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+interface StudentRow {
+  name: string;
+  number: string;
+  scores: string[];
+}
+
+@Component({
+  selector: 'app-classes',
+  standalone: true,
+  imports: [FormsModule, RouterLink],
+  templateUrl: './classes.component.html',
+  styleUrl: './classes.component.css',
+  animations: [
+    trigger('modalFadeAnim', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('250ms ease-out', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0 }))
+      ])
+    ]),
+    trigger('modalScaleAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.95) translateY(10px)' }),
+        animate('350ms cubic-bezier(0.175, 0.885, 0.32, 1.1)', style({ opacity: 1, transform: 'scale(1) translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ opacity: 0, transform: 'scale(0.95) translateY(10px)' }))
+      ])
+    ])
+  ]
+})
+export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
+  http = inject(HttpClient);
+  @ViewChild('carouselTrack') carouselTrack!: ElementRef<HTMLDivElement>;
+
+  canScrollLeft = false;
+  canScrollRight = true;
+  private scrollHandler = () => this.updateScrollState();
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  // ===== Add Class Modal =====
+  showAddClassModal = false;
+  newClass = { name: '', course: '', size: null as number | null };
+
+  // ===== Class Detail Modal =====
+  showClassDetailModal = false;
+  selectedClass: ClassCard | null = null;
+  selectedClassExams: string[] = [];
+  selectedClassStudents: StudentRow[] = [];
+  currentPage = 1;
+  totalPages = 1;
+  private readonly studentsPerPage = 8;
+  private allStudents: StudentRow[] = [];
+
+  classes: any[] = [];
+  createdExams: ExamCard[] = [];
+
+  ngOnInit() {
+    this.http.get<any[]>('http://localhost:3000/api/classes').subscribe(data => {
+      this.classes = data;
+      setTimeout(() => this.updateScrollState(), 100);
+    });
+
+    this.http.get<ExamCard[]>('http://localhost:3000/api/exams').subscribe(data => {
+      this.createdExams = data;
+    });
+  }
+
+  ngAfterViewInit(): void {
+    const track = this.carouselTrack.nativeElement;
+    track.addEventListener('scroll', this.scrollHandler, { passive: true });
+    // Initial check after rendering
+    setTimeout(() => this.updateScrollState(), 0);
+  }
+
+  ngOnDestroy(): void {
+    const track = this.carouselTrack?.nativeElement;
+    track?.removeEventListener('scroll', this.scrollHandler);
+  }
+
+  updateScrollState(): void {
+    const track = this.carouselTrack.nativeElement;
+    this.canScrollLeft = track.scrollLeft > 2;
+    this.canScrollRight = track.scrollLeft < track.scrollWidth - track.clientWidth - 2;
+    this.cdr.detectChanges();
+  }
+
+  scrollCarousel(direction: 'left' | 'right'): void {
+    const track = this.carouselTrack.nativeElement;
+    const scrollAmount = 300;
+    track.scrollBy({
+      left: direction === 'right' ? scrollAmount : -scrollAmount,
+      behavior: 'smooth'
+    });
+  }
+
+  // ===== Add Class Modal Methods =====
+  openAddClassModal(): void {
+    this.newClass = { name: '', course: '', size: null };
+    this.showAddClassModal = true;
+  }
+
+  closeAddClassModal(): void {
+    this.showAddClassModal = false;
+  }
+
+  addClass(): void {
+    if (this.newClass.name && this.newClass.course) {
+      this.http.post<any>('http://localhost:3000/api/classes', {
+        class_name: this.newClass.course,
+        section_code: this.newClass.name
+      }).subscribe({
+        next: (res) => {
+          this.classes.push({
+            id: res.id,
+            subject: res.subject,
+            section: res.section,
+            students: 0,
+            nextQuiz: 'TBD'
+          });
+          this.closeAddClassModal();
+          setTimeout(() => this.updateScrollState(), 100);
+        },
+        error: (err) => {
+          console.error('Failed to add class:', err);
+        }
+      });
+    }
+  }
+
+  // ===== Class Detail Modal Methods =====
+  openClassDetail(cls: any): void {
+    this.selectedClass = cls;
+    
+    this.http.get<{exams: string[], students: StudentRow[]}>(`http://localhost:3000/api/classes/${cls.id}/students`).subscribe(data => {
+      this.allStudents = data.students;
+      this.selectedClassExams = data.exams;
+      this.currentPage = 1;
+      this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
+      this.updatePaginatedStudents();
+      this.showClassDetailModal = true;
+    });
+  }
+
+  closeClassDetailModal(): void {
+    this.showClassDetailModal = false;
+    this.selectedClass = null;
+  }
+
+  changePage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedStudents();
+    }
+  }
+
+  private updatePaginatedStudents(): void {
+    const start = (this.currentPage - 1) * this.studentsPerPage;
+    const end = start + this.studentsPerPage;
+    this.selectedClassStudents = this.allStudents.slice(start, end);
+  }
+}
