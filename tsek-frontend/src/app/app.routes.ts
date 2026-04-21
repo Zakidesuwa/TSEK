@@ -12,6 +12,10 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () =>
       import('./pages/login/login').then(m => m.Login)
+  },{
+    path: 'landing',
+    loadComponent: () =>
+      import('./pages/landing/landing').then(m => m.Landing)
   },
   {
     path: 'verify-email',
@@ -50,5 +54,5 @@ export const routes: Routes = [
       }
     ]
   },
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'landing' }
 ];
