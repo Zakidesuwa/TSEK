@@ -23,9 +23,9 @@ export const routes: Routes = [
       import('./pages/verify-email/verify-email').then(m => m.VerifyEmailComponent)
   },
   {
-    path: '', 
-    redirectTo: 'login', 
-    pathMatch: 'full' 
+    path: '',
+    redirectTo: 'landing',
+    pathMatch: 'full'
   },
   {
     path: '',
