@@ -40,6 +40,12 @@
     }
   </div>
 
+  <!-- TSEK NOW Mobile Button -->
+  <button class="tsek-now-btn" routerLink="/generate-exam">
+    <span class="material-icons-outlined">camera_alt</span>
+    TSEK NOW
+  </button>
+
   <!-- Bottom Section: Recent Exams + Classes Panel -->
   <div class="bottom-section">
     <!-- Recent Exams -->
@@ -47,9 +53,11 @@
       <div class="card-header-section">
         <div class="card-header-accent"></div>
         <h2 class="card-title">Recent Exams</h2>
+        <button class="view-all-btn">View All</button>
       </div>
 
-      <div class="table-wrapper">
+      <!-- Desktop Table View -->
+      <div class="table-wrapper desktop-only">
         <table class="exams-table">
           <thead>
             <tr>
@@ -103,10 +111,41 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Mobile List View -->
+      <div class="mobile-exams-list mobile-only">
+        @if (isLoadingExams) {
+          @for (s of [1,2,3]; track s) {
+            <div class="mobile-exam-card">
+              <div class="skeleton skeleton-text long"></div>
+              <div class="skeleton skeleton-text short"></div>
+            </div>
+          }
+        } @else {
+          @for (exam of recentExams; track exam.name + exam.subject) {
+            <div class="mobile-exam-card">
+              <div class="mobile-exam-info">
+                <div class="mobile-exam-title">{{ exam.name }} - {{ exam.subject }}</div>
+                <div class="mobile-exam-students">{{ exam.volume }} Students</div>
+              </div>
+              <div class="mobile-exam-progress-wrapper">
+                <div class="progress-bar-container small">
+                  <div class="progress-bar" [style.width.%]="exam.progress"></div>
+                </div>
+                <span class="mobile-exam-percent">{{ exam.progress }}%</span>
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-state">
+              <p>No exams yet.</p>
+            </div>
+          }
+        }
+      </div>
     </div>
 
-    <!-- Classes Panel -->
-    <div class="classes-panel">
+    <!-- Classes Panel (Hidden on Mobile) -->
+    <div class="classes-panel desktop-only">
       <div class="classes-panel-header">
         <h3 class="classes-panel-title">CLASSES</h3>
         <div class="classes-col-headers">

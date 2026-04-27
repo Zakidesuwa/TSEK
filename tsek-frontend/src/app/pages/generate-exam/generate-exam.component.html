@@ -2,239 +2,531 @@
   <!-- Page Header -->
   <div class="page-header">
     <h1 class="page-title">Generate Exam</h1>
-    <p class="page-subtitle">Configure your exam layout.</p>
+    <p class="page-subtitle">
+      @if (currentStep === 'configure') {
+        Configure your exam layout.
+      } @else {
+        Set the correct answers for each section.
+      }
+    </p>
   </div>
 
-  <div class="content-columns">
-    <!-- Left Column -->
-    <div class="left-column">
+  <!-- ============================
+       STEP 1 — Configuration
+       ============================ -->
+  @if (currentStep === 'configure') {
+    <div class="content-columns" @fadeSlide>
+      <!-- Left Column -->
+      <div class="left-column">
 
-      <!-- Global Settings -->
-      <div class="card">
-        <h2 class="card-section-title">GLOBAL SETTINGS</h2>
+        <!-- Global Settings -->
+        <div class="card">
+          <h2 class="card-section-title">GLOBAL SETTINGS</h2>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">EXAM TITLE</label>
-            <input
-              type="text"
-              class="form-input"
-              placeholder="e.g., Quiz #1 Physics 101"
-              [(ngModel)]="examTitle"
-            >
-          </div>
-          
-          <div class="form-group">
-            <label class="form-label">CLASS / SECTION</label>
-            @if (classes.length > 0) {
-              <select class="form-select" [(ngModel)]="selectedClassId">
-                @for (cls of classes; track cls.id) {
-                  <option [value]="cls.id">{{ cls.subject }} ({{ cls.section }})</option>
-                }
-              </select>
-            } @else {
-              <div class="empty-inline">
-                <span>No classes found.</span>
-                <a routerLink="/classes" class="btn-text-inline">Create one first</a>
-              </div>
-            }
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">PAPER SIZE</label>
-            <select class="form-select" [(ngModel)]="paperSize">
-              <option value="A4">A4</option>
-              <option value="Letter">Letter</option>
-              <option value="Legal">Legal</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">DATE</label>
-            <input type="date" class="form-input date-input" [(ngModel)]="examDate">
-          </div>
-        </div>
-      </div>
-
-      <!-- Structure Setup -->
-      <div class="card">
-        <h2 class="card-section-title">STRUCTURE SETUP</h2>
-
-        @for (section of sections; track section.key) {
-          <div class="section-block" [class.disabled]="!section.enabled">
-            <div class="section-header">
-              <span class="section-label">{{ section.label }}</span>
-              <button
-                class="toggle-btn"
-                [class.active]="section.enabled"
-                (click)="toggleSection(section)"
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">EXAM TITLE</label>
+              <input
+                type="text"
+                class="form-input"
+                placeholder="e.g., Quiz #1 Physics 101"
+                [(ngModel)]="examTitle"
               >
-                <span class="toggle-knob"></span>
-              </button>
             </div>
 
-            @if (section.key === 'multipleChoice') {
-              <div class="choices-row">
-                <span class="form-label">NO. OF CHOICES:</span>
-                <select class="form-select mini-select" [(ngModel)]="numberOfChoices">
-                  <option [value]="2">2</option>
-                  <option [value]="3">3</option>
-                  <option [value]="4">4</option>
-                  <option [value]="5">5</option>
+            <div class="form-group">
+              <label class="form-label">CLASS / SECTION</label>
+              @if (classes.length > 0) {
+                <select class="form-select" [(ngModel)]="selectedClassId">
+                  @for (cls of classes; track cls.id) {
+                    <option [value]="cls.id">{{ cls.subject }} ({{ cls.section }})</option>
+                  }
                 </select>
-              </div>
-            }
-
-            <div class="option-pills">
-              @for (opt of section.options; track opt) {
-                <button
-                  class="pill"
-                  [class.selected]="section.selected === opt && section.enabled"
-                  [disabled]="!section.enabled"
-                  (click)="selectOption(section, opt)"
-                >
-                  {{ opt }}
-                </button>
+              } @else {
+                <div class="empty-inline">
+                  <span>No classes found.</span>
+                  <a routerLink="/classes" class="btn-text-inline">Create one first</a>
+                </div>
               }
             </div>
           </div>
-        }
 
-        <button class="btn-primary generate-btn" (click)="generateExam()">
-          <span class="material-icons-outlined btn-icon">picture_as_pdf</span>
-          GENERATE & EXPORT PDF
-        </button>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">PAPER SIZE</label>
+              <select class="form-select" [(ngModel)]="paperSize">
+                <option value="A4">A4</option>
+                <option value="Letter">Letter</option>
+                <option value="Legal">Legal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">DATE</label>
+              <input type="date" class="form-input date-input" [(ngModel)]="examDate">
+            </div>
+          </div>
+        </div>
+
+        <!-- Structure Setup -->
+        <div class="card">
+          <h2 class="card-section-title">STRUCTURE SETUP</h2>
+
+          @for (section of sections; track section.key) {
+            <div class="section-block" [class.disabled]="!section.enabled">
+              <div class="section-header">
+                <span class="section-label">{{ section.label }}</span>
+                <button
+                  class="toggle-btn"
+                  [class.active]="section.enabled"
+                  (click)="toggleSection(section)"
+                >
+                  <span class="toggle-knob"></span>
+                </button>
+              </div>
+
+              @if (section.key === 'multipleChoice') {
+                <div class="choices-row">
+                  <span class="form-label">NO. OF CHOICES:</span>
+                  <select class="form-select mini-select" [(ngModel)]="numberOfChoices">
+                    <option [value]="2">2</option>
+                    <option [value]="3">3</option>
+                    <option [value]="4">4</option>
+                    <option [value]="5">5</option>
+                  </select>
+                </div>
+              }
+
+              <div class="option-pills">
+                @for (opt of section.options; track opt) {
+                  <button
+                    class="pill"
+                    [class.selected]="section.selected === opt && section.enabled"
+                    [disabled]="!section.enabled"
+                    (click)="selectOption(section, opt)"
+                  >
+                    {{ opt }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <button class="btn-primary generate-btn" (click)="proceedToAnswerKey()">
+            <span class="material-icons-outlined btn-icon">arrow_forward</span>
+            PROCEED TO ANSWER KEY
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Right Column -->
-    <div class="right-column">
-      <div class="card point-config-card">
-        <h2 class="card-section-title">Point Value Configuration</h2>
-        <p class="config-description">
-          Specify each scoring weight for each section. These values will be used to calculate the
-          total exam score and will be embedded in generated answer sheet metadata for automatic grading.
-        </p>
+      <!-- Right Column -->
+      <div class="right-column">
+        <div class="card point-config-card">
+          <h2 class="card-section-title">Point Value Configuration</h2>
+          <p class="config-description">
+            Specify each scoring weight for each section. These values will be used to calculate the
+            total exam score and will be embedded in generated answer sheet metadata for automatic grading.
+          </p>
 
-        @for (pt of pointSections; track pt.key) {
-          <div class="point-row" @pointRowAnim>
-            <div class="point-info">
-              <span class="point-name">{{ pt.name }}</span>
-              <span class="point-range">{{ pt.itemRange }}</span>
+          @for (pt of pointSections; track pt.key) {
+            <div class="point-row" @pointRowAnim>
+              <div class="point-info">
+                <span class="point-name">{{ pt.name }}</span>
+                <span class="point-range">{{ pt.itemRange }}</span>
+              </div>
+              <div class="point-input-group">
+                <input
+                  type="number"
+                  class="point-input"
+                  [ngModel]="pt.pointsPerItem"
+                  (ngModelChange)="pt.pointsPerItem = $event; onPointsChange(pt)"
+                  step="0.5"
+                  min="0"
+                >
+                <span class="point-unit">PTS / ITEM</span>
+              </div>
             </div>
-            <div class="point-input-group">
-              <input
-                type="number"
-                class="point-input"
-                [ngModel]="pt.pointsPerItem"
-                (ngModelChange)="pt.pointsPerItem = $event; onPointsChange(pt)"
-                step="0.5"
-                min="0"
-              >
-              <span class="point-unit">PTS / ITEM</span>
-            </div>
-          </div>
-        }
+          }
 
-        <div class="score-section">
-          <div class="total-score">
-            <span class="total-label">TOTAL POSSIBLE SCORE</span>
-            <span class="total-value">{{ totalPossibleScore.toFixed(1) }}</span>
-          </div>
-          <div class="score-note">
-            Exam layout is hidden in configuration mode.
-          </div>
-          <div class="score-actions">
-            <button class="btn-outline" (click)="clearValues()">CLEAR VALUES</button>
-            <button class="btn-primary" (click)="saveWeights()">SAVE WEIGHTS</button>
+          <div class="score-section">
+            <div class="total-score">
+              <span class="total-label">TOTAL POSSIBLE SCORE</span>
+              <span class="total-value">{{ totalPossibleScore.toFixed(1) }}</span>
+            </div>
+            <div class="score-note">
+              Exam layout is hidden in configuration mode.
+            </div>
+            <div class="score-actions">
+              <button class="btn-outline" (click)="clearValues()">CLEAR VALUES</button>
+              <button class="btn-primary" (click)="saveWeights()">SAVE WEIGHTS</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Printable Area (Hidden on screen, Visible on print) -->
   <div class="print-area">
-    <!-- Alignment markers -->
-    <div class="marker marker-tl"></div>
-    <div class="marker marker-tr"></div>
-    <div class="marker marker-bl"></div>
-    <div class="marker marker-br"></div>
+      <!-- Alignment markers -->
+      <div class="marker marker-tl"></div>
+      <div class="marker marker-tr"></div>
+      <div class="marker marker-bl"></div>
+      <div class="marker marker-br"></div>
 
-    <div class="print-header">
-      <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
-      <div class="student-info-grid">
-        <div class="info-field">
-          <label>FULL NAME (LN, FN, MI.)</label>
-          <div class="info-box"></div>
-        </div>
-        <div class="info-field">
-          <label>STUDENT NUMBER</label>
-          <div class="info-box"></div>
-        </div>
-        <div class="info-field">
-          <label>PROGRAM & BLOCK</label>
-          <div class="info-box"></div>
-        </div>
-        <div class="info-field">
-          <label>DATE</label>
-          <div class="info-box"></div>
+      <table class="print-table">
+        <thead>
+          <tr><td><div class="print-header-space"></div></td></tr>
+        </thead>
+        <tbody>
+          <tr><td class="print-body-cell">
+
+      <div class="print-header">
+        <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
+        <div class="student-info-grid">
+          
+          <div class="info-left">
+            <div class="info-field">
+              <label>FULL NAME (LN, FN, MI.)</label>
+              <div class="info-box"></div>
+            </div>
+            <div class="info-field">
+              <label>PROGRAM & BLOCK</label>
+              <div class="info-box"></div>
+            </div>
+            <div class="info-field">
+              <label>DATE</label>
+              <div class="info-box"></div>
+            </div>
+          </div>
+
+          <div class="student-id-section">
+            <div class="student-id-label">STUDENT ID NUMBER</div>
+            <div class="id-bubble-grid">
+              @for (col of studentIdColumnsArray; track $index) {
+                <div class="id-bubble-col">
+                  @for (digit of studentIdDigits; track digit) {
+                    <div class="bubble-group">
+                      <div class="print-bubble"></div>
+                      <span class="bubble-label">{{ digit }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
         </div>
       </div>
+
+      <!-- Multiple Choice Section -->
+      @if (mcBlocks.length > 0) {
+        <div class="print-section">
+          <h2 class="print-section-title">PART I: MULTIPLE CHOICE</h2>
+          <div class="mc-blocks-container">
+            @for (block of mcBlocks; track $index) {
+              <div class="mc-grid">
+                @for (col of block; track $index) {
+                  <div class="mc-column">
+                    @for (item of col; track item) {
+                      <div class="mc-item">
+                        <span class="item-num">{{ item }}.</span>
+                        <div class="bubbles">
+                          @for (letter of choiceLetters; track letter) {
+                            <div class="bubble-group">
+                              <div class="print-bubble"></div>
+                              <span class="bubble-label">{{ letter }}</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Identification Section -->
+      @if (idBlocks.length > 0) {
+        <div class="print-section pt-4">
+          <h2 class="print-section-title">PART II: IDENTIFICATION</h2>
+          <div class="id-blocks-container">
+            @for (block of idBlocks; track $index) {
+              <div class="id-grid">
+                @for (col of block; track $index) {
+                  <div class="id-column">
+                    @for (item of col; track item) {
+                      <div class="id-item">
+                        <span class="item-num">{{ item }}.</span>
+                        <div class="id-box"></div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Enumeration Section -->
+      @if (enumBlocks.length > 0) {
+        <div class="print-section pt-4">
+          <h2 class="print-section-title">PART III: ENUMERATION</h2>
+          <div class="id-blocks-container">
+            @for (block of enumBlocks; track $index) {
+              <div class="id-grid">
+                @for (col of block; track $index) {
+                  <div class="id-column">
+                    @for (item of col; track item) {
+                      <div class="id-item">
+                        <span class="item-num">{{ item }}.</span>
+                        <div class="id-box"></div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- True or False Section -->
+      @if (tfBlocks.length > 0) {
+        <div class="print-section pt-4">
+          <h2 class="print-section-title">PART IV: TRUE OR FALSE</h2>
+          <div class="mc-blocks-container">
+            @for (block of tfBlocks; track $index) {
+              <div class="mc-grid">
+                @for (col of block; track $index) {
+                  <div class="mc-column">
+                    @for (item of col; track item) {
+                      <div class="mc-item">
+                        <span class="item-num">{{ item }}.</span>
+                        <div class="bubbles">
+                          <div class="bubble-group">
+                            <div class="print-bubble"></div>
+                            <span class="bubble-label">T</span>
+                          </div>
+                          <div class="bubble-group">
+                            <div class="print-bubble"></div>
+                            <span class="bubble-label">F</span>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+          </td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td><div class="print-footer-space"></div></td></tr>
+        </tfoot>
+      </table>
     </div>
 
-    <!-- Multiple Choice Section -->
-    @if (mcBlocks.length > 0) {
-      <div class="print-section">
-        <h2 class="section-title">PART I: MULTIPLE CHOICE</h2>
-        <div class="mc-blocks-container">
-          @for (block of mcBlocks; track $index) {
-            <div class="mc-grid">
-              @for (col of block; track $index) {
-                <div class="mc-column">
-                  @for (item of col; track item) {
-                    <div class="mc-item">
-                      <span class="item-num">{{ item }}.</span>
-                      <div class="bubbles">
-                        @for (letter of choiceLetters; track letter) {
-                          <div class="bubble-group">
-                            <div class="bubble"></div>
-                            <span class="bubble-label">{{ letter }}</span>
-                          </div>
+  <!-- ============================
+       STEP 2 — Answer Key Generator
+       ============================ -->
+  @if (currentStep === 'answerKey') {
+    <div class="step2-wrapper" @fadeSlide>
+
+      <!-- Back button -->
+      <button class="btn-back" (click)="goBackToConfig()">
+        <span class="material-icons-outlined">arrow_back</span>
+        Back to Configuration
+      </button>
+
+      <div class="content-layout">
+        <!-- Main Content Area -->
+        <div class="main-area">
+          <!-- Tab Bar -->
+          <div class="tab-bar">
+            @for (tab of answerTabs; track tab.key) {
+              <button
+                class="tab-item"
+                [class.active]="activeAnswerTab === tab.key"
+                (click)="switchAnswerTab(tab.key)"
+                [id]="'tab-' + tab.key"
+              >
+                <span class="material-icons-outlined tab-icon">{{ tab.icon }}</span>
+                <span class="tab-label">{{ tab.label }}</span>
+              </button>
+            }
+          </div>
+
+          <!-- Answer Key Generator Card -->
+          <div class="answer-key-card">
+            <div class="answer-key-header">
+              <h2 class="answer-key-title">Answer Key Generator</h2>
+              <p class="answer-key-desc">
+                Input correct answers for the
+                <strong>{{ examTitle }}</strong>
+              </p>
+            </div>
+
+            <!-- Multiple Choice / True or False Grid -->
+            @if (activeAnswerTab === 'multipleChoice' || activeAnswerTab === 'trueOrFalse') {
+              <div class="bubble-grid">
+                <!-- Left Column -->
+                <div class="bubble-column">
+                  @for (num of leftColumnItems; track num) {
+                    <div class="bubble-row">
+                      <span class="item-number">{{ num }}.</span>
+                      <div class="bubble-options">
+                        @for (opt of currentAnswerTab.options; track opt) {
+                          <button
+                            class="answer-bubble"
+                            [class.selected]="isAnswerSelected(num, opt)"
+                            (click)="selectAnswer(num, opt)"
+                            (dblclick)="toggleMultiAnswer(num, opt, $event)"
+                            [id]="'bubble-' + activeAnswerTab + '-' + num + '-' + opt"
+                          >
+                            {{ opt }}
+                          </button>
                         }
                       </div>
                     </div>
                   }
                 </div>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    }
 
-    <!-- Identification Section -->
-    @if (idBlocks.length > 0) {
-      <div class="print-section pt-4">
-        <h2 class="section-title">PART II: IDENTIFICATION</h2>
-        <div class="id-blocks-container">
-          @for (block of idBlocks; track $index) {
-            <div class="id-grid">
-              @for (col of block; track $index) {
-                <div class="id-column">
-                  @for (item of col; track item) {
-                    <div class="id-item">
-                      <span class="item-num">{{ item }}.</span>
-                      <div class="id-box"></div>
+                <!-- Right Column -->
+                <div class="bubble-column">
+                  @for (num of rightColumnItems; track num) {
+                    <div class="bubble-row">
+                      <span class="item-number">{{ num }}.</span>
+                      <div class="bubble-options">
+                        @for (opt of currentAnswerTab.options; track opt) {
+                          <button
+                            class="answer-bubble"
+                            [class.selected]="isAnswerSelected(num, opt)"
+                            (click)="selectAnswer(num, opt)"
+                            (dblclick)="toggleMultiAnswer(num, opt, $event)"
+                            [id]="'bubble-' + activeAnswerTab + '-' + num + '-' + opt"
+                          >
+                            {{ opt }}
+                          </button>
+                        }
+                      </div>
                     </div>
                   }
                 </div>
-              }
+              </div>
+            }
+
+            <!-- Identification / Enumeration Grid -->
+            @if (activeAnswerTab === 'identification' || activeAnswerTab === 'enumeration') {
+              <div class="text-grid">
+                @for (num of currentTabItemNumbers; track num) {
+                  <div class="text-row">
+                    <span class="item-number">{{ num }}.</span>
+                    <input
+                      type="text"
+                      class="text-answer-input"
+                      placeholder="Enter correct answer..."
+                      [(ngModel)]="textAnswers[activeAnswerTab][num]"
+                      (ngModelChange)="onTextChange(num)"
+                      [id]="'text-' + activeAnswerTab + '-' + num"
+                    >
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Sidebar Panels -->
+        <div class="side-panels">
+          <!-- Points Per Item -->
+          <div class="info-card points-card">
+            <div class="points-display">
+              <div class="points-left">
+                <span class="points-label">POINTS PER ITEM</span>
+                <span class="points-value">{{ currentAnswerTab.pointsPerItem.toFixed(1) }} PTS/ITEM</span>
+              </div>
+              <div class="points-divider"></div>
+              <div class="points-right">
+                <span class="points-label">TOTAL</span>
+                <span class="points-total">{{ currentTabTotal.toFixed(1) }}</span>
+              </div>
             </div>
+          </div>
+
+          <!-- Completion Status -->
+          <div class="info-card completion-card">
+            <h3 class="info-card-title">COMPLETION STATUS</h3>
+            <div class="completion-count">
+              <span class="completion-big">{{ completedItems }}/{{ currentAnswerTab.itemCount }}</span>
+            </div>
+            <div class="progress-track">
+              <div
+                class="progress-fill"
+                [style.width.%]="completionPercent"
+              ></div>
+            </div>
+            <span class="progress-percent">{{ completionPercent }}%</span>
+            <p class="completion-note">
+              {{ remainingItems }} items remaining in {{ currentAnswerTab.label }}.
+              Complete all items before finalizing the key.
+            </p>
+          </div>
+
+          <!-- Quick Guide -->
+          <div class="info-card guide-card">
+            <h3 class="guide-title">
+              <span class="guide-dot"></span>
+              Quick Guide
+            </h3>
+            <ul class="guide-list">
+              <li>Click an option bubble once to select the correct answer.</li>
+              <li>Double-click for multiple valid answers (multi-select).</li>
+              <li>Changes are saved automatically as a draft.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Finalize Button -->
+      <div class="finalize-bar">
+        <button class="btn-finalize" (click)="finalizeAnswerKey()" id="btn-finalize-answer-key">
+          FINALIZE ANSWER KEY
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Overlay -->
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()" [class.modal-error]="modalType === 'error'">
+        <div class="modal-icon">
+          <span class="material-icons-outlined">
+            {{ modalType === 'success' ? 'check_circle' : 'error_outline' }}
+          </span>
+        </div>
+        <h3 class="modal-title">{{ modalTitle }}</h3>
+        <p class="modal-message">{{ modalMessage }}</p>
+        <div class="modal-actions">
+          @if (modalType === 'success') {
+            <button class="btn-modal-action btn-outline" (click)="printExam()">
+              <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">print</span>
+              Generate PDF
+            </button>
+            <button class="btn-modal-action" (click)="closeModal()">Done</button>
+          } @else {
+            <button class="btn-modal-action" (click)="closeModal()">Got it</button>
           }
         </div>
       </div>
-    }
-  </div>
+    </div>
+  }
 </div>

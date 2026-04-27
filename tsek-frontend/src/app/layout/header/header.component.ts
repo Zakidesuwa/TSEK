@@ -1,11 +1,12 @@
 import { Component, Output, EventEmitter, inject, HostListener } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-header',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
   animations: [

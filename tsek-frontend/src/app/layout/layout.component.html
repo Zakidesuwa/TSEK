@@ -8,3 +8,23 @@
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>
+
+<!-- Bottom Navigation for Mobile -->
+<nav class="bottom-nav">
+  <a routerLink="/dashboard" routerLinkActive="active" class="bottom-nav-item" (click)="closeSidebar()">
+    <span class="material-icons-outlined">insert_chart_outlined</span>
+    <span class="bottom-nav-label">Dashboard</span>
+  </a>
+  <a routerLink="/generate-exam" routerLinkActive="active" class="bottom-nav-item" (click)="closeSidebar()">
+    <span class="material-icons-outlined">post_add</span>
+    <span class="bottom-nav-label">Generate</span>
+  </a>
+  <a routerLink="/classes" routerLinkActive="active" class="bottom-nav-item" (click)="closeSidebar()">
+    <span class="material-icons-outlined">class</span>
+    <span class="bottom-nav-label">Classes</span>
+  </a>
+  <a routerLink="/history" routerLinkActive="active" class="bottom-nav-item" (click)="closeSidebar()">
+    <span class="material-icons-outlined">history</span>
+    <span class="bottom-nav-label">History</span>
+  </a>
+</nav>

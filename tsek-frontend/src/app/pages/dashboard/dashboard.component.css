@@ -115,24 +115,125 @@
   border: 1px solid var(--color-border-light);
 }
 
+/* Responsive */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+.tsek-now-btn {
+  display: none;
+  width: 100%;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(74, 103, 65, 0.2);
+  transition: all var(--transition-fast);
+}
+
+.tsek-now-btn .material-icons-outlined {
+  font-size: 24px;
+}
+
+.tsek-now-btn:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 103, 65, 0.3);
+}
+
 .card-header-section {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
-}
-
-.card-header-accent {
-  width: 4px;
-  height: 24px;
-  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-light));
-  border-radius: 2px;
+  justify-content: space-between;
 }
 
 .card-title {
   font-size: 17px;
   font-weight: 600;
   color: var(--color-text-primary);
+  flex-grow: 1;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-exams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-exam-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-exam-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  margin-right: 12px;
+}
+
+.mobile-exam-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: normal;
+  word-break: break-word;
+}
+
+.mobile-exam-students {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.mobile-exam-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-exam-percent {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  width: 28px;
+  text-align: right;
+}
+
+.progress-bar-container.small {
+  width: 60px;
+  height: 4px;
 }
 
 /* Table */
@@ -290,7 +391,12 @@
   font-weight: 500;
 }
 
-/* Responsive */
+@media (min-width: 769px) {
+  .tsek-now-btn {
+    display: none !important;
+  }
+}
+
 @media (max-width: 900px) {
   .stat-cards {
     grid-template-columns: repeat(2, 1fr);
@@ -305,9 +411,21 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: flex !important;
+  }
+  
+  .tsek-now-btn {
+    display: flex;
+  }
+  
   .stat-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

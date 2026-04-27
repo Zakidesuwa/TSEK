@@ -312,6 +312,37 @@
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 4px;
+  padding-right: 28px; /* Make room for delete button */
+}
+
+.exam-delete-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.exam-card:hover .exam-delete-btn {
+  opacity: 1;
+}
+
+.exam-delete-btn:hover {
+  background-color: rgba(200, 80, 80, 0.1);
+  color: #b85454;
+}
+
+.exam-delete-btn .material-icons-outlined {
+  font-size: 18px;
 }
 
 .exam-card-subject {

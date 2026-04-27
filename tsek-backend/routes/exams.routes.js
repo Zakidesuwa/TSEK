@@ -45,4 +45,29 @@ router.post('/api/exams', authMiddleware, async (req, res) => {
   }
 });
 
+// Delete an exam
+router.delete('/api/exams/:id', authMiddleware, async (req, res) => {
+  const examId = req.params.id;
+  const instructorId = req.user.id;
+  try {
+    // Verify ownership via classes table before deleting
+    const verifyResult = await db.query(`
+      SELECT e.id 
+      FROM exams e
+      JOIN classes c ON e.class_id = c.id
+      WHERE e.id = $1 AND c.instructor_id = $2
+    `, [examId, instructorId]);
+
+    if (verifyResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Exam not found or already deleted' });
+    }
+
+    await db.query('DELETE FROM exams WHERE id = $1', [examId]);
+    res.json({ success: true, message: 'Exam deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete exam' });
+  }
+});
+
 module.exports = router;

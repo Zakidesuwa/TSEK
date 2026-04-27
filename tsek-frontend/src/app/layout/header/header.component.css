@@ -86,6 +86,27 @@
   .header {
     padding: 0 16px;
   }
+  .mobile-menu-btn {
+    display: none;
+  }
+  .header-title {
+    font-size: 18px;
+  }
+  /* Hide the descriptive part of the title on mobile, only show strong 'TSEK' */
+  .header-title strong::after {
+    content: '';
+  }
+  .header-title {
+    visibility: hidden;
+    position: relative;
+  }
+  .header-title strong {
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
 }
 
 /* ----- Profile Dropdown ----- */

@@ -1,4 +1,5 @@
 import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -12,6 +13,7 @@ interface ClassCard {
 }
 
 interface ExamCard {
+  id: number;
   subject: string;
   date: string;
   name: string;
@@ -28,7 +30,7 @@ interface StudentRow {
 @Component({
   selector: 'app-classes',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './classes.component.html',
   styleUrl: './classes.component.css',
   animations: [
@@ -85,9 +87,27 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
       setTimeout(() => this.updateScrollState(), 100);
     });
 
+    this.fetchExams();
+  }
+
+  fetchExams() {
     this.http.get<ExamCard[]>('http://localhost:3000/api/exams').subscribe(data => {
       this.createdExams = data;
     });
+  }
+
+  deleteExam(id: number) {
+    if (confirm('Are you sure you want to delete this exam?')) {
+      this.http.delete(`http://localhost:3000/api/exams/${id}`).subscribe({
+        next: () => {
+          this.fetchExams();
+        },
+        error: (err) => {
+          console.error('Failed to delete exam', err);
+          alert('Failed to delete exam. Please try again.');
+        }
+      });
+    }
   }
 
   ngAfterViewInit(): void {
