@@ -30,13 +30,13 @@ router.get('/api/exams', authMiddleware, async (req, res) => {
 
 // Create an exam
 router.post('/api/exams', authMiddleware, async (req, res) => {
-  const { class_id, exam_title, total_items, config } = req.body;
+  const { class_id, exam_title, total_items, config, answer_key } = req.body;
   try {
     const result = await db.query(`
-      INSERT INTO exams (class_id, exam_title, total_items, config)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO exams (class_id, exam_title, total_items, config, answer_key)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id
-    `, [class_id, exam_title, total_items, JSON.stringify(config)]);
+    `, [class_id, exam_title, total_items, JSON.stringify(config), JSON.stringify(answer_key)]);
     
     res.json({ success: true, exam_id: result.rows[0].id });
   } catch (err) {

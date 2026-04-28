@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+import { ScanService } from '../../core/services/scan';
 
 interface StatCard {
   title: string;
@@ -32,6 +33,8 @@ interface ClassBlock {
 export class DashboardComponent implements OnInit {
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
+  router = inject(Router);
+  scanService = inject(ScanService);
 
   statCards: StatCard[] = [];
   recentExams: RecentExam[] = [];
@@ -75,6 +78,15 @@ export class DashboardComponent implements OnInit {
       case 'IN PROGRESS': return 'status-progress';
       case 'PENDING': return 'status-pending';
       default: return '';
+    }
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      // Store the file in a service or state, then navigate to scan-results
+      this.scanService.setPendingFile(file);
+      this.router.navigate(['/scan-results']);
     }
   }
 }

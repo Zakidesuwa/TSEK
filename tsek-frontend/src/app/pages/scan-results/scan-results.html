@@ -1,0 +1,314 @@
+<div class="scan-page">
+  <!-- Hidden file input for Scan Another -->
+  <input type="file" accept="image/*" capture="environment" #scanInput class="hidden-input" (change)="onNewFileSelected($event)" style="display: none;">
+
+  <div class="scan-header">
+    <button class="back-btn" (click)="router.navigate(['/dashboard'])">
+      <span class="material-icons-outlined">arrow_back</span>
+    </button>
+    <h1>Scan Results</h1>
+  </div>
+
+  <!-- Processing State -->
+  @if (isLoading) {
+  <div class="state-card loading-state">
+    <div class="loading-visual">
+      <div class="pulse-ring"></div>
+      <span class="material-icons-outlined loading-icon">document_scanner</span>
+    </div>
+    <h3>Analyzing Document...</h3>
+    <p>Our system is reading bubbles and handwriting from your exam sheet</p>
+    <div class="loading-steps">
+      <div class="step active">
+        <span class="material-icons-outlined">image</span>
+        Uploading
+      </div>
+      <div class="step-line"></div>
+      <div class="step active">
+        <span class="material-icons-outlined">psychology</span>
+        AI Processing
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <span class="material-icons-outlined">fact_check</span>
+        Done
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Error State -->
+  @if (error && !isLoading) {
+  <div class="state-card error-state">
+    <span class="material-icons-outlined error-icon">error_outline</span>
+    <h3>Processing Failed</h3>
+    <p>{{ error }}</p>
+    <button class="btn-primary" (click)="router.navigate(['/dashboard'])">
+      <span class="material-icons-outlined btn-icon">arrow_back</span>
+      Go Back
+    </button>
+  </div>
+  }
+
+  <!-- Results State (Pre-Grading) -->
+  @if (!isLoading && !error && !gradeResult) {
+  <div class="results-layout">
+    <!-- Left: Image + Detected Data -->
+    <div class="results-left">
+      @if (imagePreviewUrl) {
+      <div class="preview-card">
+        <div class="preview-header">
+          <span class="material-icons-outlined">photo_camera</span>
+          Captured Image
+        </div>
+        <img [src]="imagePreviewUrl" alt="Scanned document" class="document-preview" />
+      </div>
+      }
+
+      <!-- Detected Data Summary -->
+      @if (rawText) {
+      <div class="detected-card">
+        <div class="detected-header">
+          <h3>Detected Data</h3>
+        </div>
+        <div class="detected-items">
+          <div class="detected-item">
+            <span class="material-icons-outlined">badge</span>
+            <div>
+              <label>Student ID</label>
+              <p>{{ rawText.studentId || 'Not detected' }}</p>
+            </div>
+          </div>
+          <div class="detected-item">
+            <span class="material-icons-outlined">checklist</span>
+            <div>
+              <label>Answers Found</label>
+              <p>{{ answersCount }} items detected</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Right: Grade Action -->
+    <div class="results-right">
+      <div class="grade-card">
+        <div class="grade-card-header">
+          <div class="grade-card-icon">
+            <span class="material-icons-outlined">grading</span>
+          </div>
+          <div>
+            <h3>Grade this Paper</h3>
+            <p>Select an exam to compare against</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="examSelect">Exam Configuration</label>
+          <select class="form-select" id="examSelect" [(ngModel)]="selectedExamId" [disabled]="exams.length === 0">
+            @for (exam of exams; track exam.id) {
+            <option [value]="exam.id">{{ exam.name }} ({{ exam.subject }})</option>
+            }
+          </select>
+          @if (exams.length === 0) {
+          <p class="no-exams-warning">
+            <span class="material-icons-outlined">warning</span>
+            No exams created yet.
+          </p>
+          }
+        </div>
+
+        <button class="btn-grade" (click)="processBubbles()" [disabled]="!selectedExamId || isGrading">
+          @if (isGrading) {
+          <div class="btn-spinner"></div>
+          Processing...
+          } @else {
+          <span class="material-icons-outlined">auto_awesome</span>
+          Process Grades
+          }
+        </button>
+
+        <button class="btn-discard" (click)="router.navigate(['/dashboard'])" [disabled]="isGrading">
+          Discard & Go Back
+        </button>
+      </div>
+
+      <!-- Raw JSON Accordion -->
+      <details class="raw-data-accordion">
+        <summary>
+          <span class="summary-content">
+            <span class="material-icons-outlined">data_object</span>
+            Raw JSON Response
+          </span>
+          <span class="material-icons-outlined expand-icon">expand_more</span>
+        </summary>
+        <div class="raw-text-container">
+          <pre>{{ rawText | json }}</pre>
+        </div>
+      </details>
+    </div>
+  </div>
+  }
+
+  <!-- Grade Result State -->
+  @if (gradeResult) {
+  <div class="grade-result-layout">
+    <!-- Top: Score Overview -->
+    <div class="score-overview-card">
+      <div class="score-left-section">
+        <div class="score-ring-container">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="52" />
+            <circle class="ring-progress" cx="60" cy="60" r="52" [attr.stroke-dasharray]="circumference"
+              [attr.stroke-dashoffset]="scoreOffset" />
+          </svg>
+          <div class="score-ring-text">
+            <span class="score-percent">{{ scorePercent }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="score-right-section">
+        <div class="score-title-row">
+          <span class="material-icons-outlined success-check">verified</span>
+          <h2>Grading Complete</h2>
+        </div>
+        <div class="score-big">{{ adjustedScore }} <span class="score-total">/ {{ maxScore }}</span></div>
+        <p class="score-subtitle">Total Points Earned</p>
+
+        <div class="stat-pills">
+          <div class="stat-pill correct">
+            <span class="material-icons-outlined">check_circle</span>
+            {{ correctCount }} Correct
+          </div>
+          <div class="stat-pill incorrect">
+            <span class="material-icons-outlined">cancel</span>
+            {{ incorrectCount }} Incorrect
+          </div>
+          @if (hasOverrides) {
+            <div class="stat-pill override">
+              <span class="material-icons-outlined">edit</span>
+              {{ overrides.size }} Override{{ overrides.size > 1 ? 's' : '' }}
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Status -->
+    @if (gradeResult.studentFound) {
+    <div class="student-banner success">
+      <span class="material-icons-outlined">person_check</span>
+      <div>
+        <strong>Student Identified</strong>
+        <p>Student ID {{ rawText.studentId }} was found in the database. Score has been saved automatically.</p>
+      </div>
+    </div>
+    }
+    @if (!gradeResult.studentFound && rawText?.studentId) {
+    <div class="student-banner warning">
+      <span class="material-icons-outlined">person_off</span>
+      <div>
+        <strong>Student Not Found</strong>
+        <p>Student ID {{ rawText.studentId }} was not found in the database. Score was NOT saved.</p>
+      </div>
+    </div>
+    }
+
+    <!-- Override banner -->
+    @if (overrideSaved) {
+      <div class="student-banner success">
+        <span class="material-icons-outlined">task_alt</span>
+        <div>
+          <strong>Overrides Saved</strong>
+          <p>The adjusted score has been saved to the database.</p>
+        </div>
+      </div>
+    }
+
+    <!-- Breakdown Table -->
+    <div class="breakdown-card">
+      <div class="breakdown-header">
+        <h3>Score Breakdown</h3>
+        <div class="breakdown-header-right">
+          <span class="breakdown-hint">Click "Accept" to override incorrect items</span>
+          <span class="breakdown-count">{{ sortedDetails.length }} items</span>
+        </div>
+      </div>
+      <div class="breakdown-table-wrapper">
+        <table class="breakdown-table">
+          <thead>
+            <tr>
+              <th class="col-item">#</th>
+              <th>Student Answer</th>
+              <th>Correct Answer</th>
+              <th class="col-pts">Pts</th>
+              <th class="col-status">Result</th>
+              <th class="col-action">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of sortedDetails; track item.key) {
+            <tr [class.correct]="isEffectivelyCorrect(item)" [class.incorrect]="!isEffectivelyCorrect(item)" [class.overridden]="isOverridden(item.key)">
+              <td class="col-item">{{ item.key }}</td>
+              <td class="answer-cell">{{ item.value.studentAnswer || '—' }}</td>
+              <td class="answer-cell">
+                {{ item.value.correctAnswer?.join ? item.value.correctAnswer.join(', ') : item.value.correctAnswer }}
+              </td>
+              <td class="col-pts">
+                <span class="pts-badge" [class.earned]="isEffectivelyCorrect(item)">
+                  {{ isEffectivelyCorrect(item) ? item.value.maxPoints : 0 }}
+                </span>
+              </td>
+              <td class="col-status">
+                @if (isOverridden(item.key)) {
+                  <span class="status-icon overridden"><span class="material-icons-outlined">check</span></span>
+                } @else if (item.value.isCorrect) {
+                  <span class="status-icon correct"><span class="material-icons-outlined">check</span></span>
+                } @else {
+                  <span class="status-icon incorrect"><span class="material-icons-outlined">close</span></span>
+                }
+              </td>
+              <td class="col-action">
+                @if (!item.value.isCorrect && !isOverridden(item.key)) {
+                  <button class="btn-accept" (click)="overrideItem(item.key)" title="Accept this answer as correct">
+                    <span class="material-icons-outlined">done</span>
+                    Accept
+                  </button>
+                }
+                @if (isOverridden(item.key)) {
+                  <button class="btn-undo" (click)="undoOverride(item.key)" title="Undo override">
+                    <span class="material-icons-outlined">undo</span>
+                    Undo
+                  </button>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="result-actions">
+      <button class="btn-outline" (click)="router.navigate(['/dashboard'])">
+        <span class="material-icons-outlined btn-icon">home</span>
+        Back to Dashboard
+      </button>
+      @if (hasOverrides) {
+        <button class="btn-primary save-btn" (click)="saveOverrides()" [disabled]="isSavingOverrides">
+          <span class="material-icons-outlined btn-icon">save</span>
+          {{ isSavingOverrides ? 'Saving...' : 'Save Overrides' }}
+        </button>
+      } @else {
+        <button class="btn-primary" (click)="scanInput.click()">
+          <span class="material-icons-outlined btn-icon">document_scanner</span>
+          Scan Another
+        </button>
+      }
+    </div>
+  </div>
+  }
+</div>

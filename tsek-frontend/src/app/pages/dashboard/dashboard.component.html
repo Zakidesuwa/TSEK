@@ -41,7 +41,8 @@
   </div>
 
   <!-- TSEK NOW Mobile Button -->
-  <button class="tsek-now-btn" routerLink="/generate-exam">
+  <input type="file" accept="image/*" capture="environment" #fileInput class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+  <button class="tsek-now-btn" (click)="fileInput.click()">
     <span class="material-icons-outlined">camera_alt</span>
     TSEK NOW
   </button>

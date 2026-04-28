@@ -125,7 +125,7 @@
 }
 
 .tsek-now-btn {
-  display: none;
+  display: flex;
   width: 100%;
   background: var(--color-primary);
   color: white;
@@ -391,11 +391,7 @@
   font-weight: 500;
 }
 
-@media (min-width: 769px) {
-  .tsek-now-btn {
-    display: none !important;
-  }
-}
+/* TSEK NOW button is always visible on all screen sizes */
 
 @media (max-width: 900px) {
   .stat-cards {

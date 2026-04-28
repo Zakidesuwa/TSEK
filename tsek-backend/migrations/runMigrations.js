@@ -26,6 +26,13 @@ async function runMigrations() {
   // Set existing to true so we don't lock out dummy accounts
   await pool.query('UPDATE instructors SET is_verified = true WHERE is_verified = false;');
 
+  try {
+    await pool.query('ALTER TABLE exams ADD COLUMN answer_key JSONB;');
+    console.log('Migration: Added answer_key column to exams');
+  } catch (err) {
+    if (err.code !== '42701') console.error('Migration error:', err);
+  }
+
   await pool.end();
 }
 

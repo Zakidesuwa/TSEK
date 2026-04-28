@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const classesRoutes = require('./routes/classes.routes');
 const examsRoutes = require('./routes/exams.routes');
+const scanRoutes = require('./routes/scan.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use(authRoutes);
 app.use(dashboardRoutes);
 app.use(classesRoutes);
 app.use(examsRoutes);
+app.use('/api/scan', scanRoutes);
 
 // Start server
 async function start() {
