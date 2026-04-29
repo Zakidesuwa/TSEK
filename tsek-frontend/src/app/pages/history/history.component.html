@@ -1,8 +1,53 @@
-<div class="placeholder-page">
-  <div class="placeholder-content">
-    <span class="material-icons-outlined placeholder-icon">history</span>
-    <h1>History</h1>
-    <p>View past exam results, scan logs, and grading history.</p>
-    <span class="coming-soon">Coming Soon</span>
+<div class="history-page">
+  <div class="page-header">
+    <h1 class="page-title">History</h1>
+    <p class="page-subtitle">View past exam results and grading history.</p>
   </div>
+
+  @if (isLoading) {
+    <div class="loading-state">
+      <span class="material-icons-outlined spin">autorenew</span>
+      <p>Loading history...</p>
+    </div>
+  } @else {
+    <div class="history-container">
+      @if (historyRecords.length === 0) {
+        <div class="empty-state-card full-width">
+          <span class="material-icons-outlined">history_toggle_off</span>
+          <p>No exams have been created yet.</p>
+          <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
+        </div>
+      } @else {
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>EXAM NAME</th>
+              <th>CLASS</th>
+              <th>DATE</th>
+              <th>ITEMS</th>
+              <th>SCANS</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of historyRecords; track record.id) {
+              <tr>
+                <td class="primary-cell">{{ record.name }}</td>
+                <td>{{ record.subject }} - {{ record.section }}</td>
+                <td>{{ record.date | date:'mediumDate' }}</td>
+                <td>{{ record.total_items }}</td>
+                <td>{{ record.scans }}</td>
+                <td>
+                  <button class="view-stats-btn" routerLink="/classes" [queryParams]="{ openStats: record.id }">
+                    View in Classes
+                    <span class="material-icons-outlined">arrow_forward</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  }
 </div>

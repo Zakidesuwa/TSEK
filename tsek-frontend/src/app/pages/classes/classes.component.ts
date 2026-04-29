@@ -2,7 +2,7 @@ import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetec
 import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 
 interface ClassCard {
@@ -25,6 +25,14 @@ interface StudentRow {
   name: string;
   number: string;
   scores: string[];
+}
+
+interface ExamStats {
+  totalStudents: number;
+  averageScore: number;
+  totalItems: number;
+  distribution: { well: number; good: number; needsImprovement: number };
+  mostMissed: { item: string; count: number }[];
 }
 
 @Component({
@@ -56,6 +64,7 @@ interface StudentRow {
 })
 export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   http = inject(HttpClient);
+  route = inject(ActivatedRoute);
   @ViewChild('carouselTrack') carouselTrack!: ElementRef<HTMLDivElement>;
 
   canScrollLeft = false;
@@ -78,6 +87,11 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   private readonly studentsPerPage = 8;
   allStudents: StudentRow[] = [];
 
+  // ===== Statistics Modal =====
+  showStatsModal = false;
+  selectedExamStats: ExamStats | null = null;
+  selectedExamName = '';
+
   classes: any[] = [];
   createdExams: ExamCard[] = [];
 
@@ -93,6 +107,15 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   fetchExams() {
     this.http.get<ExamCard[]>('http://localhost:3000/api/exams').subscribe(data => {
       this.createdExams = data;
+      
+      // Check if we need to open stats automatically from history page
+      const openStatsId = this.route.snapshot.queryParams['openStats'];
+      if (openStatsId) {
+        const exam = this.createdExams.find(e => e.id === Number(openStatsId));
+        if (exam) {
+          this.openStatsModal(exam);
+        }
+      }
     });
   }
 
@@ -108,6 +131,26 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         }
       });
     }
+  }
+
+  // ===== Stats Modal Methods =====
+  openStatsModal(exam: ExamCard): void {
+    this.selectedExamName = exam.name;
+    this.http.get<ExamStats>(`http://localhost:3000/api/exams/${exam.id}/statistics`).subscribe({
+      next: (data) => {
+        this.selectedExamStats = data;
+        this.showStatsModal = true;
+      },
+      error: (err) => {
+        console.error('Failed to load stats:', err);
+        alert('Failed to load statistics for this exam.');
+      }
+    });
+  }
+
+  closeStatsModal(): void {
+    this.showStatsModal = false;
+    this.selectedExamStats = null;
   }
 
   ngAfterViewInit(): void {

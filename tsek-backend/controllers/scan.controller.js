@@ -54,9 +54,9 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
       parsedJson = JSON.parse(responseText);
     } catch (parseError) {
       console.error("Failed to parse Gemini JSON:", responseText);
-      return res.status(500).json({ 
-        message: 'Failed to parse OMR results', 
-        rawText: responseText 
+      return res.status(500).json({
+        message: 'Failed to parse OMR results',
+        rawText: responseText
       });
     }
 
@@ -67,7 +67,7 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 
   } catch (error) {
     console.error('Error during Gemini scanning:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message || String(error),
       error: error.message || String(error)
     });
@@ -123,7 +123,7 @@ exports.gradeExam = async (req, res) => {
     for (const [globalNumStr, studentAnswer] of Object.entries(answers)) {
       const globalNum = parseInt(globalNumStr, 10);
       const mapping = itemMapping[globalNum];
-      
+
       if (!mapping) continue;
 
       const { sectionKey, sectionLocalNum, points } = mapping;
@@ -167,12 +167,12 @@ exports.gradeExam = async (req, res) => {
       const studentQuery = await db.query('SELECT id FROM students WHERE student_id_number::text = $1', [String(studentId).trim()]);
       if (studentQuery.rows.length > 0) {
         studentDbId = studentQuery.rows[0].id;
-        
+
         // Insert into exam_results
         await db.query(`
-          INSERT INTO exam_results (exam_id, student_id, score)
-          VALUES ($1, $2, $3)
-        `, [exam_id, studentDbId, totalScore]);
+          INSERT INTO exam_results (exam_id, student_id, score, graded_items)
+          VALUES ($1, $2, $3, $4)
+        `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems)]);
       }
     }
 
@@ -186,7 +186,7 @@ exports.gradeExam = async (req, res) => {
 
   } catch (err) {
     console.error('Error during grading:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       message: err.message || String(err),
       error: err.message || String(err)
     });
@@ -218,29 +218,29 @@ exports.saveOverride = async (req, res) => {
 
         if (existing.rows.length > 0) {
           await db.query(
-            'UPDATE exam_results SET score = $1 WHERE exam_id = $2 AND student_id = $3',
-            [adjustedScore, exam_id, studentDbId]
+            'UPDATE exam_results SET score = $1, graded_items = $4 WHERE exam_id = $2 AND student_id = $3',
+            [adjustedScore, exam_id, studentDbId, JSON.stringify(overriddenItems)]
           );
         } else {
           await db.query(
-            'INSERT INTO exam_results (exam_id, student_id, score) VALUES ($1, $2, $3)',
-            [exam_id, studentDbId, adjustedScore]
+            'INSERT INTO exam_results (exam_id, student_id, score, graded_items) VALUES ($1, $2, $3, $4)',
+            [exam_id, studentDbId, adjustedScore, JSON.stringify(overriddenItems)]
           );
         }
 
-        return res.status(200).json({ 
-          message: 'Override saved successfully', 
+        return res.status(200).json({
+          message: 'Override saved successfully',
           saved: true,
-          overriddenItems 
+          overriddenItems
         });
       }
     }
 
     // If student not found, just acknowledge the override
-    res.status(200).json({ 
-      message: 'Override acknowledged (student not in DB)', 
+    res.status(200).json({
+      message: 'Override acknowledged (student not in DB)',
       saved: false,
-      overriddenItems 
+      overriddenItems
     });
 
   } catch (err) {

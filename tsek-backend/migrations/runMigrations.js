@@ -78,6 +78,13 @@ async function runMigrations() {
     console.error('Migration error (exam_results):', err);
   }
 
+  try {
+    await pool.query('ALTER TABLE exam_results ADD COLUMN graded_items JSONB;');
+    console.log('Migration: Added graded_items column to exam_results');
+  } catch (err) {
+    if (err.code !== '42701') console.error('Migration error:', err);
+  }
+
   await pool.end();
 }
 

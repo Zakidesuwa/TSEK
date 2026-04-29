@@ -10,35 +10,37 @@
     <div class="carousel-container" [class.can-scroll-left]="canScrollLeft" [class.can-scroll-right]="canScrollRight">
       <div class="carousel-fade carousel-fade-left"></div>
       <div class="carousel-fade carousel-fade-right"></div>
-      <button class="carousel-btn carousel-btn-left" [class.hidden]="!canScrollLeft" (click)="scrollCarousel('left')" title="Scroll Left">
+      <button class="carousel-btn carousel-btn-left" [class.hidden]="!canScrollLeft" (click)="scrollCarousel('left')"
+        title="Scroll Left">
         <span class="material-icons-outlined">chevron_left</span>
       </button>
       <div class="carousel-track" #carouselTrack>
         @for (cls of classes; track cls.section) {
-          <div class="class-card" (click)="openClassDetail(cls)">
-            <div class="class-card-header">
-              <div class="class-card-info">
-                <h3 class="class-card-subject">{{ cls.subject }}</h3>
-                <p class="class-card-section">{{ cls.section }}</p>
-              </div>
-              <span class="student-badge">{{ cls.students }} STUDENTS</span>
+        <div class="class-card" (click)="openClassDetail(cls)">
+          <div class="class-card-header">
+            <div class="class-card-info">
+              <h3 class="class-card-subject">{{ cls.subject }}</h3>
+              <p class="class-card-section">{{ cls.section }}</p>
             </div>
-            <div class="class-card-footer">
-              <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
-              <button class="class-card-arrow" title="View Class">
-                <span class="material-icons-outlined">arrow_forward</span>
-              </button>
-            </div>
+            <span class="student-badge">{{ cls.students }} STUDENTS</span>
           </div>
+          <div class="class-card-footer">
+            <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
+            <button class="class-card-arrow" title="View Class">
+              <span class="material-icons-outlined">arrow_forward</span>
+            </button>
+          </div>
+        </div>
         } @empty {
-          <div class="empty-state-card">
-            <span class="material-icons-outlined">school</span>
-            <p>You haven't added any classes yet.</p>
-            <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
-          </div>
+        <div class="empty-state-card">
+          <span class="material-icons-outlined">school</span>
+          <p>You haven't added any classes yet.</p>
+          <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
+        </div>
         }
       </div>
-      <button class="carousel-btn carousel-btn-right" [class.hidden]="!canScrollRight" (click)="scrollCarousel('right')" title="Scroll Right">
+      <button class="carousel-btn carousel-btn-right" [class.hidden]="!canScrollRight" (click)="scrollCarousel('right')"
+        title="Scroll Right">
         <span class="material-icons-outlined">chevron_right</span>
       </button>
     </div>
@@ -59,27 +61,28 @@
 
     <div class="exams-grid">
       @for (exam of createdExams; track exam.name + exam.date) {
-        <div class="exam-card">
-          <button class="exam-delete-btn" title="Delete Exam" (click)="deleteExam(exam.id)">
-            <span class="material-icons-outlined">delete_outline</span>
-          </button>
-          
-          <div class="exam-card-top">
-            <span class="exam-card-subject">{{ exam.subject }}</span>
-            <span class="exam-card-date">{{ exam.date | date:'shortDate' }}</span>
-          </div>
-          <h4 class="exam-card-name">{{ exam.name }}</h4>
-          <p class="exam-card-types">{{ exam.types }}</p>
-          <span class="exam-status-badge" [class.active]="exam.status === 'ACTIVE'" [class.inactive]="exam.status === 'INACTIVE'">
-            {{ exam.status }}
-          </span>
+      <div class="exam-card" (click)="openStatsModal(exam)">
+        <button class="exam-delete-btn" title="Delete Exam" (click)="deleteExam(exam.id); $event.stopPropagation()">
+          <span class="material-icons-outlined">delete_outline</span>
+        </button>
+
+        <div class="exam-card-top">
+          <span class="exam-card-subject">{{ exam.subject }}</span>
+          <span class="exam-card-date">{{ exam.date | date:'shortDate' }}</span>
         </div>
+        <h4 class="exam-card-name">{{ exam.name }}</h4>
+        <p class="exam-card-types">{{ exam.types }}</p>
+        <span class="exam-status-badge" [class.active]="exam.status === 'ACTIVE'"
+          [class.inactive]="exam.status === 'INACTIVE'">
+          {{ exam.status }}
+        </span>
+      </div>
       } @empty {
-        <div class="empty-state-card full-width">
-          <span class="material-icons-outlined">inventory_2</span>
-          <p>No exams created yet.</p>
-          <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
-        </div>
+      <div class="empty-state-card full-width">
+        <span class="material-icons-outlined">inventory_2</span>
+        <p>No exams created yet.</p>
+        <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
+      </div>
       }
     </div>
   </div>
@@ -87,145 +90,214 @@
 
 <!-- ===== ADD CLASS MODAL ===== -->
 @if (showAddClassModal) {
-  <div class="modal-overlay" @modalFadeAnim (click)="closeAddClassModal()">
-    <div class="modal-container add-class-modal" @modalScaleAnim (click)="$event.stopPropagation()">
-      <h2 class="modal-title">Adding class</h2>
+<div class="modal-overlay" @modalFadeAnim (click)="closeAddClassModal()">
+  <div class="modal-container add-class-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <h2 class="modal-title">Adding class</h2>
 
-      <div class="modal-form-group">
-        <label class="modal-label">CLASS NAME</label>
-        <input
-          type="text"
-          class="modal-input"
-          placeholder="e.g., BSCS 1A&B"
-          [(ngModel)]="newClass.name"
-        >
-      </div>
+    <div class="modal-form-group">
+      <label class="modal-label">CLASS NAME</label>
+      <input type="text" class="modal-input" placeholder="e.g., BSCS 1A&B" [(ngModel)]="newClass.name">
+    </div>
 
-      <div class="modal-form-group">
-        <label class="modal-label">COURSE NAME</label>
-        <input
-          type="text"
-          class="modal-input"
-          placeholder="e.g., Statistics and Probability"
-          [(ngModel)]="newClass.course"
-        >
-      </div>
+    <div class="modal-form-group">
+      <label class="modal-label">COURSE NAME</label>
+      <input type="text" class="modal-input" placeholder="e.g., Statistics and Probability"
+        [(ngModel)]="newClass.course">
+    </div>
 
-      <div class="modal-form-group">
-        <label class="modal-label">CLASS SIZE</label>
-        <input
-          type="number"
-          class="modal-input"
-          placeholder="e.g., 67"
-          [(ngModel)]="newClass.size"
-        >
-      </div>
+    <div class="modal-form-group">
+      <label class="modal-label">CLASS SIZE</label>
+      <input type="number" class="modal-input" placeholder="e.g., 67" [(ngModel)]="newClass.size">
+    </div>
 
-      <div class="modal-actions">
-        <button class="modal-btn-cancel" (click)="closeAddClassModal()">CANCEL</button>
-        <button class="modal-btn-confirm" (click)="addClass()">ADD CLASS</button>
-      </div>
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" (click)="closeAddClassModal()">CANCEL</button>
+      <button class="modal-btn-confirm" (click)="addClass()">ADD CLASS</button>
     </div>
   </div>
+</div>
 }
 
 <!-- ===== CLASS DETAIL MODAL ===== -->
 @if (showClassDetailModal && selectedClass) {
-  <div class="modal-overlay" @modalFadeAnim (click)="closeClassDetailModal()">
-    <div class="modal-container class-detail-modal" @modalScaleAnim (click)="$event.stopPropagation()">
-      <div class="detail-header">
-        <div>
-          <h2 class="detail-title">{{ selectedClass.subject }} - {{ selectedClass.section }}</h2>
-          <p class="detail-subtitle">{{ allStudents.length }} student{{ allStudents.length !== 1 ? 's' : '' }} enrolled</p>
-        </div>
-        <div class="detail-header-actions">
-          <button class="add-student-btn" (click)="toggleAddStudentForm()">
-            <span class="material-icons-outlined">{{ showAddStudentForm ? 'close' : 'person_add' }}</span>
-            {{ showAddStudentForm ? 'Cancel' : 'Add Student' }}
-          </button>
-          <button class="detail-close-btn" (click)="closeClassDetailModal()">
-            <span class="material-icons-outlined">close</span>
-          </button>
-        </div>
+<div class="modal-overlay" @modalFadeAnim (click)="closeClassDetailModal()">
+  <div class="modal-container class-detail-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="detail-header">
+      <div>
+        <h2 class="detail-title">{{ selectedClass.subject }} - {{ selectedClass.section }}</h2>
+        <p class="detail-subtitle">{{ allStudents.length }} student{{ allStudents.length !== 1 ? 's' : '' }} enrolled
+        </p>
       </div>
-
-      <!-- Add Student Form -->
-      @if (showAddStudentForm) {
-        <div class="add-student-section">
-          <div class="add-student-form">
-            <div class="student-form-field">
-              <label>Full Name</label>
-              <input type="text" class="modal-input" placeholder="e.g., Juan Dela Cruz" [(ngModel)]="newStudent.full_name">
-            </div>
-            <div class="student-form-field">
-              <label>Student ID Number</label>
-              <input type="text" class="modal-input" placeholder="e.g., 44520178" [(ngModel)]="newStudent.student_id_number">
-            </div>
-            <button class="student-form-submit" (click)="addStudent()" [disabled]="isAddingStudent || !newStudent.full_name || !newStudent.student_id_number">
-              @if (isAddingStudent) {
-                Adding...
-              } @else {
-                <span class="material-icons-outlined">add</span>
-                Add
-              }
-            </button>
-          </div>
-          @if (addStudentError) {
-            <p class="student-form-error">
-              <span class="material-icons-outlined">error_outline</span>
-              {{ addStudentError }}
-            </p>
-          }
-        </div>
-      }
-
-      <div class="detail-table-wrapper">
-        <table class="detail-table">
-          <thead>
-            <tr>
-              <th>STUDENT NAME</th>
-              <th>STUDENT NUMBER</th>
-              @for (exam of selectedClassExams; track exam) {
-                <th>{{ exam }}</th>
-              }
-              <th class="th-action"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (student of selectedClassStudents; track student.number) {
-              <tr>
-                <td class="student-name-cell">{{ student.name }}</td>
-                <td class="student-number-cell">{{ student.number }}</td>
-                @for (score of student.scores; track $index) {
-                  <td class="student-score-cell">{{ score }}</td>
-                }
-                <td class="student-action-cell">
-                  <button class="student-remove-btn" (click)="removeStudent(student.number)" title="Remove from class">
-                    <span class="material-icons-outlined">person_remove</span>
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td [attr.colspan]="2 + selectedClassExams.length + 1" class="empty-table-cell">
-                  <span class="material-icons-outlined">groups</span>
-                  <p>No students enrolled yet. Click "Add Student" to get started.</p>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-
-      <div class="detail-pagination">
-        <button class="pagination-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-          <span class="material-icons-outlined">chevron_left</span>
+      <div class="detail-header-actions">
+        <button class="add-student-btn" (click)="toggleAddStudentForm()">
+          <span class="material-icons-outlined">{{ showAddStudentForm ? 'close' : 'person_add' }}</span>
+          {{ showAddStudentForm ? 'Cancel' : 'Add Student' }}
         </button>
-        <span class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-          <span class="material-icons-outlined">chevron_right</span>
+        <button class="detail-close-btn" (click)="closeClassDetailModal()">
+          <span class="material-icons-outlined">close</span>
         </button>
       </div>
     </div>
+
+    <!-- Add Student Form -->
+    @if (showAddStudentForm) {
+    <div class="add-student-section">
+      <div class="add-student-form">
+        <div class="student-form-field">
+          <label>Full Name</label>
+          <input type="text" class="modal-input" placeholder="e.g., Juan Dela Cruz" [(ngModel)]="newStudent.full_name">
+        </div>
+        <div class="student-form-field">
+          <label>Student ID Number</label>
+          <input type="text" class="modal-input" placeholder="e.g., 44520178"
+            [(ngModel)]="newStudent.student_id_number">
+        </div>
+        <button class="student-form-submit" (click)="addStudent()"
+          [disabled]="isAddingStudent || !newStudent.full_name || !newStudent.student_id_number">
+          @if (isAddingStudent) {
+          Adding...
+          } @else {
+          <span class="material-icons-outlined">add</span>
+          Add
+          }
+        </button>
+      </div>
+      @if (addStudentError) {
+      <p class="student-form-error">
+        <span class="material-icons-outlined">error_outline</span>
+        {{ addStudentError }}
+      </p>
+      }
+    </div>
+    }
+
+    <div class="detail-table-wrapper">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>STUDENT NAME</th>
+            <th>STUDENT NUMBER</th>
+            @for (exam of selectedClassExams; track exam) {
+            <th>{{ exam }}</th>
+            }
+            <th class="th-action"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of selectedClassStudents; track student.number) {
+          <tr>
+            <td class="student-name-cell">{{ student.name }}</td>
+            <td class="student-number-cell">{{ student.number }}</td>
+            @for (score of student.scores; track $index) {
+            <td class="student-score-cell">{{ score }}</td>
+            }
+            <td class="student-action-cell">
+              <button class="student-remove-btn" (click)="removeStudent(student.number)" title="Remove from class">
+                <span class="material-icons-outlined">person_remove</span>
+              </button>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td [attr.colspan]="2 + selectedClassExams.length + 1" class="empty-table-cell">
+              <span class="material-icons-outlined">groups</span>
+              <p>No students enrolled yet. Click "Add Student" to get started.</p>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="detail-pagination">
+      <button class="pagination-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <span class="material-icons-outlined">chevron_left</span>
+      </button>
+      <span class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        <span class="material-icons-outlined">chevron_right</span>
+      </button>
+    </div>
   </div>
+</div>
+}
+
+<!-- ===== STATS MODAL ===== -->
+@if (showStatsModal && selectedExamStats) {
+<div class="modal-overlay" @modalFadeAnim (click)="closeStatsModal()">
+  <div class="modal-container stats-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="detail-header">
+      <div>
+        <h2 class="detail-title">{{ selectedExamName }} - Statistics</h2>
+        <p class="detail-subtitle">Performance overview for {{ selectedExamStats.totalStudents }} scanned paper(s)</p>
+      </div>
+      <button class="detail-close-btn" (click)="closeStatsModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="stats-content">
+      <div class="stats-summary">
+        <div class="stat-box">
+          <span class="stat-label">AVERAGE SCORE</span>
+          <span class="stat-value">{{ selectedExamStats.averageScore }}<small>/{{ selectedExamStats.totalItems
+              }}</small></span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">TOTAL SCANNED</span>
+          <span class="stat-value">{{ selectedExamStats.totalStudents }}</span>
+        </div>
+      </div>
+
+      <div class="stats-distribution">
+        <h3 class="stats-section-title">Grade Distribution</h3>
+        <div class="dist-bar-container">
+          <div class="dist-bar-row">
+            <span class="dist-label">Well (>80%)</span>
+            <div class="dist-bar-wrapper">
+              <div class="dist-bar well-bar"
+                [style.width.%]="selectedExamStats.totalStudents ? (selectedExamStats.distribution.well / selectedExamStats.totalStudents) * 100 : 0">
+              </div>
+            </div>
+            <span class="dist-count">{{ selectedExamStats.distribution.well }}</span>
+          </div>
+          <div class="dist-bar-row">
+            <span class="dist-label">Good (60-80%)</span>
+            <div class="dist-bar-wrapper">
+              <div class="dist-bar good-bar"
+                [style.width.%]="selectedExamStats.totalStudents ? (selectedExamStats.distribution.good / selectedExamStats.totalStudents) * 100 : 0">
+              </div>
+            </div>
+            <span class="dist-count">{{ selectedExamStats.distribution.good }}</span>
+          </div>
+          <div class="dist-bar-row">
+            <span class="dist-label">Improvement (<60%)< /span>
+                <div class="dist-bar-wrapper">
+                  <div class="dist-bar improve-bar"
+                    [style.width.%]="selectedExamStats.totalStudents ? (selectedExamStats.distribution.needsImprovement / selectedExamStats.totalStudents) * 100 : 0">
+                  </div>
+                </div>
+                <span class="dist-count">{{ selectedExamStats.distribution.needsImprovement }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-difficult">
+        <h3 class="stats-section-title">Most Missed Questions</h3>
+        @if (selectedExamStats.mostMissed.length > 0) {
+        <ul class="missed-list">
+          @for (item of selectedExamStats.mostMissed; track item.item) {
+          <li class="missed-item">
+            <span class="missed-q">Question {{ item.item }}</span>
+            <span class="missed-c">{{ item.count }} student(s) got this wrong</span>
+          </li>
+          }
+        </ul>
+        } @else {
+        <p class="stats-empty">No mistakes recorded yet.</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>
 }

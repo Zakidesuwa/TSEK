@@ -82,7 +82,7 @@ export class GenerateExamComponent implements OnInit {
       this.examDate = '';
       this.numberOfChoices = 4;
       this.selectedClassId = this.classes.length > 0 ? this.classes[0].id : null;
-      
+
       this.sections = [
         { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
         { label: 'IDENTIFICATION ITEMS', key: 'identification', enabled: true, options: [10, 15, 20], selected: 10, pointName: 'Identification', defaultPoints: 2.0 },
@@ -137,7 +137,7 @@ export class GenerateExamComponent implements OnInit {
         }
         this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -195,7 +195,7 @@ export class GenerateExamComponent implements OnInit {
   }
 
   get studentIdColumnsArray(): number[] {
-    return [1, 2, 3, 4, 5, 6, 7, 8]; // 8 digit ID
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 9 digit ID
   }
 
   get mcColumns(): any[][] {
@@ -243,7 +243,7 @@ export class GenerateExamComponent implements OnInit {
   get enumColumns(): any[][] {
     const section = this.sections.find(s => s.key === 'enumeration');
     if (!section || !section.enabled) return [];
-    
+
     let startNum = 1;
     const mcSection = this.sections.find(s => s.key === 'multipleChoice');
     const idSection = this.sections.find(s => s.key === 'identification');
@@ -261,7 +261,7 @@ export class GenerateExamComponent implements OnInit {
   get tfColumns(): any[][] {
     const section = this.sections.find(s => s.key === 'trueOrFalse');
     if (!section || !section.enabled) return [];
-    
+
     let startNum = 1;
     const mcSection = this.sections.find(s => s.key === 'multipleChoice');
     const idSection = this.sections.find(s => s.key === 'identification');

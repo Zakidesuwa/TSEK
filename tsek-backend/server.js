@@ -14,6 +14,9 @@ const classesRoutes = require('./routes/classes.routes');
 const examsRoutes = require('./routes/exams.routes');
 const scanRoutes = require('./routes/scan.routes');
 
+const historyRoutes = require('./routes/history.routes');
+const statsRoutes = require('./routes/stats.routes');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -42,6 +45,8 @@ app.use(dashboardRoutes);
 app.use(classesRoutes);
 app.use(examsRoutes);
 app.use('/api/scan', scanRoutes);
+app.use(historyRoutes);
+app.use(statsRoutes);
 
 // Start server
 async function start() {
