@@ -56,6 +56,16 @@ export const routes: Routes = [
         path: 'scan-results',
         loadComponent: () =>
           import('./pages/scan-results/scan-results').then(m => m.ScanResults)
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./pages/settings/settings.component').then(m => m.SettingsComponent)
+      },
+      {
+        path: 'help',
+        loadComponent: () =>
+          import('./pages/help/help.component').then(m => m.HelpComponent)
       }
     ]
   },

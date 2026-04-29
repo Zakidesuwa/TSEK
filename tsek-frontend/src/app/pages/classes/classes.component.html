@@ -134,11 +134,50 @@
   <div class="modal-overlay" @modalFadeAnim (click)="closeClassDetailModal()">
     <div class="modal-container class-detail-modal" @modalScaleAnim (click)="$event.stopPropagation()">
       <div class="detail-header">
-        <h2 class="detail-title">{{ selectedClass.subject }} - {{ selectedClass.section }}</h2>
-        <button class="detail-close-btn" (click)="closeClassDetailModal()">
-          <span class="material-icons-outlined">close</span>
-        </button>
+        <div>
+          <h2 class="detail-title">{{ selectedClass.subject }} - {{ selectedClass.section }}</h2>
+          <p class="detail-subtitle">{{ allStudents.length }} student{{ allStudents.length !== 1 ? 's' : '' }} enrolled</p>
+        </div>
+        <div class="detail-header-actions">
+          <button class="add-student-btn" (click)="toggleAddStudentForm()">
+            <span class="material-icons-outlined">{{ showAddStudentForm ? 'close' : 'person_add' }}</span>
+            {{ showAddStudentForm ? 'Cancel' : 'Add Student' }}
+          </button>
+          <button class="detail-close-btn" (click)="closeClassDetailModal()">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
       </div>
+
+      <!-- Add Student Form -->
+      @if (showAddStudentForm) {
+        <div class="add-student-section">
+          <div class="add-student-form">
+            <div class="student-form-field">
+              <label>Full Name</label>
+              <input type="text" class="modal-input" placeholder="e.g., Juan Dela Cruz" [(ngModel)]="newStudent.full_name">
+            </div>
+            <div class="student-form-field">
+              <label>Student ID Number</label>
+              <input type="text" class="modal-input" placeholder="e.g., 44520178" [(ngModel)]="newStudent.student_id_number">
+            </div>
+            <button class="student-form-submit" (click)="addStudent()" [disabled]="isAddingStudent || !newStudent.full_name || !newStudent.student_id_number">
+              @if (isAddingStudent) {
+                Adding...
+              } @else {
+                <span class="material-icons-outlined">add</span>
+                Add
+              }
+            </button>
+          </div>
+          @if (addStudentError) {
+            <p class="student-form-error">
+              <span class="material-icons-outlined">error_outline</span>
+              {{ addStudentError }}
+            </p>
+          }
+        </div>
+      }
 
       <div class="detail-table-wrapper">
         <table class="detail-table">
@@ -149,6 +188,7 @@
               @for (exam of selectedClassExams; track exam) {
                 <th>{{ exam }}</th>
               }
+              <th class="th-action"></th>
             </tr>
           </thead>
           <tbody>
@@ -159,6 +199,18 @@
                 @for (score of student.scores; track $index) {
                   <td class="student-score-cell">{{ score }}</td>
                 }
+                <td class="student-action-cell">
+                  <button class="student-remove-btn" (click)="removeStudent(student.number)" title="Remove from class">
+                    <span class="material-icons-outlined">person_remove</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="2 + selectedClassExams.length + 1" class="empty-table-cell">
+                  <span class="material-icons-outlined">groups</span>
+                  <p>No students enrolled yet. Click "Add Student" to get started.</p>
+                </td>
               </tr>
             }
           </tbody>

@@ -1,0 +1,76 @@
+<div class="settings-page">
+  <div class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Manage your account preferences.</p>
+  </div>
+
+  <!-- Profile Section -->
+  <div class="settings-card">
+    <div class="card-header">
+      <span class="material-icons-outlined card-icon">person</span>
+      <h2>Profile Information</h2>
+    </div>
+    <div class="profile-info">
+      <div class="profile-avatar">
+        <span class="avatar-letter">{{ user.name.charAt(0) }}</span>
+      </div>
+      <div class="profile-fields">
+        <div class="field-row">
+          <label>Full Name</label>
+          <span class="field-value">{{ user.name }}</span>
+        </div>
+        <div class="field-row">
+          <label>Email Address</label>
+          <span class="field-value">{{ user.email }}</span>
+        </div>
+        <div class="field-row">
+          <label>Role</label>
+          <span class="field-value">Instructor</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Section -->
+  <div class="settings-card">
+    <div class="card-header">
+      <span class="material-icons-outlined card-icon">lock</span>
+      <h2>Change Password</h2>
+    </div>
+
+    @if (passwordSuccess) {
+      <div class="success-banner">
+        <span class="material-icons-outlined">check_circle</span>
+        Password changed successfully.
+      </div>
+    }
+
+    @if (passwordError) {
+      <div class="error-banner">
+        <span class="material-icons-outlined">error_outline</span>
+        {{ passwordError }}
+      </div>
+    }
+
+    <div class="password-form">
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" class="form-input" placeholder="Enter current password" [(ngModel)]="passwords.current">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" class="form-input" placeholder="Enter new password" [(ngModel)]="passwords.newPass">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" class="form-input" placeholder="Confirm new password" [(ngModel)]="passwords.confirm">
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" (click)="changePassword()" [disabled]="isChangingPassword">
+          <span class="material-icons-outlined btn-icon">save</span>
+          {{ isChangingPassword ? 'Saving...' : 'Update Password' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

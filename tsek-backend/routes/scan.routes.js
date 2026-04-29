@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const scanController = require('../controllers/scan.controller');
 const multer = require('multer');
+const authMiddleware = require('../authMiddleware');
 
 // Configure multer for memory storage
 const upload = multer({
@@ -11,9 +12,9 @@ const upload = multer({
   }
 });
 
-// The auth middleware should probably be here, but for testing we'll keep it simple
-router.post('/', upload.single('image'), scanController.scanImage);
-router.post('/grade', scanController.gradeExam);
-router.post('/grade/override', scanController.saveOverride);
+// All scan routes require authentication
+router.post('/', authMiddleware, upload.single('image'), scanController.scanImage);
+router.post('/grade', authMiddleware, scanController.gradeExam);
+router.post('/grade/override', authMiddleware, scanController.saveOverride);
 
 module.exports = router;

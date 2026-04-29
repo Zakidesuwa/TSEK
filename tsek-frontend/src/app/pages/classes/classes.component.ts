@@ -76,7 +76,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   currentPage = 1;
   totalPages = 1;
   private readonly studentsPerPage = 8;
-  private allStudents: StudentRow[] = [];
+  allStudents: StudentRow[] = [];
 
   classes: any[] = [];
   createdExams: ExamCard[] = [];
@@ -202,5 +202,72 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     const start = (this.currentPage - 1) * this.studentsPerPage;
     const end = start + this.studentsPerPage;
     this.selectedClassStudents = this.allStudents.slice(start, end);
+  }
+
+  // ===== Student Management =====
+  showAddStudentForm = false;
+  isAddingStudent = false;
+  addStudentError: string | null = null;
+  newStudent = { full_name: '', student_id_number: '' };
+
+  toggleAddStudentForm(): void {
+    this.showAddStudentForm = !this.showAddStudentForm;
+    this.addStudentError = null;
+    if (this.showAddStudentForm) {
+      this.newStudent = { full_name: '', student_id_number: '' };
+    }
+  }
+
+  addStudent(): void {
+    if (!this.selectedClass || !this.newStudent.full_name || !this.newStudent.student_id_number) return;
+
+    this.isAddingStudent = true;
+    this.addStudentError = null;
+
+    this.http.post<any>(`http://localhost:3000/api/classes/${(this.selectedClass as any).id}/students`, {
+      full_name: this.newStudent.full_name,
+      student_id_number: this.newStudent.student_id_number
+    }).subscribe({
+      next: (res) => {
+        this.isAddingStudent = false;
+        this.newStudent = { full_name: '', student_id_number: '' };
+        this.showAddStudentForm = false;
+        this.refreshClassStudents();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isAddingStudent = false;
+        this.addStudentError = err.error?.error || 'Failed to add student.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  removeStudent(studentNumber: string): void {
+    if (!this.selectedClass) return;
+    if (!confirm('Remove this student from the class?')) return;
+
+    this.http.delete(`http://localhost:3000/api/classes/${(this.selectedClass as any).id}/students/${studentNumber}`).subscribe({
+      next: () => {
+        this.refreshClassStudents();
+      },
+      error: (err) => {
+        console.error('Failed to remove student:', err);
+      }
+    });
+  }
+
+  private refreshClassStudents(): void {
+    if (!this.selectedClass) return;
+    this.http.get<{exams: string[], students: StudentRow[]}>(`http://localhost:3000/api/classes/${(this.selectedClass as any).id}/students`).subscribe(data => {
+      this.allStudents = data.students;
+      this.selectedClassExams = data.exams;
+      this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
+      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+      this.updatePaginatedStudents();
+      // Update the student count on the class card
+      (this.selectedClass as any).students = this.allStudents.length;
+      this.cdr.detectChanges();
+    });
   }
 }

@@ -1,0 +1,79 @@
+<div class="help-page">
+  <div class="page-header">
+    <h1 class="page-title">Help & Support</h1>
+    <p class="page-subtitle">Find answers to common questions about using TSEK.</p>
+  </div>
+
+  <!-- Quick Start -->
+  <div class="help-card highlight">
+    <div class="quick-start-header">
+      <span class="material-icons-outlined quick-icon">rocket_launch</span>
+      <div>
+        <h2>Quick Start Guide</h2>
+        <p>Get up and running with TSEK in 4 simple steps.</p>
+      </div>
+    </div>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Create a Class</h3>
+          <p>Go to Classes → Add Class. Enter the course name and section code.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Add Students</h3>
+          <p>Open the class → Add Student. Enter names and ID numbers.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Generate an Exam</h3>
+          <p>Go to Generate Exam. Configure sections, set the answer key, and print.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h3>Scan & Grade</h3>
+          <p>Click TSEK NOW, scan the filled sheet, select the exam, and grade.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQs -->
+  <div class="help-card">
+    <div class="card-header">
+      <span class="material-icons-outlined card-icon">help_outline</span>
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="faq-list">
+      @for (faq of faqs; track faq.question) {
+        <div class="faq-item" [class.open]="faq.open">
+          <button class="faq-question" (click)="toggleFaq(faq)">
+            <span>{{ faq.question }}</span>
+            <span class="material-icons-outlined faq-chevron">expand_more</span>
+          </button>
+          @if (faq.open) {
+            <div class="faq-answer">
+              <p>{{ faq.answer }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="help-card">
+    <div class="card-header">
+      <span class="material-icons-outlined card-icon">mail</span>
+      <h2>Still Need Help?</h2>
+    </div>
+    <p class="contact-text">If you can't find what you're looking for, reach out to your system administrator or contact the TSEK development team.</p>
+  </div>
+</div>

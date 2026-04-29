@@ -33,6 +33,51 @@ async function runMigrations() {
     if (err.code !== '42701') console.error('Migration error:', err);
   }
 
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        student_id_number VARCHAR(50) UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('Migration: Ensured students table exists');
+  } catch (err) {
+    console.error('Migration error (students):', err);
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS class_enrollments (
+        id SERIAL PRIMARY KEY,
+        class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+        student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(class_id, student_id)
+      );
+    `);
+    console.log('Migration: Ensured class_enrollments table exists');
+  } catch (err) {
+    console.error('Migration error (class_enrollments):', err);
+  }
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS exam_results (
+        id SERIAL PRIMARY KEY,
+        exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+        student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+        score NUMERIC NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(exam_id, student_id)
+      );
+    `);
+    console.log('Migration: Ensured exam_results table exists');
+  } catch (err) {
+    console.error('Migration error (exam_results):', err);
+  }
+
   await pool.end();
 }
 

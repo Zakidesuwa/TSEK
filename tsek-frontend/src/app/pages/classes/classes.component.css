@@ -773,3 +773,197 @@
   opacity: 0.8;
   text-decoration: underline;
 }
+
+/* ===== STUDENT MANAGEMENT ===== */
+.detail-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.add-student-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+  border: 1px solid rgba(74, 103, 65, 0.2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.add-student-btn .material-icons-outlined {
+  font-size: 18px;
+}
+
+.add-student-btn:hover {
+  background: rgba(74, 103, 65, 0.15);
+  border-color: rgba(74, 103, 65, 0.3);
+}
+
+.add-student-section {
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg);
+}
+
+.add-student-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.student-form-field {
+  flex: 1;
+}
+
+.student-form-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.student-form-field .modal-input {
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.student-form-submit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: white;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.student-form-submit .material-icons-outlined {
+  font-size: 18px;
+}
+
+.student-form-submit:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.student-form-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.student-form-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.student-form-error .material-icons-outlined {
+  font-size: 16px;
+}
+
+.th-action {
+  width: 50px;
+}
+
+.student-action-cell {
+  text-align: center;
+  width: 50px;
+}
+
+.student-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.detail-table tbody tr:hover .student-remove-btn {
+  opacity: 1;
+}
+
+.student-remove-btn:hover {
+  background: rgba(200, 80, 80, 0.1);
+  color: #b85454;
+}
+
+.student-remove-btn .material-icons-outlined {
+  font-size: 18px;
+}
+
+.empty-table-cell {
+  text-align: center;
+  padding: 48px 24px !important;
+  color: var(--color-text-muted);
+}
+
+.empty-table-cell .material-icons-outlined {
+  font-size: 40px;
+  color: var(--color-border);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.empty-table-cell p {
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Responsive adjustments for student form */
+@media (max-width: 600px) {
+  .add-student-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-form-submit {
+    justify-content: center;
+  }
+
+  .detail-header-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .add-student-section {
+    padding: 12px 20px;
+  }
+}
