@@ -79,6 +79,16 @@ async function runMigrations() {
   }
 
   try {
+    await pool.query('ALTER TABLE exam_results ADD CONSTRAINT unique_exam_student UNIQUE(exam_id, student_id);');
+    console.log('Migration: Added unique constraint to exam_results');
+  } catch (err) {
+    if (err.code !== '42710' && err.code !== '23505') {
+        // 23505 might be thrown if there are already duplicate rows, we should handle that too
+        console.error('Migration error (unique constraint):', err);
+    }
+  }
+
+  try {
     await pool.query('ALTER TABLE exam_results ADD COLUMN graded_items JSONB;');
     console.log('Migration: Added graded_items column to exam_results');
   } catch (err) {

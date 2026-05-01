@@ -24,14 +24,23 @@ interface HistoryRecord {
 export class HistoryComponent implements OnInit {
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
+  protected Math = Math;
   
+  allRecords: HistoryRecord[] = [];
   historyRecords: HistoryRecord[] = [];
   isLoading = true;
+
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalPages = 1;
 
   ngOnInit() {
     this.http.get<HistoryRecord[]>(`${environment.apiUrl}/api/history`).subscribe({
       next: (data) => {
-        this.historyRecords = data;
+        this.allRecords = data;
+        this.totalPages = Math.max(1, Math.ceil(this.allRecords.length / this.itemsPerPage));
+        this.updatePaginatedRecords();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -41,6 +50,20 @@ export class HistoryComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  changePage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedRecords();
+    }
+  }
+
+  private updatePaginatedRecords(): void {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    this.historyRecords = this.allRecords.slice(start, end);
+    this.cdr.detectChanges();
   }
 }
 

@@ -27,12 +27,14 @@ exports.scanImage = async (req, res) => {
 Look carefully at the provided student answer sheet image. 
 
 1. Identify the Student ID number encoded in the grid bubbles.
-2. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
-3. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+2. If there is a name field (handwritten or printed), identify the student's full name.
+3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
   "studentId": "123456",
+  "studentName": "JOHN DOE",
   "answers": {
     "1": "A",
     "2": "C",
@@ -160,27 +162,44 @@ exports.gradeExam = async (req, res) => {
       };
     }
 
-    // 4. Look up Student and Save Score (if valid studentId provided)
+    // 4. Look up Student and Class enrollment
     let studentDbId = null;
-    if (studentId) {
-      // Assuming studentId from sheet matches student_id_number
+    let isEnrolled = false;
+    let studentExists = false;
+    let classId = null;
+
+    const examInfo = await db.query('SELECT class_id FROM exams WHERE id = $1', [exam_id]);
+    if (examInfo.rows.length > 0) {
+      classId = examInfo.rows[0].class_id;
+    }
+
+    if (studentId && classId) {
       const studentQuery = await db.query('SELECT id FROM students WHERE student_id_number::text = $1', [String(studentId).trim()]);
       if (studentQuery.rows.length > 0) {
+        studentExists = true;
         studentDbId = studentQuery.rows[0].id;
 
-        // Insert into exam_results
-        await db.query(`
-          INSERT INTO exam_results (exam_id, student_id, score, graded_items)
-          VALUES ($1, $2, $3, $4)
-        `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems)]);
+        const enrollmentQuery = await db.query('SELECT 1 FROM class_enrollments WHERE class_id = $1 AND student_id = $2', [classId, studentDbId]);
+        if (enrollmentQuery.rows.length > 0) {
+          isEnrolled = true;
+
+          // Insert into exam_results only if student is enrolled
+          await db.query(`
+            INSERT INTO exam_results (exam_id, student_id, score, graded_items)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4
+          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems)]);
+        }
       }
     }
 
     res.status(200).json({
-      message: 'Grading complete',
+      message: isEnrolled ? 'Grading complete' : 'Student not enrolled in this class',
       score: totalScore,
       totalPossible: totalPossible,
-      studentFound: !!studentDbId,
+      studentFound: studentExists,
+      isEnrolled: isEnrolled,
+      classId: classId,
       details: gradedItems
     });
 
@@ -222,10 +241,11 @@ exports.saveOverride = async (req, res) => {
             [adjustedScore, exam_id, studentDbId, JSON.stringify(overriddenItems)]
           );
         } else {
-          await db.query(
-            'INSERT INTO exam_results (exam_id, student_id, score, graded_items) VALUES ($1, $2, $3, $4)',
-            [exam_id, studentDbId, adjustedScore, JSON.stringify(overriddenItems)]
-          );
+          await db.query(`
+            INSERT INTO exam_results (exam_id, student_id, score, graded_items) 
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4
+          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(overriddenItems)]);
         }
 
         return res.status(200).json({

@@ -197,21 +197,21 @@
     </div>
 
     <!-- Student Status -->
-    @if (gradeResult.studentFound) {
+    @if (gradeResult.isEnrolled) {
     <div class="student-banner success">
       <span class="material-icons-outlined">person_check</span>
       <div>
-        <strong>Student Identified</strong>
-        <p>Student ID {{ rawText.studentId }} was found in the database. Score has been saved automatically.</p>
+        <strong>Student Identified & Enrolled</strong>
+        <p>Student ID {{ rawText.studentId }} is enrolled in this class. Score has been saved automatically.</p>
       </div>
     </div>
     }
-    @if (!gradeResult.studentFound && rawText?.studentId) {
+    @if (!gradeResult.isEnrolled && rawText?.studentId) {
     <div class="student-banner warning">
       <span class="material-icons-outlined">person_off</span>
       <div>
-        <strong>Student Not Found</strong>
-        <p>Student ID {{ rawText.studentId }} was not found in the database. Score was NOT saved.</p>
+        <strong>Student Not Enrolled</strong>
+        <p>Student ID {{ rawText.studentId }} was detected but is not part of this class. Score was NOT saved.</p>
       </div>
     </div>
     }
@@ -308,6 +308,43 @@
           Scan Another
         </button>
       }
+    </div>
+  </div>
+  }
+
+  <!-- ===== ENROLLMENT PROMPT MODAL ===== -->
+  @if (showEnrollmentPrompt) {
+  <div class="modal-overlay" @modalFadeAnim (click)="cancelEnrollment()">
+    <div class="modal-container enroll-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="modal-icon-wrapper">
+        <span class="material-icons-outlined">person_add_alt</span>
+      </div>
+      <h2 class="modal-title">Student Not Enrolled</h2>
+      <p class="modal-text">
+        The student with ID <strong>{{ tempEnrollData?.studentId }}</strong> was detected, 
+        but they are not currently enrolled in this class. 
+      </p>
+
+      <div class="detected-info-box">
+        <div class="info-row">
+          <span class="info-label">Detected Name:</span>
+          <span class="info-value">{{ tempEnrollData?.studentName }}</span>
+        </div>
+      </div>
+
+      <p class="modal-subtext">Would you like to add this student to the class list and save their score?</p>
+
+      <div class="modal-actions">
+        <button class="btn-modal-secondary" (click)="cancelEnrollment()">IGNORE</button>
+        <button class="btn-modal-primary" (click)="enrollStudent()" [disabled]="isEnrolling">
+          @if (isEnrolling) {
+            <div class="btn-spinner small"></div>
+            ENROLLING...
+          } @else {
+            ENROLL STUDENT
+          }
+        </button>
+      </div>
     </div>
   </div>
   }

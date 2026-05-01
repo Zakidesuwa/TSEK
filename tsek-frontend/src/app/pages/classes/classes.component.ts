@@ -98,6 +98,10 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   examToDelete: number | null = null;
   examNameToDelete: string = '';
 
+  // ===== Remove Student Confirmation Modal =====
+  showRemoveStudentModal = false;
+  studentToRemove: { name: string, number: string } | null = null;
+
   classes: any[] = [];
   createdExams: ExamCard[] = [];
 
@@ -306,18 +310,31 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     });
   }
 
-  removeStudent(studentNumber: string): void {
+  removeStudent(student: StudentRow): void {
     if (!this.selectedClass) return;
-    if (!confirm('Remove this student from the class?')) return;
+    this.studentToRemove = { name: student.name, number: student.number };
+    this.showRemoveStudentModal = true;
+  }
 
-    this.http.delete(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students/${studentNumber}`).subscribe({
+  confirmRemoveStudent(): void {
+    if (!this.selectedClass || !this.studentToRemove) return;
+
+    this.http.delete(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students/${this.studentToRemove.number}`).subscribe({
       next: () => {
         this.refreshClassStudents();
+        this.closeRemoveStudentModal();
       },
       error: (err) => {
         console.error('Failed to remove student:', err);
+        alert('Failed to remove student. Please try again.');
+        this.closeRemoveStudentModal();
       }
     });
+  }
+
+  closeRemoveStudentModal(): void {
+    this.showRemoveStudentModal = false;
+    this.studentToRemove = null;
   }
 
   private refreshClassStudents(): void {

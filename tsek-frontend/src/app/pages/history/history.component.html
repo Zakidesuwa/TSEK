@@ -47,6 +47,26 @@
             }
           </tbody>
         </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-footer">
+          <div class="pagination-info">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, allRecords.length) }} of {{ allRecords.length }} exams
+          </div>
+          <div class="pagination-actions">
+            <button class="pagination-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+              <span class="material-icons-outlined">chevron_left</span>
+              PREVIOUS
+            </button>
+            <div class="page-numbers">
+              Page {{ currentPage }} of {{ totalPages }}
+            </div>
+            <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+              NEXT
+              <span class="material-icons-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
       }
     </div>
   }

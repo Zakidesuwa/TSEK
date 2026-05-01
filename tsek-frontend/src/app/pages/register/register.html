@@ -108,7 +108,10 @@
 
           <div class="checkbox-group">
             <input type="checkbox" id="terms" name="agreedToTerms" [(ngModel)]="agreedToTerms" />
-            <label for="terms">I agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>.</label>
+            <label for="terms">
+              I agree to the <a href="#" (click)="openTermsModal($event)">Terms of Service</a> 
+              and <a href="#" (click)="openPrivacyModal($event)">Privacy Policy</a>.
+            </label>
           </div>
         </form>
 
@@ -120,3 +123,148 @@
 
   </div>
 </div>
+
+<!-- ===== TERMS AND CONDITIONS MODAL ===== -->
+@if (showTermsModal) {
+<div class="modal-overlay" @modalFadeAnim (click)="closeTermsModal()">
+  <div class="modal-container legal-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon-wrapper">
+        <span class="material-icons-outlined">description</span>
+      </div>
+      <h2 class="modal-title">Terms and Conditions</h2>
+      <button class="modal-close-btn" (click)="closeTermsModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="modal-body legal-content">
+      <h3>TSEK (Test Sheet Evaluation Kit)</h3>
+      
+      <h4>1. Acceptance of Terms</h4>
+      <p>By accessing and using the TSEK application, you agree to comply with and be bound by these Terms and Conditions. If you do not agree, you must not use the system.</p>
+
+      <h4>2. Description of Service</h4>
+      <p>TSEK is an automated system designed to:</p>
+      <ul>
+        <li>Upload and process answer sheets</li>
+        <li>Evaluate responses using predefined answer keys</li>
+        <li>Generate results and reports</li>
+      </ul>
+
+      <h4>3. User Responsibilities</h4>
+      <p>Users agree to:</p>
+      <ul>
+        <li>Provide accurate and complete information</li>
+        <li>Use the system only for academic and authorized purposes</li>
+        <li>Maintain confidentiality of login credentials</li>
+        <li>Avoid uploading malicious or irrelevant files</li>
+      </ul>
+
+      <h4>4. Account Management</h4>
+      <ul>
+        <li>Users are responsible for all activities under their account</li>
+        <li>The system administrator reserves the right to suspend or terminate accounts for misuse</li>
+      </ul>
+
+      <h4>5. Intellectual Property</h4>
+      <p>All system components, including software, design, and content, are owned by the developers of TSEK. Unauthorized reproduction or distribution is prohibited.</p>
+
+      <h4>6. Data Usage</h4>
+      <p>By using the system, you consent to the collection and processing of data necessary for:</p>
+      <ul>
+        <li>Evaluation of answer sheets</li>
+        <li>System improvement</li>
+        <li>Record keeping</li>
+      </ul>
+
+      <h4>7. Limitations of Liability</h4>
+      <p>The developers shall not be held liable for:</p>
+      <ul>
+        <li>Incorrect results due to poor image quality</li>
+        <li>System downtime or technical issues</li>
+        <li>Misuse of the system</li>
+      </ul>
+
+      <h4>8. Modifications</h4>
+      <p>The system administrators reserve the right to update these terms at any time.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn-primary" (click)="closeTermsModal()">I UNDERSTAND</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== PRIVACY POLICY MODAL ===== -->
+@if (showPrivacyModal) {
+<div class="modal-overlay" @modalFadeAnim (click)="closePrivacyModal()">
+  <div class="modal-container legal-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon-wrapper">
+        <span class="material-icons-outlined">security</span>
+      </div>
+      <h2 class="modal-title">Privacy Policy</h2>
+      <button class="modal-close-btn" (click)="closePrivacyModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="modal-body legal-content">
+      <h3>TSEK (Test Sheet Evaluation Kit)</h3>
+
+      <h4>1. Information Collected</h4>
+      <p>The system may collect:</p>
+      <ul>
+        <li>Personal information (name, email, ID)</li>
+        <li>Uploaded documents (answer sheets, exams)</li>
+        <li>System usage data</li>
+      </ul>
+
+      <h4>2. Purpose of Data Collection</h4>
+      <p>Data is collected to:</p>
+      <ul>
+        <li>Process and evaluate answer sheets</li>
+        <li>Improve system performance</li>
+        <li>Maintain academic records</li>
+      </ul>
+
+      <h4>3. Data Storage and Security</h4>
+      <ul>
+        <li>Data is stored securely in the system database</li>
+        <li>Access is restricted to authorized personnel only</li>
+        <li>Security measures are implemented to prevent unauthorized access</li>
+      </ul>
+
+      <h4>4. Data Sharing</h4>
+      <p>TSEK does not share user data with third parties, except:</p>
+      <ul>
+        <li>When required by law</li>
+        <li>With authorized academic personnel</li>
+      </ul>
+
+      <h4>5. Data Retention</h4>
+      <p>User data is retained only as long as necessary for academic and system purposes.</p>
+
+      <h4>6. User Rights</h4>
+      <p>Users have the right to:</p>
+      <ul>
+        <li>Access their data</li>
+        <li>Request corrections</li>
+        <li>Request deletion (subject to academic policies)</li>
+      </ul>
+
+      <h4>7. Cookies and Tracking</h4>
+      <p>The system may use basic tracking mechanisms to improve user experience.</p>
+
+      <h4>8. Updates to Policy</h4>
+      <p>This Privacy Policy may be updated periodically.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn-primary" (click)="closePrivacyModal()">I UNDERSTAND</button>
+    </div>
+  </div>
+</div>
+}

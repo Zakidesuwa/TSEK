@@ -1,10 +1,10 @@
-<app-header (menuToggle)="toggleSidebar()"></app-header>
+<app-header (menuToggle)="toggleSidebar()" (logoutRequested)="onLogoutRequested()"></app-header>
 <div
   class="sidebar-overlay"
   [class.visible]="sidebarOpen"
   (click)="closeSidebar()"
 ></div>
-<app-sidebar [open]="sidebarOpen" (navClick)="closeSidebar()"></app-sidebar>
+<app-sidebar [open]="sidebarOpen" (navClick)="closeSidebar()" (logoutRequested)="onLogoutRequested()"></app-sidebar>
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>
@@ -28,3 +28,24 @@
     <span class="bottom-nav-label">History</span>
   </a>
 </nav>
+
+<!-- ===== LOGOUT CONFIRMATION MODAL ===== -->
+@if (showLogoutModal) {
+<div class="modal-overlay" @modalFadeAnim (click)="cancelLogout()">
+  <div class="modal-container logout-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="modal-icon-wrapper">
+      <span class="material-icons-outlined">logout</span>
+    </div>
+    <h2 class="modal-title">Log Out?</h2>
+    <p class="modal-text">
+      Are you sure you want to log out of <strong>TSEK</strong>? 
+      You will need to sign in again to access your exams and classes.
+    </p>
+
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" (click)="cancelLogout()">CANCEL</button>
+      <button class="modal-btn-logout" (click)="doLogout()">LOG OUT</button>
+    </div>
+  </div>
+</div>
+}

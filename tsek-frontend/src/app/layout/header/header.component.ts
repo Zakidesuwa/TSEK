@@ -23,6 +23,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 })
 export class HeaderComponent {
   @Output() menuToggle = new EventEmitter<void>();
+  @Output() logoutRequested = new EventEmitter<void>();
   currentDate: string;
   isDropdownOpen = false;
 
@@ -53,8 +54,8 @@ export class HeaderComponent {
   }
 
   logout() {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.logoutRequested.emit();
+    this.isDropdownOpen = false;
   }
 
   @HostListener('document:click')

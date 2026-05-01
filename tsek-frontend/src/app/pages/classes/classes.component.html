@@ -192,7 +192,7 @@
             <td class="student-score-cell">{{ score }}</td>
             }
             <td class="student-action-cell">
-              <button class="student-remove-btn" (click)="removeStudent(student.number)" title="Remove from class">
+              <button class="student-remove-btn" (click)="removeStudent(student)" title="Remove from class">
                 <span class="material-icons-outlined">person_remove</span>
               </button>
             </td>
@@ -318,6 +318,27 @@
     <div class="modal-actions">
       <button class="modal-btn-cancel" (click)="closeDeleteModal()">CANCEL</button>
       <button class="modal-btn-delete" (click)="confirmDelete()">DELETE EXAM</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== REMOVE STUDENT CONFIRMATION MODAL ===== -->
+@if (showRemoveStudentModal) {
+<div class="modal-overlay" @modalFadeAnim (click)="closeRemoveStudentModal()">
+  <div class="modal-container delete-confirm-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <span class="material-icons-outlined">person_remove</span>
+    </div>
+    <h2 class="modal-title">Remove Student?</h2>
+    <p class="delete-modal-text">
+      Are you sure you want to remove <strong>{{ studentToRemove?.name }}</strong> (ID: {{ studentToRemove?.number }}) from this class? 
+      This will also remove their associated exam results for this specific class.
+    </p>
+
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" (click)="closeRemoveStudentModal()">CANCEL</button>
+      <button class="modal-btn-delete" (click)="confirmRemoveStudent()">REMOVE STUDENT</button>
     </div>
   </div>
 </div>

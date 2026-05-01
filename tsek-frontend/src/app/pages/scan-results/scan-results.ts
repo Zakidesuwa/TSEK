@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { ScanService } from '../../core/services/scan';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-scan-results',
@@ -12,6 +13,26 @@ import { environment } from '../../../environments/environment';
   imports: [CommonModule, FormsModule],
   templateUrl: './scan-results.html',
   styleUrl: './scan-results.css',
+  animations: [
+    trigger('modalFadeAnim', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('250ms ease-out', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0 }))
+      ])
+    ]),
+    trigger('modalScaleAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.95) translateY(10px)' }),
+        animate('350ms cubic-bezier(0.175, 0.885, 0.32, 1.1)', style({ opacity: 1, transform: 'scale(1) translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ opacity: 0, transform: 'scale(0.95) translateY(10px)' }))
+      ])
+    ])
+  ]
 })
 export class ScanResults implements OnInit {
   scanService = inject(ScanService);
@@ -28,6 +49,11 @@ export class ScanResults implements OnInit {
   exams: any[] = [];
   selectedExamId: number | null = null;
   gradeResult: any = null;
+
+  // Enrollment Prompt State
+  showEnrollmentPrompt = false;
+  isEnrolling = false;
+  tempEnrollData: any = null;
 
   // SVG ring constants
   readonly circumference = 2 * Math.PI * 52; // r=52
@@ -88,6 +114,16 @@ export class ScanResults implements OnInit {
       next: (res: any) => {
         this.isGrading = false;
         this.gradeResult = res;
+
+        if (!res.isEnrolled) {
+          this.tempEnrollData = {
+            classId: res.classId,
+            studentId: this.rawText.studentId,
+            studentName: this.rawText.studentName || 'Unknown Student'
+          };
+          this.showEnrollmentPrompt = true;
+        }
+
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -97,6 +133,35 @@ export class ScanResults implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  enrollStudent() {
+    if (!this.tempEnrollData) return;
+
+    this.isEnrolling = true;
+    const payload = {
+      full_name: this.tempEnrollData.studentName,
+      student_id_number: this.tempEnrollData.studentId
+    };
+
+    this.http.post(`${environment.apiUrl}/api/classes/${this.tempEnrollData.classId}/students`, payload).subscribe({
+      next: () => {
+        this.isEnrolling = false;
+        this.showEnrollmentPrompt = false;
+        // Re-run grading now that they are enrolled
+        this.processBubbles();
+      },
+      error: (err) => {
+        this.isEnrolling = false;
+        alert('Failed to enroll student: ' + (err.error?.error || 'Unknown error'));
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cancelEnrollment() {
+    this.showEnrollmentPrompt = false;
+    this.tempEnrollData = null;
   }
 
   onNewFileSelected(event: any) {
