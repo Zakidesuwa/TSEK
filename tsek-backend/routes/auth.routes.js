@@ -83,7 +83,8 @@ router.post('/api/register', async (req, res) => {
     // 5. Send verification email
     const transporter = getTransporter();
     if (transporter) {
-      const verificationLink = `http://localhost:4200/verify-email?token=${verificationToken}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+      const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
       const info = await transporter.sendMail({
         from: '"TSEK App" <noreply@tsek.app>',
         to: email,

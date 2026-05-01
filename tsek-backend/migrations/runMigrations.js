@@ -1,13 +1,15 @@
 const { Pool } = require('pg');
 
 async function runMigrations() {
-  const pool = new Pool({
-    user: process.env.DB_USER || 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'tsek_db',
-    password: process.env.DB_PASSWORD || 'password',
-    port: process.env.DB_PORT || 5432,
-  });
+  const pool = process.env.DATABASE_URL 
+    ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+    : new Pool({
+        user: process.env.DB_USER || 'postgres',
+        host: process.env.DB_HOST || 'localhost',
+        database: process.env.DB_NAME || 'tsek_db',
+        password: process.env.DB_PASSWORD || 'password',
+        port: process.env.DB_PORT || 5432,
+      });
 
   try {
     await pool.query('ALTER TABLE instructors ADD COLUMN is_verified BOOLEAN DEFAULT false;');
