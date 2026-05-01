@@ -71,36 +71,35 @@ router.post('/api/register', async (req, res) => {
     // 3. Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // 4. Insert user
+    // 4. Insert user (Auto-verify for Defense)
     const result = await db.query(`
       INSERT INTO instructors (prefix, full_name, school_email, password_hash, is_verified, verification_token)
-      VALUES ($1, $2, $3, $4, false, $5)
+      VALUES ($1, $2, $3, $4, true, $5)
       RETURNING id, prefix, full_name, school_email
     `, [prefix, full_name, email, passwordHash, verificationToken]);
 
     const instructor = result.rows[0];
 
-    // 5. Send verification email (non-blocking)
+    // 5. Send verification email (Attempt, but non-blocking)
     const transporter = getTransporter();
     if (transporter) {
       try {
         const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
         const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
-        const info = await transporter.sendMail({
+        await transporter.sendMail({
           from: '"TSEK App" <noreply@tsek.app>',
           to: email,
-          subject: "Verify your TSEK Account",
-          text: `Please click this link to verify your account: ${verificationLink}`,
-          html: `<p>Hello ${full_name},</p><p>Please <a href="${verificationLink}">click here</a> to verify your account.</p>`,
+          subject: "Welcome to TSEK",
+          text: `Account created successfully! You can now log in.`,
+          html: `<p>Hello ${full_name},</p><p>Your account has been created and verified. You can now log in to TSEK.</p>`,
         });
-        console.log(process.env.SMTP_USER ? "Real verification email sent!" : "Ethereal verification email sent! Preview URL: %s", nodemailer.getTestMessageUrl(info));
       } catch (emailErr) {
-        console.error('Email sending failed (non-critical):', emailErr.message);
+        console.log('Email skip/fail (Expected on Render):', emailErr.message);
       }
     }
 
     res.status(201).json({
-      message: 'Registration successful! Please check your email to verify your account.',
+      message: 'Registration successful! You can now log in immediately.',
       user: { id: instructor.id, prefix: instructor.prefix, name: instructor.full_name, email: instructor.school_email }
     });
   } catch (err) {
