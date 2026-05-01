@@ -13,14 +13,9 @@ async function initMailer() {
     });
     console.log('Real SMTP configured successfully.');
   } else {
-    const account = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: { user: account.user, pass: account.pass },
-    });
-    console.log('Ethereal SMTP fallback configured.');
+    // Skip Ethereal in production — it hangs on cloud servers
+    console.log('No SMTP credentials found. Email sending is disabled.');
+    transporter = null;
   }
 }
 
