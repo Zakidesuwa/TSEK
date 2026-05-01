@@ -80,31 +80,28 @@ router.post('/api/register', async (req, res) => {
 
     const instructor = result.rows[0];
 
-    // 5. Send verification email (Attempt, but non-blocking)
-    const transporter = getTransporter();
-    if (transporter) {
-      try {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-        const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
-        await transporter.sendMail({
-          from: '"TSEK App" <noreply@tsek.app>',
-          to: email,
-          subject: "Welcome to TSEK",
-          text: `Account created successfully! You can now log in.`,
-          html: `<p>Hello ${full_name},</p><p>Your account has been created and verified. You can now log in to TSEK.</p>`,
-        });
-      } catch (emailErr) {
-        console.log('Email skip/fail (Expected on Render):', emailErr.message);
-      }
-    }
-
+    // 5. Return success INSTANTLY
     res.status(201).json({
       message: 'Registration successful! You can now log in immediately.',
       user: { id: instructor.id, prefix: instructor.prefix, name: instructor.full_name, email: instructor.school_email }
     });
+
+    // 6. Attempt email in background (Do not await)
+    const transporter = getTransporter();
+    if (transporter) {
+      transporter.sendMail({
+        from: '"TSEK App" <noreply@tsek.app>',
+        to: email,
+        subject: "Welcome to TSEK",
+        text: `Account created successfully! You can now log in.`,
+        html: `<p>Hello ${full_name},</p><p>Your account has been created and verified. You can now log in to TSEK.</p>`,
+      }).catch(err => console.log('Background email failed (Expected on Render):', err.message));
+    }
   } catch (err) {
     console.error('Register error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 });
 
