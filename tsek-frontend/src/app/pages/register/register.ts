@@ -36,11 +36,21 @@ export class Register {
   errorMessage = '';
   successMessage = '';
   isLoading = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   http = inject(HttpClient);
   authService = inject(AuthService);
   router = inject(Router);
   cdr = inject(ChangeDetectorRef);
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   register() {
     if (!this.fullName || !this.email || !this.password || !this.confirmPassword) {
