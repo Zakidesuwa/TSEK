@@ -12,6 +12,44 @@ async function runMigrations() {
       });
 
   try {
+    // 1. Core Tables (Base Schema)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS instructors (
+        id SERIAL PRIMARY KEY,
+        prefix VARCHAR(20),
+        full_name VARCHAR(255) NOT NULL,
+        school_email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS classes (
+        id SERIAL PRIMARY KEY,
+        instructor_id INTEGER REFERENCES instructors(id) ON DELETE CASCADE,
+        class_name VARCHAR(255) NOT NULL,
+        section_code VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS exams (
+        id SERIAL PRIMARY KEY,
+        class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+        exam_title VARCHAR(255) NOT NULL,
+        total_items INTEGER NOT NULL,
+        config JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('Migration: Core tables initialized');
+  } catch (err) {
+    console.error('Migration error (core tables):', err);
+  }
+
+  try {
     await pool.query('ALTER TABLE instructors ADD COLUMN is_verified BOOLEAN DEFAULT false;');
     console.log('Migration: Added is_verified column');
   } catch (err) {
@@ -71,6 +109,7 @@ async function runMigrations() {
         exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
         student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
         score NUMERIC NOT NULL DEFAULT 0,
+        scanned_image_url VARCHAR(255),
         created_at TIMESTAMP DEFAULT NOW(),
         UNIQUE(exam_id, student_id)
       );
