@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { RouterLink } from '@angular/router';
 
 interface HistoryRecord {
@@ -28,7 +29,7 @@ export class HistoryComponent implements OnInit {
   isLoading = true;
 
   ngOnInit() {
-    this.http.get<HistoryRecord[]>('http://localhost:3000/api/history').subscribe({
+    this.http.get<HistoryRecord[]>(`${environment.apiUrl}/api/history`).subscribe({
       next: (data) => {
         this.historyRecords = data;
         this.isLoading = false;

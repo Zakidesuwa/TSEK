@@ -30,11 +30,16 @@ export class Login {
   password = '';
   errorMessage = '';
   isLoading = false;
+  showPassword = false;
 
   http = inject(HttpClient);
   authService = inject(AuthService);
   router = inject(Router);
   cdr = inject(ChangeDetectorRef);
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
 
   login() {
     if (!this.email || !this.password) {
@@ -68,4 +73,3 @@ export class Login {
     });
   }
 }
-

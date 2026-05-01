@@ -4,6 +4,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 interface ClassCard {
   subject: string;
@@ -92,11 +93,16 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   selectedExamStats: ExamStats | null = null;
   selectedExamName = '';
 
+  // ===== Delete Confirmation Modal =====
+  showDeleteModal = false;
+  examToDelete: number | null = null;
+  examNameToDelete: string = '';
+
   classes: any[] = [];
   createdExams: ExamCard[] = [];
 
   ngOnInit() {
-    this.http.get<any[]>('http://localhost:3000/api/classes').subscribe(data => {
+    this.http.get<any[]>(`${environment.apiUrl}/api/classes`).subscribe(data => {
       this.classes = data;
       setTimeout(() => this.updateScrollState(), 100);
     });
@@ -105,7 +111,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   fetchExams() {
-    this.http.get<ExamCard[]>('http://localhost:3000/api/exams').subscribe(data => {
+    this.http.get<ExamCard[]>(`${environment.apiUrl}/api/exams`).subscribe(data => {
       this.createdExams = data;
       
       // Check if we need to open stats automatically from history page
@@ -119,24 +125,38 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     });
   }
 
-  deleteExam(id: number) {
-    if (confirm('Are you sure you want to delete this exam?')) {
-      this.http.delete(`http://localhost:3000/api/exams/${id}`).subscribe({
+  deleteExam(id: number, name: string = 'this exam') {
+    this.examToDelete = id;
+    this.examNameToDelete = name;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete() {
+    if (this.examToDelete) {
+      this.http.delete(`${environment.apiUrl}/api/exams/${this.examToDelete}`).subscribe({
         next: () => {
           this.fetchExams();
+          this.closeDeleteModal();
         },
         error: (err) => {
           console.error('Failed to delete exam', err);
           alert('Failed to delete exam. Please try again.');
+          this.closeDeleteModal();
         }
       });
     }
   }
 
+  closeDeleteModal() {
+    this.showDeleteModal = false;
+    this.examToDelete = null;
+    this.examNameToDelete = '';
+  }
+
   // ===== Stats Modal Methods =====
   openStatsModal(exam: ExamCard): void {
     this.selectedExamName = exam.name;
-    this.http.get<ExamStats>(`http://localhost:3000/api/exams/${exam.id}/statistics`).subscribe({
+    this.http.get<ExamStats>(`${environment.apiUrl}/api/exams/${exam.id}/statistics`).subscribe({
       next: (data) => {
         this.selectedExamStats = data;
         this.showStatsModal = true;
@@ -193,7 +213,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
 
   addClass(): void {
     if (this.newClass.name && this.newClass.course) {
-      this.http.post<any>('http://localhost:3000/api/classes', {
+      this.http.post<any>(`${environment.apiUrl}/api/classes`, {
         class_name: this.newClass.course,
         section_code: this.newClass.name
       }).subscribe({
@@ -219,7 +239,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   openClassDetail(cls: any): void {
     this.selectedClass = cls;
     
-    this.http.get<{exams: string[], students: StudentRow[]}>(`http://localhost:3000/api/classes/${cls.id}/students`).subscribe(data => {
+    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${cls.id}/students`).subscribe(data => {
       this.allStudents = data.students;
       this.selectedClassExams = data.exams;
       this.currentPage = 1;
@@ -267,7 +287,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     this.isAddingStudent = true;
     this.addStudentError = null;
 
-    this.http.post<any>(`http://localhost:3000/api/classes/${(this.selectedClass as any).id}/students`, {
+    this.http.post<any>(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students`, {
       full_name: this.newStudent.full_name,
       student_id_number: this.newStudent.student_id_number
     }).subscribe({
@@ -290,7 +310,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     if (!this.selectedClass) return;
     if (!confirm('Remove this student from the class?')) return;
 
-    this.http.delete(`http://localhost:3000/api/classes/${(this.selectedClass as any).id}/students/${studentNumber}`).subscribe({
+    this.http.delete(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students/${studentNumber}`).subscribe({
       next: () => {
         this.refreshClassStudents();
       },
@@ -302,7 +322,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
 
   private refreshClassStudents(): void {
     if (!this.selectedClass) return;
-    this.http.get<{exams: string[], students: StudentRow[]}>(`http://localhost:3000/api/classes/${(this.selectedClass as any).id}/students`).subscribe(data => {
+    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students`).subscribe(data => {
       this.allStudents = data.students;
       this.selectedClassExams = data.exams;
       this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));

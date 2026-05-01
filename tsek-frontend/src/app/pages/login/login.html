@@ -58,9 +58,14 @@
               <input type="email" name="email" [(ngModel)]="email" class="form-control" />
             </div>
 
-            <div class="form-group">
+            <div class="form-group password-group">
               <label>PASSWORD</label>
-              <input type="password" name="password" [(ngModel)]="password" class="form-control" />
+              <div class="password-input-wrapper">
+                <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password" class="form-control" />
+                <button type="button" class="toggle-password-btn" (click)="togglePasswordVisibility()">
+                  <span class="material-icons-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+                </button>
+              </div>
             </div>
             
             <div class="forgot-wrapper">

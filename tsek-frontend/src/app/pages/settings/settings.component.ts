@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -53,7 +54,7 @@ export class SettingsComponent implements OnInit {
     }
 
     this.isChangingPassword = true;
-    this.http.post<any>('http://localhost:3000/api/change-password', {
+    this.http.post<any>(`${environment.apiUrl}/api/change-password`, {
       currentPassword: this.passwords.current,
       newPassword: this.passwords.newPass
     }).subscribe({

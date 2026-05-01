@@ -32,15 +32,25 @@ export class Register {
   password = '';
   confirmPassword = '';
   agreedToTerms = false;
-  
+
   errorMessage = '';
   successMessage = '';
   isLoading = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   http = inject(HttpClient);
   authService = inject(AuthService);
   router = inject(Router);
   cdr = inject(ChangeDetectorRef);
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   register() {
     if (!this.fullName || !this.email || !this.password || !this.confirmPassword) {
@@ -74,7 +84,7 @@ export class Register {
     this.successMessage = '';
     this.cdr.detectChanges();
 
-    this.http.post<{message: string}>('http://localhost:3000/api/register', {
+    this.http.post<{ message: string }>('http://localhost:3000/api/register', {
       prefix: this.prefix,
       full_name: this.fullName.trim(),
       email: this.email,

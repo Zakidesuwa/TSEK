@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 type QuestionType = 'multipleChoice' | 'identification' | 'enumeration' | 'trueOrFalse';
 
@@ -129,7 +130,7 @@ export class GenerateExamComponent implements OnInit {
   };
 
   ngOnInit() {
-    this.http.get<any[]>('http://localhost:3000/api/classes').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/api/classes`).subscribe({
       next: data => {
         this.classes = data;
         if (this.classes.length > 0) {
@@ -488,7 +489,7 @@ export class GenerateExamComponent implements OnInit {
       answer_key: answerKey
     };
 
-    this.http.post('http://localhost:3000/api/exams', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/api/exams`, payload).subscribe({
       next: () => {
         this.modalTitle = 'Success!';
         this.modalMessage = 'Answer key finalized and saved successfully.';

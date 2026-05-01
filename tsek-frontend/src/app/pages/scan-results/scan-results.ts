@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ScanService } from '../../core/services/scan';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-scan-results',
@@ -60,7 +61,7 @@ export class ScanResults implements OnInit {
   }
 
   fetchExams() {
-    this.http.get<any[]>('http://localhost:3000/api/exams').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/api/exams`).subscribe({
       next: (data) => {
         this.exams = data;
         if (this.exams.length > 0) {
@@ -83,7 +84,7 @@ export class ScanResults implements OnInit {
       answers: this.rawText.answers
     };
 
-    this.http.post('http://localhost:3000/api/scan/grade', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/api/scan/grade`, payload).subscribe({
       next: (res: any) => {
         this.isGrading = false;
         this.gradeResult = res;
@@ -225,7 +226,7 @@ export class ScanResults implements OnInit {
       overriddenItems: Array.from(this.overrides)
     };
 
-    this.http.post('http://localhost:3000/api/scan/grade/override', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/api/scan/grade/override`, payload).subscribe({
       next: () => {
         this.isSavingOverrides = false;
         this.overrideSaved = true;

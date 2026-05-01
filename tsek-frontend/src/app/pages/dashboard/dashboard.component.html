@@ -40,14 +40,14 @@
     }
   </div>
 
-  <!-- TSEK NOW Mobile Button -->
-  <input type="file" accept="image/*" capture="environment" #fileInput class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
-  <button class="tsek-now-btn" (click)="fileInput.click()">
+  <!-- TSEK NOW Mobile Button (Hidden on Desktop) -->
+  <input type="file" accept="image/*" capture="environment" #fileInputMobile class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+  <button class="tsek-now-btn mobile-only" (click)="fileInputMobile.click()">
     <span class="material-icons-outlined">camera_alt</span>
     TSEK NOW
   </button>
 
-  <!-- Bottom Section: Recent Exams + Classes Panel -->
+  <!-- Bottom Section: Recent Exams + Sidebar -->
   <div class="bottom-section">
     <!-- Recent Exams -->
     <div class="recent-exams-card">
@@ -145,38 +145,48 @@
       </div>
     </div>
 
-    <!-- Classes Panel (Hidden on Mobile) -->
-    <div class="classes-panel desktop-only">
-      <div class="classes-panel-header">
-        <h3 class="classes-panel-title">CLASSES</h3>
-        <div class="classes-col-headers">
-          <span>BLOCK</span>
-          <span>NO. OF STUDENTS</span>
+    <!-- Right Sidebar (Hidden on Mobile) -->
+    <div class="dashboard-sidebar desktop-only">
+      <!-- Classes Panel -->
+      <div class="classes-panel">
+        <div class="classes-panel-header">
+          <h3 class="classes-panel-title">CLASSES</h3>
+          <div class="classes-col-headers">
+            <span>BLOCK</span>
+            <span>NO. OF STUDENTS</span>
+          </div>
+        </div>
+        <div class="classes-list">
+          @if (isLoadingClasses) {
+            @for (s of [1,2,3]; track s) {
+              <div class="class-row">
+                <div class="skeleton skeleton-text medium" style="margin:0"></div>
+                <div class="skeleton skeleton-text short" style="margin:0; width: 20px;"></div>
+              </div>
+            }
+          } @else {
+            @for (cls of classBlocks; track cls.block) {
+              <div class="class-row">
+                <span class="class-block">{{ cls.block }}</span>
+                <span class="class-students">{{ cls.students }}</span>
+              </div>
+            } @empty {
+              <div class="empty-state small">
+                <span class="material-icons-outlined">school</span>
+                <p>No classes found.</p>
+                <button class="btn-text" routerLink="/classes">Add a class</button>
+              </div>
+            }
+          }
         </div>
       </div>
-      <div class="classes-list">
-        @if (isLoadingClasses) {
-          @for (s of [1,2,3]; track s) {
-            <div class="class-row">
-              <div class="skeleton skeleton-text medium" style="margin:0"></div>
-              <div class="skeleton skeleton-text short" style="margin:0; width: 20px;"></div>
-            </div>
-          }
-        } @else {
-          @for (cls of classBlocks; track cls.block) {
-            <div class="class-row">
-              <span class="class-block">{{ cls.block }}</span>
-              <span class="class-students">{{ cls.students }}</span>
-            </div>
-          } @empty {
-            <div class="empty-state small">
-              <span class="material-icons-outlined">school</span>
-              <p>No classes found.</p>
-              <button class="btn-text" routerLink="/classes">Add a class</button>
-            </div>
-          }
-        }
-      </div>
+
+      <!-- TSEK NOW Desktop Button -->
+      <input type="file" accept="image/*" capture="environment" #fileInputDesktop class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+      <button class="tsek-now-btn sidebar-btn" (click)="fileInputDesktop.click()">
+        <span class="material-icons-outlined">camera_alt</span>
+        TSEK NOW
+      </button>
     </div>
   </div>
 </div>

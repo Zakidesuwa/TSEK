@@ -82,14 +82,24 @@
             <input type="email" placeholder="" class="form-control" name="email" [(ngModel)]="email" />
           </div>
 
-          <div class="form-group">
+          <div class="form-group password-group">
             <label>PASSWORD</label>
-            <input type="password" class="form-control" name="password" [(ngModel)]="password" />
+            <div class="password-input-wrapper">
+              <input [type]="showPassword ? 'text' : 'password'" class="form-control" name="password" [(ngModel)]="password" />
+              <button type="button" class="toggle-password-btn" (click)="togglePasswordVisibility()">
+                <span class="material-icons-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+              </button>
+            </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group password-group">
             <label>CONFIRM PASSWORD</label>
-            <input type="password" class="form-control" name="confirmPassword" [(ngModel)]="confirmPassword" />
+            <div class="password-input-wrapper">
+              <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control" name="confirmPassword" [(ngModel)]="confirmPassword" />
+              <button type="button" class="toggle-password-btn" (click)="toggleConfirmPasswordVisibility()">
+                <span class="material-icons-outlined">{{ showConfirmPassword ? 'visibility' : 'visibility_off' }}</span>
+              </button>
+            </div>
           </div>
 
           <button type="submit" class="btn-submit" [disabled]="isLoading" [class.loading]="isLoading">
