@@ -80,19 +80,23 @@ router.post('/api/register', async (req, res) => {
 
     const instructor = result.rows[0];
 
-    // 5. Send verification email
+    // 5. Send verification email (non-blocking)
     const transporter = getTransporter();
     if (transporter) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-      const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
-      const info = await transporter.sendMail({
-        from: '"TSEK App" <noreply@tsek.app>',
-        to: email,
-        subject: "Verify your TSEK Account",
-        text: `Please click this link to verify your account: ${verificationLink}`,
-        html: `<p>Hello ${full_name},</p><p>Please <a href="${verificationLink}">click here</a> to verify your account.</p>`,
-      });
-      console.log(process.env.SMTP_USER ? "Real verification email sent!" : "Ethereal verification email sent! Preview URL: %s", nodemailer.getTestMessageUrl(info));
+      try {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+        const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
+        const info = await transporter.sendMail({
+          from: '"TSEK App" <noreply@tsek.app>',
+          to: email,
+          subject: "Verify your TSEK Account",
+          text: `Please click this link to verify your account: ${verificationLink}`,
+          html: `<p>Hello ${full_name},</p><p>Please <a href="${verificationLink}">click here</a> to verify your account.</p>`,
+        });
+        console.log(process.env.SMTP_USER ? "Real verification email sent!" : "Ethereal verification email sent! Preview URL: %s", nodemailer.getTestMessageUrl(info));
+      } catch (emailErr) {
+        console.error('Email sending failed (non-critical):', emailErr.message);
+      }
     }
 
     res.status(201).json({
