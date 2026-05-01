@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
+import { environment } from '../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
@@ -57,7 +58,7 @@ export class Login {
     this.errorMessage = '';
     this.cdr.detectChanges();
 
-    this.http.post<{token: string, message: string}>('http://localhost:3000/api/login', {
+    this.http.post<{token: string, message: string}>(`${environment.apiUrl}/api/login`, {
       email: this.email,
       password: this.password
     }).subscribe({

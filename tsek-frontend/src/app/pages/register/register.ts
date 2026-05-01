@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
+import { environment } from '../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
@@ -123,7 +124,7 @@ export class Register {
     this.successMessage = '';
     this.cdr.detectChanges();
 
-    this.http.post<{ message: string }>('http://localhost:3000/api/register', {
+    this.http.post<{ message: string }>(`${environment.apiUrl}/api/register`, {
       prefix: this.prefix,
       full_name: this.fullName.trim(),
       email: this.email,
