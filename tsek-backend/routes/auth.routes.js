@@ -82,7 +82,7 @@ router.post('/api/register', async (req, res) => {
 
     // 5. Return success INSTANTLY
     res.status(201).json({
-      message: 'Registration successful! You can now log in immediately.',
+      message: 'Registration successful!',
       user: { id: instructor.id, prefix: instructor.prefix, name: instructor.full_name, email: instructor.school_email }
     });
 
