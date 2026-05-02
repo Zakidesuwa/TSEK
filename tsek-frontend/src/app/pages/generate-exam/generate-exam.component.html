@@ -14,7 +14,49 @@
   <!-- ============================
        STEP 1 — Configuration
        ============================ -->
-  @if (currentStep === 'configure') {
+  @if (isLoading) {
+    <div class="content-columns">
+      <div class="left-column">
+        <div class="card">
+          <div class="skeleton skeleton-title" style="margin-bottom: 20px;"></div>
+          <div class="form-row">
+            <div class="form-group"><div class="skeleton skeleton-text short"></div><div class="skeleton skeleton-title" style="width: 100%;"></div></div>
+            <div class="form-group"><div class="skeleton skeleton-text short"></div><div class="skeleton skeleton-title" style="width: 100%;"></div></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><div class="skeleton skeleton-text short"></div><div class="skeleton skeleton-title" style="width: 100%;"></div></div>
+            <div class="form-group"><div class="skeleton skeleton-text short"></div><div class="skeleton skeleton-title" style="width: 100%;"></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="skeleton skeleton-title" style="margin-bottom: 20px;"></div>
+          @for (s of [1,2,3]; track s) {
+            <div class="section-block">
+              <div class="section-header">
+                <div class="skeleton skeleton-text medium"></div>
+                <div class="skeleton skeleton-badge" style="width: 40px;"></div>
+              </div>
+              <div class="skeleton skeleton-text long"></div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="right-column">
+        <div class="card">
+          <div class="skeleton skeleton-title" style="margin-bottom: 20px;"></div>
+          <div class="skeleton skeleton-text long"></div>
+          <div class="skeleton skeleton-text long"></div>
+          @for (s of [1,2]; track s) {
+            <div class="point-row">
+              <div class="skeleton skeleton-text medium"></div>
+              <div class="skeleton skeleton-badge"></div>
+            </div>
+          }
+          <div class="skeleton skeleton-title" style="width: 100%; height: 60px; margin-top: 20px;"></div>
+        </div>
+      </div>
+    </div>
+  } @else if (currentStep === 'configure') {
     <div class="content-columns" @fadeSlide>
       <!-- Left Column -->
       <div class="left-column">

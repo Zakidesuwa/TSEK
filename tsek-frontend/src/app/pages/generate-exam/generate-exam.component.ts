@@ -112,6 +112,7 @@ export class GenerateExamComponent implements OnInit {
   paperSize = 'A4';
   examDate = '';
   numberOfChoices = 4;
+  isLoading = true;
   selectedClassId: number | null = null;
   classes: any[] = [];
 
@@ -130,15 +131,20 @@ export class GenerateExamComponent implements OnInit {
   };
 
   ngOnInit() {
+    this.isLoading = true;
     this.http.get<any[]>(`${environment.apiUrl}/api/classes`).subscribe({
       next: data => {
         this.classes = data;
         if (this.classes.length > 0) {
           this.selectedClassId = this.classes[0].id;
         }
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: () => { }
+      error: () => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 

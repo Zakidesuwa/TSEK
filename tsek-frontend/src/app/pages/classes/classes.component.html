@@ -15,28 +15,45 @@
         <span class="material-icons-outlined">chevron_left</span>
       </button>
       <div class="carousel-track" #carouselTrack>
-        @for (cls of classes; track cls.section) {
-        <div class="class-card" (click)="openClassDetail(cls)">
-          <div class="class-card-header">
-            <div class="class-card-info">
-              <h3 class="class-card-subject">{{ cls.subject }}</h3>
-              <p class="class-card-section">{{ cls.section }}</p>
+        @if (isLoadingClasses) {
+          @for (s of [1,2,3,4]; track s) {
+            <div class="class-card skeleton-card">
+              <div class="class-card-header">
+                <div class="class-card-info">
+                  <div class="skeleton skeleton-text long"></div>
+                  <div class="skeleton skeleton-text medium"></div>
+                </div>
+                <div class="skeleton skeleton-badge"></div>
+              </div>
+              <div class="class-card-footer">
+                <div class="skeleton skeleton-text short"></div>
+              </div>
             </div>
-            <span class="student-badge">{{ cls.students }} STUDENTS</span>
+          }
+        } @else {
+          @for (cls of classes; track cls.section) {
+          <div class="class-card" (click)="openClassDetail(cls)">
+            <div class="class-card-header">
+              <div class="class-card-info">
+                <h3 class="class-card-subject">{{ cls.subject }}</h3>
+                <p class="class-card-section">{{ cls.section }}</p>
+              </div>
+              <span class="student-badge">{{ cls.students }} STUDENTS</span>
+            </div>
+            <div class="class-card-footer">
+              <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
+              <button class="class-card-arrow" title="View Class">
+                <span class="material-icons-outlined">arrow_forward</span>
+              </button>
+            </div>
           </div>
-          <div class="class-card-footer">
-            <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
-            <button class="class-card-arrow" title="View Class">
-              <span class="material-icons-outlined">arrow_forward</span>
-            </button>
+          } @empty {
+          <div class="empty-state-card">
+            <span class="material-icons-outlined">school</span>
+            <p>You haven't added any classes yet.</p>
+            <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
           </div>
-        </div>
-        } @empty {
-        <div class="empty-state-card">
-          <span class="material-icons-outlined">school</span>
-          <p>You haven't added any classes yet.</p>
-          <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
-        </div>
+          }
         }
       </div>
       <button class="carousel-btn carousel-btn-right" [class.hidden]="!canScrollRight" (click)="scrollCarousel('right')"
@@ -60,29 +77,43 @@
     </div>
 
     <div class="exams-grid">
-      @for (exam of createdExams; track exam.name + exam.date) {
-      <div class="exam-card" (click)="openStatsModal(exam)">
-        <button class="exam-delete-btn" title="Delete Exam" (click)="deleteExam(exam.id, exam.name); $event.stopPropagation()">
-          <span class="material-icons-outlined">delete_outline</span>
-        </button>
+      @if (isLoadingExams) {
+        @for (s of [1,2,3,4]; track s) {
+          <div class="exam-card skeleton-card">
+            <div class="exam-card-top">
+              <div class="skeleton skeleton-text medium"></div>
+              <div class="skeleton skeleton-text short"></div>
+            </div>
+            <div class="skeleton skeleton-title" style="width: 80%; margin-top: 4px;"></div>
+            <div class="skeleton skeleton-text medium"></div>
+            <div class="skeleton skeleton-badge" style="margin-top: 12px;"></div>
+          </div>
+        }
+      } @else {
+        @for (exam of createdExams; track exam.name + exam.date) {
+        <div class="exam-card" (click)="openStatsModal(exam)">
+          <button class="exam-delete-btn" title="Delete Exam" (click)="deleteExam(exam.id, exam.name); $event.stopPropagation()">
+            <span class="material-icons-outlined">delete_outline</span>
+          </button>
 
-        <div class="exam-card-top">
-          <span class="exam-card-subject">{{ exam.subject }}</span>
-          <span class="exam-card-date">{{ exam.date | date:'shortDate' }}</span>
+          <div class="exam-card-top">
+            <span class="exam-card-subject">{{ exam.subject }}</span>
+            <span class="exam-card-date">{{ exam.date | date:'shortDate' }}</span>
+          </div>
+          <h4 class="exam-card-name">{{ exam.name }}</h4>
+          <p class="exam-card-types">{{ exam.types }}</p>
+          <span class="exam-status-badge" [class.active]="exam.status === 'ACTIVE'"
+            [class.inactive]="exam.status === 'INACTIVE'">
+            {{ exam.status }}
+          </span>
         </div>
-        <h4 class="exam-card-name">{{ exam.name }}</h4>
-        <p class="exam-card-types">{{ exam.types }}</p>
-        <span class="exam-status-badge" [class.active]="exam.status === 'ACTIVE'"
-          [class.inactive]="exam.status === 'INACTIVE'">
-          {{ exam.status }}
-        </span>
-      </div>
-      } @empty {
-      <div class="empty-state-card full-width">
-        <span class="material-icons-outlined">inventory_2</span>
-        <p>No exams created yet.</p>
-        <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
-      </div>
+        } @empty {
+        <div class="empty-state-card full-width">
+          <span class="material-icons-outlined">inventory_2</span>
+          <p>No exams created yet.</p>
+          <button class="btn-text" routerLink="/generate-exam">Create your first exam</button>
+        </div>
+        }
       }
     </div>
   </div>

@@ -5,9 +5,31 @@
   </div>
 
   @if (isLoading) {
-    <div class="loading-state">
-      <span class="material-icons-outlined spin">autorenew</span>
-      <p>Loading history...</p>
+    <div class="history-container">
+      <table class="history-table skeleton-table">
+        <thead>
+          <tr>
+            <th>EXAM NAME</th>
+            <th>CLASS</th>
+            <th>DATE</th>
+            <th>ITEMS</th>
+            <th>SCANS</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of [1,2,3,4,5,6,7,8]; track s) {
+            <tr>
+              <td><div class="skeleton skeleton-text long"></div></td>
+              <td><div class="skeleton skeleton-text medium"></div></td>
+              <td><div class="skeleton skeleton-text short"></div></td>
+              <td><div class="skeleton skeleton-text short" style="width: 20px;"></div></td>
+              <td><div class="skeleton skeleton-text short" style="width: 20px;"></div></td>
+              <td><div class="skeleton skeleton-badge"></div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   } @else {
     <div class="history-container">

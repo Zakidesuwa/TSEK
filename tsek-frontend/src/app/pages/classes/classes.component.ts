@@ -102,29 +102,46 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   showRemoveStudentModal = false;
   studentToRemove: { name: string, number: string } | null = null;
 
+  isLoadingClasses = true;
+  isLoadingExams = true;
+
   classes: any[] = [];
   createdExams: ExamCard[] = [];
 
   ngOnInit() {
-    this.http.get<any[]>(`${environment.apiUrl}/api/classes`).subscribe(data => {
-      this.classes = data;
-      setTimeout(() => this.updateScrollState(), 100);
+    this.isLoadingClasses = true;
+    this.http.get<any[]>(`${environment.apiUrl}/api/classes`).subscribe({
+      next: (data) => {
+        this.classes = data;
+        this.isLoadingClasses = false;
+        setTimeout(() => this.updateScrollState(), 100);
+      },
+      error: () => {
+        this.isLoadingClasses = false;
+      }
     });
 
     this.fetchExams();
   }
 
   fetchExams() {
-    this.http.get<ExamCard[]>(`${environment.apiUrl}/api/exams`).subscribe(data => {
-      this.createdExams = data;
-      
-      // Check if we need to open stats automatically from history page
-      const openStatsId = this.route.snapshot.queryParams['openStats'];
-      if (openStatsId) {
-        const exam = this.createdExams.find(e => e.id === Number(openStatsId));
-        if (exam) {
-          this.openStatsModal(exam);
+    this.isLoadingExams = true;
+    this.http.get<ExamCard[]>(`${environment.apiUrl}/api/exams`).subscribe({
+      next: (data) => {
+        this.createdExams = data;
+        this.isLoadingExams = false;
+        
+        // Check if we need to open stats automatically from history page
+        const openStatsId = this.route.snapshot.queryParams['openStats'];
+        if (openStatsId) {
+          const exam = this.createdExams.find(e => e.id === Number(openStatsId));
+          if (exam) {
+            this.openStatsModal(exam);
+          }
         }
+      },
+      error: () => {
+        this.isLoadingExams = false;
       }
     });
   }
