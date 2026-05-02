@@ -178,3 +178,9 @@
   background: #000;
 }
 
+@media print {
+  .bottom-nav {
+    display: none !important;
+  }
+}
+

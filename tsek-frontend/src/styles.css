@@ -106,13 +106,30 @@ table {
 @media print {
   app-sidebar,
   app-header,
-  .sidebar-overlay {
+  .sidebar-overlay,
+  .bottom-nav,
+  nav {
     display: none !important;
   }
   
   .main-content {
     margin: 0 !important;
     padding: 0 !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 

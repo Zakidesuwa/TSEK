@@ -994,19 +994,6 @@
     display: none !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-    background: white;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
   .print-area {
     display: block;
     position: relative;
@@ -1019,18 +1006,20 @@
     font-family: Arial, Helvetica, sans-serif;
   }
 
-  /* Alignment Markers */
   .marker {
     position: fixed;
-    width: 0;
-    height: 0;
-    border: 10px solid black;
+    width: 7mm;
+    height: 7mm;
+    border: 3.5mm solid black;
+    box-sizing: border-box;
     z-index: 9999;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .marker-tl { top: 12mm; left: 12mm; }
-  .marker-tr { top: 12mm; right: 12mm; }
-  .marker-bl { bottom: 12mm; left: 12mm; }
-  .marker-br { bottom: 12mm; right: 12mm; }
+  .marker-tl { top: 10mm; left: 10mm; }
+  .marker-tr { top: 10mm; right: 10mm; }
+  .marker-bl { bottom: 10mm; left: 10mm; }
+  .marker-br { bottom: 10mm; right: 10mm; }
 
   /* Print Table Layout to reserve space for fixed markers */
   .print-table {
@@ -1039,7 +1028,7 @@
   }
   
   .print-header-space, .print-footer-space {
-    height: 25mm; /* Reserves top/bottom space on every page */
+    height: 20mm; /* Reduced space */
   }
 
   .print-body-cell {
