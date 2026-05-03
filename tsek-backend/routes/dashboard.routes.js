@@ -66,7 +66,8 @@ router.get('/api/dashboard/recent-exams', authMiddleware, async (req, res) => {
         e.id, 
         e.exam_title as name, 
         c.class_name as subject, 
-        e.total_items as volume,
+        e.total_items,
+        e.config,
         'COMPLETED' as status,
         100 as progress
       FROM exams e
@@ -75,7 +76,27 @@ router.get('/api/dashboard/recent-exams', authMiddleware, async (req, res) => {
       ORDER BY e.id DESC
       LIMIT 5
     `, [instructorId]);
-    res.json(result.rows);
+
+    const formatted = result.rows.map(row => {
+      let volume = row.total_items;
+      try {
+        const config = typeof row.config === 'string' ? JSON.parse(row.config) : row.config;
+        if (Array.isArray(config)) {
+          volume = config.filter(s => s.enabled).reduce((sum, s) => sum + (s.selected * (s.defaultPoints || 1)), 0);
+        }
+      } catch (e) {}
+      
+      return {
+        id: row.id,
+        name: row.name,
+        subject: row.subject,
+        volume: volume,
+        status: row.status,
+        progress: row.progress
+      };
+    });
+
+    res.json(formatted);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch recent exams' });
