@@ -13,7 +13,10 @@ router.get('/api/classes', authMiddleware, async (req, res) => {
         c.class_name as subject, 
         c.section_code as section,
         COUNT(ce.student_id) as students,
-        'Oct 20' as "nextQuiz"
+        COALESCE(
+          (SELECT TO_CHAR(MAX(created_at), 'Mon DD') FROM exams WHERE class_id = c.id),
+          'TBD'
+        ) as "nextQuiz"
       FROM classes c
       LEFT JOIN class_enrollments ce ON c.id = ce.class_id
       WHERE c.instructor_id = $1
