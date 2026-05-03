@@ -3,7 +3,7 @@
     <!-- Top Navigation -->
     <nav class="landing-nav">
       <div class="nav-left">
-        <span class="nav-brand">TSEK</span>
+        <span (click)="scrollTo('tsek')" class="nav-brand">TSEK</span>
       </div>
       <div class="nav-center">
         <a (click)="scrollTo('features')" class="nav-link">Features</a>
@@ -16,7 +16,7 @@
     </nav>
 
     <!-- Main Content Area -->
-    <div class="landing-content">
+    <div class="landing-content" id="tsek">
 
       <!-- Left Promotional Area -->
       <div class="left-section">
