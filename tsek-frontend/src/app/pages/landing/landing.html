@@ -6,9 +6,8 @@
         <span class="nav-brand">TSEK</span>
       </div>
       <div class="nav-center">
-        <a href="#" class="nav-link active">Features</a>
-        <a href="#" class="nav-link">Scanning</a>
-        <a href="#" class="nav-link">Classroom</a>
+        <a (click)="scrollTo('features')" class="nav-link">Features</a>
+        <a (click)="scrollTo('classroom')" class="nav-link">Classroom</a>
       </div>
       <div class="nav-right">
         <button class="btn-get-started" routerLink="/login">GET STARTED</button>
@@ -61,7 +60,7 @@
 
 
     </div>
-    <div class="feature-grid">
+    <div class="feature-grid" id="feature">
       <!-- Live OCR Scanning Card -->
       <div class="div1">
         <div class="feature-icon">

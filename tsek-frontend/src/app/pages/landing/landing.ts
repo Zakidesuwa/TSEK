@@ -7,4 +7,11 @@ import { RouterLink } from '@angular/router';
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })
-export class Landing {}
+export class Landing {
+  scrollTo(sectionId: string): void {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+}
