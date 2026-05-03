@@ -115,6 +115,9 @@ export class GenerateExamComponent implements OnInit {
   isLoading = true;
   selectedClassId: number | null = null;
   classes: any[] = [];
+  
+  // Validation errors
+  formErrors: { title?: string; class?: string; date?: string } = {};
 
   sections: ExamSection[] = [
     { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
@@ -194,6 +197,52 @@ export class GenerateExamComponent implements OnInit {
 
   get choiceLetters(): string[] {
     return ['A', 'B', 'C', 'D', 'E'].slice(0, this.numberOfChoices);
+  }
+
+  /** Validate date input */
+  validateExamDate(): string | null {
+    if (!this.examDate) {
+      return 'Please select an exam date.';
+    }
+
+    const examDateObj = new Date(this.examDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (isNaN(examDateObj.getTime())) {
+      return 'Invalid date format.';
+    }
+
+    if (examDateObj < today) {
+      return 'Exam date cannot be in the past. Please select a future date.';
+    }
+
+    return null;
+  }
+
+  /** Validate all form fields before proceeding */
+  validateForm(): boolean {
+    this.formErrors = {};
+
+    // Validate class selection
+    if (!this.selectedClassId) {
+      this.formErrors.class = 'Please select a class.';
+    }
+
+    // Validate exam title
+    if (!this.examTitle || this.examTitle.trim() === '') {
+      this.formErrors.title = 'Please enter an exam title.';
+    } else if (this.examTitle.trim().length < 3) {
+      this.formErrors.title = 'Exam title must be at least 3 characters long.';
+    }
+
+    // Validate exam date
+    const dateError = this.validateExamDate();
+    if (dateError) {
+      this.formErrors.date = dateError;
+    }
+
+    return Object.keys(this.formErrors).length === 0;
   }
 
   // Helpers to chunk exam items for the print layout
@@ -305,11 +354,13 @@ export class GenerateExamComponent implements OnInit {
 
   /** Advance from Step 1 → Step 2 */
   proceedToAnswerKey() {
-    if (!this.selectedClassId || !this.examTitle) {
-      this.modalTitle = 'Missing Information';
-      this.modalMessage = 'Please fill out the exam title and select a class before proceeding.';
+    if (!this.validateForm()) {
+      const errorMessages = Object.values(this.formErrors).filter(err => err);
+      this.modalTitle = 'Validation Error';
+      this.modalMessage = errorMessages.join('\n\n');
       this.modalType = 'error';
       this.showModal = true;
+      this.cdr.detectChanges();
       return;
     }
 
