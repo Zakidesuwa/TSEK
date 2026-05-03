@@ -10,7 +10,7 @@ const { getTransporter } = require('../config/mailer');
 // ✅ In-memory store for login attempts
 const loginAttempts = {};
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 // ✅ Helper: check if account is locked
 function isLocked(email) {
@@ -82,7 +82,7 @@ router.post('/api/login', async (req, res) => {
       const attemptsLeft = MAX_ATTEMPTS - loginAttempts[email].count;
       if (attemptsLeft <= 0) {
         return res.status(429).json({
-          error: `Too many failed attempts. Account locked for 15 minutes.`,
+          error: `Too many failed attempts. Account locked for 10 minutes.`,
           remainingSeconds: LOCKOUT_DURATION_MS / 1000
         });
       }
