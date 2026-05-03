@@ -49,10 +49,10 @@ export class DashboardComponent implements OnInit {
     // Fetch dashboard stats
     this.http.get<any>(`${environment.apiUrl}/api/dashboard/stats`).subscribe(data => {
       this.statCards = [
-        { title: 'TOTAL SHEETS CHECKED', value: data.totalSheets.toString(), subtitle: 'Live Data', icon: 'fact_check' },
-        { title: 'STUDENT ACCURACY', value: data.accuracy, subtitle: '', icon: 'verified' },
-        { title: 'ACTIVE EXAMS', value: data.activeExams.toString(), subtitle: 'Live Data', icon: 'assignment' },
-        { title: 'CLASSES', value: data.classesCount.toString(), subtitle: 'Live Data', icon: 'school' }
+        { title: 'TOTAL SHEETS CHECKED', value: data.totalSheets.toString(), subtitle: 'You have scanned ' + data.totalSheets.toString() + ' sheets', icon: 'fact_check' },
+        { title: 'STUDENT ACCURACY', value: data.accuracy, subtitle: 'Your students have a ' + data.accuracy + ' accuracy rate', icon: 'verified' },
+        { title: 'ACTIVE EXAMS', value: data.activeExams.toString(), subtitle: 'You have ' + data.activeExams.toString() + ' active exams', icon: 'assignment' },
+        { title: 'CLASSES', value: data.classesCount.toString(), subtitle: 'You have ' + data.classesCount.toString() + ' total classes', icon: 'school' }
       ];
       this.isLoadingStats = false;
       this.cdr.detectChanges();
