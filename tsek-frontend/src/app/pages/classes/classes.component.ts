@@ -104,6 +104,8 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
 
   isLoadingClasses = true;
   isLoadingExams = true;
+  isDeletingExam = false;
+  isRemovingStudent = false;
 
   classes: any[] = [];
   createdExams: ExamCard[] = [];
@@ -154,12 +156,15 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
 
   confirmDelete() {
     if (this.examToDelete) {
+      this.isDeletingExam = true;
       this.http.delete(`${environment.apiUrl}/api/exams/${this.examToDelete}`).subscribe({
         next: () => {
           this.fetchExams();
+          this.isDeletingExam = false;
           this.closeDeleteModal();
         },
         error: (err) => {
+          this.isDeletingExam = false;
           console.error('Failed to delete exam', err);
           alert('Failed to delete exam. Please try again.');
           this.closeDeleteModal();
@@ -336,12 +341,15 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   confirmRemoveStudent(): void {
     if (!this.selectedClass || !this.studentToRemove) return;
 
+    this.isRemovingStudent = true;
     this.http.delete(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students/${this.studentToRemove.number}`).subscribe({
       next: () => {
         this.refreshClassStudents();
+        this.isRemovingStudent = false;
         this.closeRemoveStudentModal();
       },
       error: (err) => {
+        this.isRemovingStudent = false;
         console.error('Failed to remove student:', err);
         alert('Failed to remove student. Please try again.');
         this.closeRemoveStudentModal();

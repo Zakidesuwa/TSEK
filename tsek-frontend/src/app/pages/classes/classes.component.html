@@ -347,8 +347,15 @@
     </p>
 
     <div class="modal-actions">
-      <button class="modal-btn-cancel" (click)="closeDeleteModal()">CANCEL</button>
-      <button class="modal-btn-delete" (click)="confirmDelete()">DELETE EXAM</button>
+      <button class="modal-btn-cancel" (click)="closeDeleteModal()" [disabled]="isDeletingExam">CANCEL</button>
+      <button class="modal-btn-delete" (click)="confirmDelete()" [disabled]="isDeletingExam">
+        @if (isDeletingExam) {
+          <div class="btn-spinner"></div>
+          DELETING...
+        } @else {
+          DELETE EXAM
+        }
+      </button>
     </div>
   </div>
 </div>
@@ -368,8 +375,15 @@
     </p>
 
     <div class="modal-actions">
-      <button class="modal-btn-cancel" (click)="closeRemoveStudentModal()">CANCEL</button>
-      <button class="modal-btn-delete" (click)="confirmRemoveStudent()">REMOVE STUDENT</button>
+      <button class="modal-btn-cancel" (click)="closeRemoveStudentModal()" [disabled]="isRemovingStudent">CANCEL</button>
+      <button class="modal-btn-delete" (click)="confirmRemoveStudent()" [disabled]="isRemovingStudent">
+        @if (isRemovingStudent) {
+          <div class="btn-spinner"></div>
+          REMOVING...
+        } @else {
+          REMOVE STUDENT
+        }
+      </button>
     </div>
   </div>
 </div>
