@@ -169,4 +169,52 @@ router.delete('/api/classes/:classId/students/:studentId', authMiddleware, async
   }
 });
 
+// Delete a class
+router.delete('/api/classes/:id', authMiddleware, async (req, res) => {
+  const classId = req.params.id;
+  const instructorId = req.user.id;
+
+  try {
+    // Verify the class belongs to this instructor
+    const classCheck = await db.query(
+      'SELECT id FROM classes WHERE id = $1 AND instructor_id = $2',
+      [classId, instructorId]
+    );
+
+    if (classCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Class not found or you do not have permission to delete it.' });
+    }
+
+    // Delete exam results for exams in this class
+    await db.query(
+      `DELETE FROM exam_results 
+       WHERE exam_id IN (SELECT id FROM exams WHERE class_id = $1)`,
+      [classId]
+    );
+
+    // Delete exams for this class
+    await db.query(
+      'DELETE FROM exams WHERE class_id = $1',
+      [classId]
+    );
+
+    // Delete class enrollments
+    await db.query(
+      'DELETE FROM class_enrollments WHERE class_id = $1',
+      [classId]
+    );
+
+    // Delete the class itself
+    await db.query(
+      'DELETE FROM classes WHERE id = $1',
+      [classId]
+    );
+
+    res.json({ message: 'Class deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting class:', err);
+    res.status(500).json({ error: 'Failed to delete class' });
+  }
+});
+
 module.exports = router;
