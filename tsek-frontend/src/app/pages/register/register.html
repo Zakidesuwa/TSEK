@@ -268,3 +268,13 @@
   </div>
 </div>
 }
+
+<!-- Loading Overlay -->
+@if (isLoading) {
+  <div class="loading-overlay" @modalFadeAnim>
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p class="loading-text">Creating your account...</p>
+    </div>
+  </div>
+}

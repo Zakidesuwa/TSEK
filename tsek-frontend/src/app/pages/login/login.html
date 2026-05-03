@@ -88,6 +88,16 @@
     </div>
   </div>
 
+  <!-- Loading Overlay -->
+  @if (isLoading) {
+    <div class="loading-overlay" @modalFadeAnim>
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <p class="loading-text">Authenticating your credentials...</p>
+      </div>
+    </div>
+  }
+
   <footer class="login-footer">
     <div class="footer-top">
       <span>CREATED BY ZAKISAME</span>
