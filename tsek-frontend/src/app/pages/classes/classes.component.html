@@ -160,6 +160,10 @@
         </p>
       </div>
       <div class="detail-header-actions">
+        <button class="delete-class-btn" (click)="deleteClass(selectedClass)" title="Delete class">
+          <span class="material-icons-outlined">delete_outline</span>
+          Delete Class
+        </button>
         <button class="add-student-btn" (click)="toggleAddStudentForm()">
           <span class="material-icons-outlined">{{ showAddStudentForm ? 'close' : 'person_add' }}</span>
           {{ showAddStudentForm ? 'Cancel' : 'Add Student' }}
@@ -354,6 +358,34 @@
           DELETING...
         } @else {
           DELETE EXAM
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== DELETE CLASS CONFIRMATION MODAL ===== -->
+@if (showDeleteClassModal && classToDelete) {
+<div class="modal-overlay" @modalFadeAnim (click)="closeDeleteClassModal()">
+  <div class="modal-container delete-confirm-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <span class="material-icons-outlined">warning_amber</span>
+    </div>
+    <h2 class="modal-title">Delete Class?</h2>
+    <p class="delete-modal-text">
+      Are you sure you want to delete <strong>{{ classToDelete.subject }} - {{ classToDelete.section }}</strong>? 
+      This action cannot be undone and all class data will be permanently removed.
+    </p>
+
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" (click)="closeDeleteClassModal()" [disabled]="isDeletingClass">CANCEL</button>
+      <button class="modal-btn-delete" (click)="confirmDeleteClass()" [disabled]="isDeletingClass">
+        @if (isDeletingClass) {
+          <div class="btn-spinner"></div>
+          DELETING...
+        } @else {
+          DELETE CLASS
         }
       </button>
     </div>

@@ -31,6 +31,7 @@ html {
   top: 0;
   left: 0;
   box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .nav-brand {
@@ -179,7 +180,7 @@ html {
 }
 .scanning{
     width:100%;
-    margin: 50px 70px 50px 70px;
+    padding: 50px 70px 50px 70px;
 
 }
 .scanning .toptitle{
@@ -406,6 +407,7 @@ html {
     right: 0;
     z-index: 1000;
     align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   .nav-left {
     display: flex;
@@ -436,7 +438,7 @@ html {
   }
   .scanning{
     width:100%;
-    margin: 30px;
+    padding: 30px;
 
 }
   .scanning .toptitle{

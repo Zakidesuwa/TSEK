@@ -7,30 +7,96 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { getTransporter } = require('../config/mailer');
 
+// ✅ In-memory store for login attempts
+const loginAttempts = {};
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+
+// ✅ Helper: check if account is locked
+function isLocked(email) {
+  const record = loginAttempts[email];
+  if (!record) return false;
+  if (record.count >= MAX_ATTEMPTS) {
+    const elapsed = Date.now() - record.lastAttempt;
+    if (elapsed < LOCKOUT_DURATION_MS) return true;
+    delete loginAttempts[email]; // lockout expired, reset
+  }
+  return false;
+}
+
+// ✅ Helper: get remaining lockout time in seconds
+function getRemainingLockout(email) {
+  const record = loginAttempts[email];
+  if (!record) return 0;
+  const elapsed = Date.now() - record.lastAttempt;
+  return Math.ceil((LOCKOUT_DURATION_MS - elapsed) / 1000);
+}
+
+// ✅ Helper: record a failed attempt
+function recordFailedAttempt(email) {
+  if (!loginAttempts[email]) {
+    loginAttempts[email] = { count: 0, lastAttempt: null };
+  }
+  loginAttempts[email].count += 1;
+  loginAttempts[email].lastAttempt = Date.now();
+}
+
+// ✅ Helper: reset attempts on success
+function resetAttempts(email) {
+  delete loginAttempts[email];
+}
+
 // Login
 router.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    // Check if user exists
+
+    // ✅ 1. Check if account is locked out
+    if (isLocked(email)) {
+      const remaining = getRemainingLockout(email);
+      return res.status(429).json({
+        error: `Too many failed attempts. Try again in ${Math.ceil(remaining / 60)} minute(s).`,
+        remainingSeconds: remaining
+      });
+    }
+
+    // 2. Check if user exists
     const result = await db.query('SELECT * FROM instructors WHERE school_email = $1', [email]);
     if (result.rows.length === 0) {
+      recordFailedAttempt(email); // ✅ count attempt
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const instructor = result.rows[0];
 
-    // Check if verified
+    // 3. Check if verified
     if (!instructor.is_verified) {
       return res.status(403).json({ error: 'Please verify your email address before logging in.' });
     }
 
-    // Verify passwords
+    // 4. Verify password
     const isValid = await bcrypt.compare(password, instructor.password_hash);
     if (!isValid) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      recordFailedAttempt(email); // ✅ count attempt
+
+      const attemptsLeft = MAX_ATTEMPTS - loginAttempts[email].count;
+      if (attemptsLeft <= 0) {
+        return res.status(429).json({
+          error: `Too many failed attempts. Account locked for 10 minutes.`,
+          remainingSeconds: LOCKOUT_DURATION_MS / 1000
+        });
+      }
+
+      return res.status(401).json({
+        error: `Invalid email or password. ${attemptsLeft} attempt(s) left.`,
+        attemptsLeft
+      });
     }
 
-    // 3. Generate JWT
+    // ✅ 5. Success — reset attempts
+    resetAttempts(email);
+
+    // 6. Generate JWT
     const token = jwt.sign(
       { id: instructor.id, email: instructor.school_email, name: `${instructor.prefix || ''} ${instructor.full_name}`.trim() },
       process.env.JWT_SECRET || 'fallback_secret',
@@ -52,26 +118,20 @@ router.post('/api/login', async (req, res) => {
 router.post('/api/register', async (req, res) => {
   const { prefix, full_name, email, password } = req.body;
   try {
-    // 0. Validate school email domain
     const emailLower = email.toLowerCase();
     if (!emailLower.endsWith('.edu') && !emailLower.endsWith('.edu.ph')) {
       return res.status(400).json({ error: 'You must use a valid school email address (.edu or .edu.ph).' });
     }
 
-    // 1. Check if email exists
     const existing = await db.query('SELECT id FROM instructors WHERE school_email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
 
-    // 2. Hash password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // 3. Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // 4. Insert user (Auto-verify for Defense)
     const result = await db.query(`
       INSERT INTO instructors (prefix, full_name, school_email, password_hash, is_verified, verification_token)
       VALUES ($1, $2, $3, $4, true, $5)
@@ -80,13 +140,11 @@ router.post('/api/register', async (req, res) => {
 
     const instructor = result.rows[0];
 
-    // 5. Return success INSTANTLY
     res.status(201).json({
       message: 'Registration successful!',
       user: { id: instructor.id, prefix: instructor.prefix, name: instructor.full_name, email: instructor.school_email }
     });
 
-    // 6. Attempt email in background (Do not await)
     const transporter = getTransporter();
     if (transporter) {
       transporter.sendMail({

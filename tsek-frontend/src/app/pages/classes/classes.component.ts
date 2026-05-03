@@ -93,10 +93,15 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   selectedExamStats: ExamStats | null = null;
   selectedExamName = '';
 
-  // ===== Delete Confirmation Modal =====
+  // ===== Delete Exam Confirmation Modal =====
   showDeleteModal = false;
   examToDelete: number | null = null;
   examNameToDelete: string = '';
+
+  // ===== Delete Class Confirmation Modal =====
+  showDeleteClassModal = false;
+  classToDelete: any = null;
+  isDeletingClass = false;
 
   // ===== Remove Student Confirmation Modal =====
   showRemoveStudentModal = false;
@@ -374,5 +379,39 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
       (this.selectedClass as any).students = this.allStudents.length;
       this.cdr.detectChanges();
     });
+  }
+
+  // ===== Delete Class Methods =====
+  deleteClass(cls: any): void {
+    this.classToDelete = cls;
+    this.showDeleteClassModal = true;
+  }
+
+  confirmDeleteClass(): void {
+    if (!this.classToDelete) return;
+
+    this.isDeletingClass = true;
+    this.http.delete(`${environment.apiUrl}/api/classes/${this.classToDelete.id}`).subscribe({
+      next: () => {
+        this.classes = this.classes.filter(c => c.id !== this.classToDelete.id);
+        this.isDeletingClass = false;
+        this.closeDeleteClassModal();
+        this.closeClassDetailModal();
+        setTimeout(() => this.updateScrollState(), 100);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isDeletingClass = false;
+        console.error('Failed to delete class:', err);
+        alert('Failed to delete class. Please try again.');
+        this.closeDeleteClassModal();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeDeleteClassModal(): void {
+    this.showDeleteClassModal = false;
+    this.classToDelete = null;
   }
 }

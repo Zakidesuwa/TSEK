@@ -133,13 +133,10 @@ export class Register {
       next: (res) => {
         this.isLoading = false;
         this.successMessage = res.message;
-        // Clear form
-        this.fullName = '';
-        this.email = '';
-        this.password = '';
-        this.confirmPassword = '';
-        this.agreedToTerms = false;
-        this.cdr.detectChanges();
+        // Navigate to login after successful registration
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 1500);
       },
       error: (err) => {
         this.isLoading = false;
