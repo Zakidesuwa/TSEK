@@ -56,8 +56,21 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
     const classId = req.params.id;
     
     // 1. Fetch all exams for this class
-    const examsRes = await db.query('SELECT id, exam_title, total_items FROM exams WHERE class_id = $1 ORDER BY created_at ASC', [classId]);
+    const examsRes = await db.query('SELECT id, exam_title, total_items, config FROM exams WHERE class_id = $1 ORDER BY created_at ASC', [classId]);
     const classExams = examsRes.rows;
+    
+    // Pre-calculate max scores for each exam
+    const examMaxScores = classExams.map(exam => {
+      let maxScore = exam.total_items;
+      try {
+        const config = typeof exam.config === 'string' ? JSON.parse(exam.config) : exam.config;
+        if (Array.isArray(config)) {
+          maxScore = config.filter(s => s.enabled).reduce((sum, s) => sum + (s.selected * (s.defaultPoints || 1)), 0);
+        }
+      } catch (e) {}
+      return { id: exam.id, maxScore };
+    });
+
     const examNames = classExams.map(e => e.exam_title);
 
     // 2. Fetch all students enrolled in this class
@@ -75,15 +88,18 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
     // 3. For each student, find their scores for the respective exams
     const students = await Promise.all(studentsRes.rows.map(async (student) => {
       const scores = [];
-      for (const exam of classExams) {
+      for (let i = 0; i < classExams.length; i++) {
+        const exam = classExams[i];
+        const { maxScore } = examMaxScores[i];
+
         const resultRes = await db.query(`
           SELECT score FROM exam_results WHERE exam_id = $1 AND student_id = $2
         `, [exam.id, student.id]);
         
         if (resultRes.rows.length > 0) {
-          scores.push(`${resultRes.rows[0].score}/${exam.total_items}`);
+          scores.push(`${resultRes.rows[0].score}/${maxScore}`);
         } else {
-          scores.push(`--/${exam.total_items}`);
+          scores.push(`--/${maxScore}`);
         }
       }
       return {

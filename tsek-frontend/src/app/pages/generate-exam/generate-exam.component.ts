@@ -538,11 +538,17 @@ export class GenerateExamComponent implements OnInit {
       }
     }
 
+    // Update sections with saved points before sending
+    const finalConfig = this.sections.map(s => ({
+      ...s,
+      defaultPoints: this.savedPoints[s.key] ?? s.defaultPoints
+    }));
+
     const payload = {
       class_id: this.selectedClassId,
       exam_title: this.examTitle,
       total_items: this.answerTabs.reduce((sum, t) => sum + t.itemCount, 0),
-      config: this.sections,
+      config: finalConfig,
       answer_key: answerKey
     };
 

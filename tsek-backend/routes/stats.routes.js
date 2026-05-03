@@ -10,7 +10,7 @@ router.get('/api/exams/:id/statistics', authMiddleware, async (req, res) => {
   try {
     // Verify ownership
     const verifyResult = await db.query(`
-      SELECT e.total_items 
+      SELECT e.total_items, e.config 
       FROM exams e
       JOIN classes c ON e.class_id = c.id
       WHERE e.id = $1 AND c.instructor_id = $2
@@ -20,7 +20,22 @@ router.get('/api/exams/:id/statistics', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Exam not found' });
     }
 
-    const totalItems = verifyResult.rows[0].total_items;
+    const { total_items: totalItems, config } = verifyResult.rows[0];
+    
+    // Calculate total possible score based on config
+    let maxPossibleScore = 0;
+    try {
+      const parsedConfig = typeof config === 'string' ? JSON.parse(config) : config;
+      if (Array.isArray(parsedConfig)) {
+        parsedConfig.filter(s => s.enabled).forEach(section => {
+          maxPossibleScore += (section.selected * (section.defaultPoints || 1));
+        });
+      } else {
+        maxPossibleScore = totalItems; // Fallback
+      }
+    } catch (e) {
+      maxPossibleScore = totalItems; // Fallback
+    }
 
     // Fetch all results for this exam
     const resultsQuery = await db.query(`
@@ -49,7 +64,7 @@ router.get('/api/exams/:id/statistics', authMiddleware, async (req, res) => {
       const score = parseFloat(row.score);
       totalScoreSum += score;
       
-      const percentage = (score / totalItems) * 100;
+      const percentage = (score / maxPossibleScore) * 100;
       if (percentage >= 80) distribution.well++;
       else if (percentage >= 60) distribution.good++;
       else distribution.needsImprovement++;
@@ -73,7 +88,7 @@ router.get('/api/exams/:id/statistics', authMiddleware, async (req, res) => {
     res.json({
       totalStudents,
       averageScore,
-      totalItems,
+      totalItems: maxPossibleScore,
       distribution,
       mostMissed
     });

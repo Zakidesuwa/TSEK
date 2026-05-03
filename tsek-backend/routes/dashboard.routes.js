@@ -9,13 +9,31 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
   try {
     const statsRes = await db.query(`
       SELECT 
-        COUNT(er.id) as total_sheets,
-        COALESCE(SUM(er.score)::float / NULLIF(SUM(e.total_items), 0) * 100, 0) as accuracy
+        er.score,
+        e.config,
+        e.total_items
       FROM exam_results er
       JOIN exams e ON er.exam_id = e.id
       JOIN classes c ON e.class_id = c.id
       WHERE c.instructor_id = $1
     `, [instructorId]);
+    
+    let totalScore = 0;
+    let totalPossible = 0;
+    statsRes.rows.forEach(row => {
+      totalScore += parseFloat(row.score);
+      let maxScore = row.total_items;
+      try {
+        const config = typeof row.config === 'string' ? JSON.parse(row.config) : row.config;
+        if (Array.isArray(config)) {
+          maxScore = config.filter(s => s.enabled).reduce((sum, s) => sum + (s.selected * (s.defaultPoints || 1)), 0);
+        }
+      } catch (e) {}
+      totalPossible += maxScore;
+    });
+    
+    const accuracyNum = totalPossible > 0 ? (totalScore / totalPossible * 100) : 0;
+    const totalSheets = statsRes.rows.length;
     
     const examsRes = await db.query(`
       SELECT COUNT(e.id) FROM exams e
@@ -25,11 +43,10 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
     
     const classesRes = await db.query('SELECT COUNT(*) FROM classes WHERE instructor_id = $1', [instructorId]);
     
-    const accuracyNum = parseFloat(statsRes.rows[0].accuracy);
     const accuracyStr = accuracyNum > 0 ? accuracyNum.toFixed(1) + '%' : '0.0%';
 
     res.json({
-      totalSheets: parseInt(statsRes.rows[0].total_sheets, 10),
+      totalSheets: totalSheets,
       accuracy: accuracyStr,
       activeExams: parseInt(examsRes.rows[0].count, 10),
       classesCount: parseInt(classesRes.rows[0].count, 10)
