@@ -108,8 +108,14 @@
           <div class="checkbox-group">
             <input type="checkbox" id="terms" name="agreedToTerms" [(ngModel)]="agreedToTerms" />
             <label for="terms">
-              I agree to the <a href="#" (click)="openTermsModal($event)">Terms of Service</a> 
-              and <a href="#" (click)="openPrivacyModal($event)">Privacy Policy</a>.
+              I agree to the <a href="#" (click)="openTermsModal($event)">Terms of Service</a>.
+            </label>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="privacy" name="agreedToPrivacy" [(ngModel)]="agreedToPrivacy" />
+            <label for="privacy">
+              I agree to the <a href="#" (click)="openPrivacyModal($event)">Privacy Policy</a>.
             </label>
           </div>
         </form>

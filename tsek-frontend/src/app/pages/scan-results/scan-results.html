@@ -75,8 +75,8 @@
           <div class="detected-item">
             <span class="material-icons-outlined">badge</span>
             <div>
-              <label>Student ID</label>
-              <p>{{ rawText.studentId || 'Not detected' }}</p>
+              <label>Student ID <span class="edit-hint">(Editable)</span></label>
+              <input type="text" class="student-id-input" [(ngModel)]="rawText.studentId" placeholder="Not detected" />
             </div>
           </div>
           <div class="detected-item">

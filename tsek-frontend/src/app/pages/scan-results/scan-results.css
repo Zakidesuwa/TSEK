@@ -1160,3 +1160,32 @@
   border-width: 2px;
 }
 
+/* Student ID Editable Field */
+.student-id-input {
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 120px;
+  transition: all 0.2s ease;
+}
+
+.student-id-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.edit-hint {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 400;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+

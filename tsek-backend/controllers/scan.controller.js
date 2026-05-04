@@ -26,14 +26,21 @@ exports.scanImage = async (req, res) => {
     const prompt = `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
 Look carefully at the provided student answer sheet image. 
 
-1. Identify the Student ID number encoded in the grid bubbles.
+1. Identify the Student ID number encoded in the grid bubbles. 
+   - There are exactly 9 columns in the Student ID grid.
+   - The grid has exactly 10 rows of bubbles. The top-most row is ALWAYS 0, the second row down is 1, the third row down is 2, and so on until the bottom row which is 9.
+   - Look at each column individually from left to right.
+   - For each column, count how many rows down the shaded bubble is to determine the correct number (0-9). Pay extreme attention to horizontal alignment.
+   - Combine these 9 numbers to form the final Student ID.
+
 2. If there is a name field (handwritten or printed), identify the student's full name.
 3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
 4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
-  "studentId": "123456",
+  "studentIdReasoning": "Briefly list the shaded number found in each of the 9 columns from left to right (e.g., 'Col 1: 2, Col 2: 0, Col 3: 2...') to ensure accuracy.",
+  "studentId": "123456789",
   "studentName": "JOHN DOE",
   "answers": {
     "1": "A",
@@ -45,8 +52,29 @@ Return the result STRICTLY as a valid, stringified JSON object using the followi
 }
 Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object. If an item is unreadable or completely blank, leave the answer as null.`;
 
-    const result = await model.generateContent([prompt, imagePart]);
-    let responseText = result.response.text();
+    let responseText;
+    try {
+      const result = await model.generateContent([prompt, imagePart]);
+      responseText = result.response.text();
+    } catch (apiError) {
+      // If we hit a rate limit (429) or 503, fallback to the second API key
+      if (apiError.status === 503 || apiError.status === 429 || (apiError.message && (apiError.message.includes('503') || apiError.message.includes('429') || apiError.message.includes('quota')))) {
+        console.log("Primary API key failed or quota exceeded. Attempting fallback to GEMINI_API_KEY_2...");
+        
+        const fallbackKey = process.env.GEMINI_API_KEY_2;
+        if (!fallbackKey) {
+          console.error("No GEMINI_API_KEY_2 found in .env. Cannot fallback.");
+          throw apiError;
+        }
+
+        const fallbackGenAI = new GoogleGenerativeAI(fallbackKey);
+        const fallbackModel = fallbackGenAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const fallbackResult = await fallbackModel.generateContent([prompt, imagePart]);
+        responseText = fallbackResult.response.text();
+      } else {
+        throw apiError; // Throw other errors normally
+      }
+    }
 
     // Clean up potential markdown formatting if Gemini disobeys
     responseText = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
