@@ -167,12 +167,14 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
           this.fetchExams();
           this.isDeletingExam = false;
           this.closeDeleteModal();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.isDeletingExam = false;
           console.error('Failed to delete exam', err);
           alert('Failed to delete exam. Please try again.');
           this.closeDeleteModal();
+          this.cdr.detectChanges();
         }
       });
     }
@@ -352,12 +354,14 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         this.refreshClassStudents();
         this.isRemovingStudent = false;
         this.closeRemoveStudentModal();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isRemovingStudent = false;
         console.error('Failed to remove student:', err);
         alert('Failed to remove student. Please try again.');
         this.closeRemoveStudentModal();
+        this.cdr.detectChanges();
       }
     });
   }

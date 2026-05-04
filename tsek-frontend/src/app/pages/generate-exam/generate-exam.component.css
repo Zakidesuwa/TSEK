@@ -477,6 +477,7 @@
 @media (max-width: 900px) {
   .content-columns {
     flex-direction: column;
+    align-items: stretch;
   }
 }
 
@@ -840,6 +841,7 @@
 @media (max-width: 900px) {
   .content-layout {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .side-panels {
@@ -970,6 +972,7 @@
 @media (max-width: 1000px) {
   .content-layout {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .side-panels {

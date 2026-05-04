@@ -65,6 +65,9 @@
 .primary-cell {
   font-weight: 600;
   color: var(--color-text-primary);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 300px;
 }
 
 .view-stats-btn {
