@@ -1189,3 +1189,28 @@
   opacity: 0.8;
 }
 
+.student-id-input.name-input {
+  width: 200px;
+}
+
+.info-value-input {
+  background: var(--color-bg-card);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 4px;
+  width: 160px;
+  text-align: right;
+  transition: all 0.2s ease;
+}
+
+.info-value-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+

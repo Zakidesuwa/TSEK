@@ -80,6 +80,13 @@
             </div>
           </div>
           <div class="detected-item">
+            <span class="material-icons-outlined">person</span>
+            <div>
+              <label>Student Name <span class="edit-hint">(Editable)</span></label>
+              <input type="text" class="student-id-input name-input" [(ngModel)]="rawText.studentName" placeholder="Not detected" />
+            </div>
+          </div>
+          <div class="detected-item">
             <span class="material-icons-outlined">checklist</span>
             <div>
               <label>Answers Found</label>
@@ -327,8 +334,8 @@
 
       <div class="detected-info-box">
         <div class="info-row">
-          <span class="info-label">Detected Name:</span>
-          <span class="info-value">{{ tempEnrollData?.studentName }}</span>
+          <span class="info-label">Student Name:</span>
+          <input type="text" class="info-value-input" [(ngModel)]="tempEnrollData.studentName" placeholder="Enter student name" />
         </div>
       </div>
 
