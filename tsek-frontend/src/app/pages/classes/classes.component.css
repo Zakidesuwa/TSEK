@@ -239,6 +239,12 @@
   margin-bottom: 20px;
 }
 
+.created-exams-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
 .exams-header-left {
   display: flex;
   align-items: center;
