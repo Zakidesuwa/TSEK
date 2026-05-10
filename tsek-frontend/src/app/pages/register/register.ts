@@ -50,8 +50,7 @@ export class Register {
   email = '';
   password = '';
   confirmPassword = '';
-  agreedToTerms = false;
-  agreedToPrivacy = false;
+  agreedToTermsAndPrivacy = false;
 
   errorMessage = '';
   successMessage = '';
@@ -99,18 +98,8 @@ export class Register {
       return;
     }
 
-    if (!this.agreedToTerms && !this.agreedToPrivacy) {
-      this.errorMessage = 'You must agree to both the Terms of Service and Privacy Policy.';
-      return;
-    }
-
-    if (!this.agreedToTerms) {
-      this.errorMessage = 'You must agree to the Terms of Service to create an account.';
-      return;
-    }
-
-    if (!this.agreedToPrivacy) {
-      this.errorMessage = 'You must agree to the Privacy Policy to create an account.';
+    if (!this.agreedToTermsAndPrivacy) {
+      this.errorMessage = 'You must agree to the Terms of Service and Privacy Policy to create an account.';
       return;
     }
 
