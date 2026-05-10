@@ -60,7 +60,7 @@ export class DashboardComponent implements OnInit {
 
     // Fetch recent exams
     this.http.get<RecentExam[]>(`${environment.apiUrl}/api/dashboard/recent-exams`).subscribe(data => {
-      this.recentExams = data;
+      this.recentExams = data.slice(0, 5);
       this.isLoadingExams = false;
       this.cdr.detectChanges();
     });
