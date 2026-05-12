@@ -205,6 +205,66 @@
   border: 1px solid var(--color-border);
 }
 
+/* Multi-Page Thumbnail Row */
+.pages-thumbnail-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+}
+
+.pages-thumbnail-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.pages-thumbnail-row::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.page-thumbnail {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 160px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid var(--color-border-light);
+  background: #f5f5f5;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.page-thumbnail:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.page-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.page-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 0 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 /* Detected Data Card */
 .detected-card {
   background: var(--color-bg-card);

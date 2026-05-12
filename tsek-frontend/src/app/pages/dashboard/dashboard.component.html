@@ -41,7 +41,7 @@
   </div>
 
   <!-- TSEK NOW Mobile Button (Hidden on Desktop) -->
-  <input type="file" accept="image/*" capture="environment" #fileInputMobile class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" multiple #fileInputMobile class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
   <button class="tsek-now-btn mobile-only" (click)="fileInputMobile.click()">
     <span class="material-icons-outlined">camera_alt</span>
     TSEK NOW
@@ -182,7 +182,7 @@
       </div>
 
       <!-- TSEK NOW Desktop Button -->
-      <input type="file" accept="image/*" capture="environment" #fileInputDesktop class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+      <input type="file" accept="image/*" multiple #fileInputDesktop class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
       <button class="tsek-now-btn sidebar-btn" (click)="fileInputDesktop.click()">
         <span class="material-icons-outlined">camera_alt</span>
         TSEK NOW

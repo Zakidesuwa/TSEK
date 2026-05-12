@@ -83,10 +83,9 @@ export class DashboardComponent implements OnInit {
   }
 
   onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      // Store the file in a service or state, then navigate to scan-results
-      this.scanService.setPendingFile(file);
+    const files = Array.from(event.target.files) as File[];
+    if (files.length > 0) {
+      this.scanService.setPendingFiles(files);
       this.router.navigate(['/scan-results']);
     }
   }

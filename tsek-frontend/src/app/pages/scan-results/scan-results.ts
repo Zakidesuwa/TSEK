@@ -44,7 +44,8 @@ export class ScanResults implements OnInit {
   isGrading = false;
   error: string | null = null;
   rawText: any = null;
-  imagePreviewUrl: string | null = null;
+  imagePreviewUrls: string[] = [];
+  pageCount = 1;
 
   exams: any[] = [];
   selectedExamId: number | null = null;
@@ -60,20 +61,23 @@ export class ScanResults implements OnInit {
 
   ngOnInit() {
     this.fetchExams();
-    const file = this.scanService.getPendingFile();
+    const files = this.scanService.getPendingFiles();
 
-    if (!file) {
+    if (files.length === 0) {
       this.router.navigate(['/dashboard']);
       return;
     }
 
-    this.imagePreviewUrl = URL.createObjectURL(file);
+    // Create preview URLs for all pages
+    this.imagePreviewUrls = files.map(f => URL.createObjectURL(f));
+    this.pageCount = files.length;
 
-    this.scanService.scanImage(file).subscribe({
+    // Send all images in one request
+    this.scanService.scanImages(files).subscribe({
       next: (response) => {
         this.isLoading = false;
         this.rawText = response.rawText || { error: 'No data returned' };
-        this.scanService.clearPendingFile();
+        this.scanService.clearPendingFiles();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -165,9 +169,9 @@ export class ScanResults implements OnInit {
   }
 
   onNewFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.scanService.setPendingFile(file);
+    const files = Array.from(event.target.files) as File[];
+    if (files.length > 0) {
+      this.scanService.setPendingFiles(files);
       // Reset state and re-run the pipeline
       this.gradeResult = null;
       this.error = null;
@@ -176,18 +180,20 @@ export class ScanResults implements OnInit {
       this.overrides.clear();
       this.overrideSaved = false;
 
-      // Update image preview
-      if (this.imagePreviewUrl) {
-        URL.revokeObjectURL(this.imagePreviewUrl);
+      // Revoke old preview URLs
+      for (const url of this.imagePreviewUrls) {
+        URL.revokeObjectURL(url);
       }
-      this.imagePreviewUrl = URL.createObjectURL(file);
+      // Create new preview URLs
+      this.imagePreviewUrls = files.map(f => URL.createObjectURL(f));
+      this.pageCount = files.length;
 
-      // Start scanning the new file
-      this.scanService.scanImage(file).subscribe({
+      // Start scanning all files in one request
+      this.scanService.scanImages(files).subscribe({
         next: (response) => {
           this.isLoading = false;
           this.rawText = response.rawText || { error: 'No data returned' };
-          this.scanService.clearPendingFile();
+          this.scanService.clearPendingFiles();
           this.cdr.detectChanges();
         },
         error: (err) => {

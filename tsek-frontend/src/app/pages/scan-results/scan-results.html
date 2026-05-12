@@ -1,6 +1,6 @@
 <div class="scan-page">
   <!-- Hidden file input for Scan Another -->
-  <input type="file" accept="image/*" capture="environment" #scanInput class="hidden-input" (change)="onNewFileSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" multiple #scanInput class="hidden-input" (change)="onNewFileSelected($event)" style="display: none;">
 
   <div class="scan-header">
     <button class="back-btn" (click)="router.navigate(['/dashboard'])">
@@ -16,8 +16,8 @@
       <div class="pulse-ring"></div>
       <span class="material-icons-outlined loading-icon">document_scanner</span>
     </div>
-    <h3>Analyzing Document...</h3>
-    <p>Our system is reading bubbles and handwriting from your exam sheet</p>
+    <h3>Analyzing {{ pageCount > 1 ? pageCount + ' Pages' : 'Document' }}...</h3>
+    <p>Our system is reading bubbles and handwriting from your exam {{ pageCount > 1 ? 'sheets' : 'sheet' }}</p>
     <div class="loading-steps">
       <div class="step active">
         <span class="material-icons-outlined">image</span>
@@ -55,13 +55,29 @@
   <div class="results-layout">
     <!-- Left: Image + Detected Data -->
     <div class="results-left">
-      @if (imagePreviewUrl) {
+      @if (imagePreviewUrls.length === 1) {
       <div class="preview-card">
         <div class="preview-header">
           <span class="material-icons-outlined">photo_camera</span>
           Captured Image
         </div>
-        <img [src]="imagePreviewUrl" alt="Scanned document" class="document-preview" />
+        <img [src]="imagePreviewUrls[0]" alt="Scanned document" class="document-preview" />
+      </div>
+      }
+      @if (imagePreviewUrls.length > 1) {
+      <div class="preview-card">
+        <div class="preview-header">
+          <span class="material-icons-outlined">photo_library</span>
+          Captured Pages ({{ imagePreviewUrls.length }})
+        </div>
+        <div class="pages-thumbnail-row">
+          @for (url of imagePreviewUrls; track url; let i = $index) {
+          <div class="page-thumbnail">
+            <img [src]="url" [alt]="'Page ' + (i + 1)" />
+            <span class="page-badge">{{ i + 1 }}</span>
+          </div>
+          }
+        </div>
       </div>
       }
 

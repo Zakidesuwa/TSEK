@@ -13,7 +13,7 @@ const upload = multer({
 });
 
 // All scan routes require authentication
-router.post('/', authMiddleware, upload.single('image'), scanController.scanImage);
+router.post('/', authMiddleware, upload.array('images', 5), scanController.scanImage);
 router.post('/grade', authMiddleware, scanController.gradeExam);
 router.post('/grade/override', authMiddleware, scanController.saveOverride);
 

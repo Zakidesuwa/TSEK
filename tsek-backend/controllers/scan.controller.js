@@ -2,8 +2,10 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 exports.scanImage = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image provided for scanning' });
+    // Support both single file (legacy) and multiple files
+    const files = req.files || (req.file ? [req.file] : []);
+    if (files.length === 0) {
+      return res.status(400).json({ message: 'No image(s) provided for scanning' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -14,16 +16,47 @@ exports.scanImage = async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-    // Prepare the image for Gemini
-    const imagePart = {
+    // Build image parts for all pages
+    const imageParts = files.map((file, index) => ({
       inlineData: {
-        data: req.file.buffer.toString("base64"),
-        mimeType: req.file.mimetype
+        data: file.buffer.toString("base64"),
+        mimeType: file.mimetype
       }
-    };
+    }));
 
-    // Strict prompt to force JSON output representing the OMR sheet and handwriting
-    const prompt = `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
+    // Adapt prompt based on single vs multi-page
+    const isMultiPage = files.length > 1;
+
+    const prompt = isMultiPage
+      ? `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
+You are given ${files.length} images. These are ${files.length} PAGES of the SAME student's exam answer sheet. The items continue across pages with sequential numbering (e.g., page 1 has items 1-50, page 2 has items 51-100, etc.).
+
+1. Identify the Student ID number encoded in the grid bubbles. The Student ID grid is on PAGE 1 ONLY.
+   - There are exactly 9 columns in the Student ID grid.
+   - The grid has exactly 10 rows of bubbles. The top-most row is ALWAYS 0, the second row down is 1, the third row down is 2, and so on until the bottom row which is 9.
+   - Look at each column individually from left to right.
+   - For each column, count how many rows down the shaded bubble is to determine the correct number (0-9). Pay extreme attention to horizontal alignment.
+   - Combine these 9 numbers to form the final Student ID.
+
+2. If there is a name field (handwritten or printed) on page 1, identify the student's full name.
+3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+5. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
+
+Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
+{
+  "studentIdReasoning": "Briefly list the shaded number found in each of the 9 columns from left to right (e.g., 'Col 1: 2, Col 2: 0, Col 3: 2...') to ensure accuracy.",
+  "studentId": "123456789",
+  "studentName": "JOHN DOE",
+  "answers": {
+    "1": "A",
+    "2": "C",
+    "51": "MITOCHONDRIA",
+    "52": "PHOTOSYNTHESIS"
+  }
+}
+Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object. If an item is unreadable or completely blank, leave the answer as null.`
+      : `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
 Look carefully at the provided student answer sheet image. 
 
 1. Identify the Student ID number encoded in the grid bubbles. 
@@ -54,7 +87,7 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 
     let responseText;
     try {
-      const result = await model.generateContent([prompt, imagePart]);
+      const result = await model.generateContent([prompt, ...imageParts]);
       responseText = result.response.text();
     } catch (apiError) {
       // If we hit a rate limit (429) or 503, fallback to the second API key
@@ -69,7 +102,7 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 
         const fallbackGenAI = new GoogleGenerativeAI(fallbackKey);
         const fallbackModel = fallbackGenAI.getGenerativeModel({ model: "gemini-flash-latest" });
-        const fallbackResult = await fallbackModel.generateContent([prompt, imagePart]);
+        const fallbackResult = await fallbackModel.generateContent([prompt, ...imageParts]);
         responseText = fallbackResult.response.text();
       } else {
         throw apiError; // Throw other errors normally
@@ -92,7 +125,8 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 
     res.status(200).json({
       message: 'Scanning complete',
-      rawText: parsedJson // We return the parsed JSON object here
+      rawText: parsedJson,
+      pageCount: files.length
     });
 
   } catch (error) {

@@ -10,25 +10,46 @@ import { environment } from '../../../environments/environment';
 export class ScanService {
   private http = inject(HttpClient);
   
-  // Store the file temporarily when selected from the dashboard
-  private pendingScanFile: File | null = null;
+  // Store files temporarily when selected from the dashboard
+  private pendingScanFiles: File[] = [];
 
-  setPendingFile(file: File) {
-    this.pendingScanFile = file;
+  setPendingFiles(files: File[]) {
+    this.pendingScanFiles = files;
   }
 
+  // Convenience wrapper for single file
+  setPendingFile(file: File) {
+    this.pendingScanFiles = [file];
+  }
+
+  getPendingFiles(): File[] {
+    return this.pendingScanFiles;
+  }
+
+  // Legacy single-file getter (returns first file or null)
   getPendingFile(): File | null {
-    return this.pendingScanFile;
+    return this.pendingScanFiles.length > 0 ? this.pendingScanFiles[0] : null;
+  }
+
+  clearPendingFiles() {
+    this.pendingScanFiles = [];
   }
 
   clearPendingFile() {
-    this.pendingScanFile = null;
+    this.clearPendingFiles();
   }
 
-  scanImage(file: File): Observable<any> {
+  // Scan multiple images in one API call
+  scanImages(files: File[]): Observable<any> {
     const formData = new FormData();
-    formData.append('image', file);
-
+    for (const file of files) {
+      formData.append('images', file);
+    }
     return this.http.post(`${environment.apiUrl}/api/scan`, formData);
+  }
+
+  // Legacy single-image scan (still uses the new multi endpoint)
+  scanImage(file: File): Observable<any> {
+    return this.scanImages([file]);
   }
 }
