@@ -40,7 +40,12 @@ export class ScanResults implements OnInit {
   cdr = inject(ChangeDetectorRef);
   http = inject(HttpClient);
 
-  isLoading = true;
+  // Staging state — files queued but not yet scanned
+  isStaging = true;
+  stagedFiles: File[] = [];
+  stagedPreviewUrls: string[] = [];
+
+  isLoading = false;
   isGrading = false;
   error: string | null = null;
   rawText: any = null;
@@ -68,16 +73,57 @@ export class ScanResults implements OnInit {
       return;
     }
 
-    // Create preview URLs for all pages
-    this.imagePreviewUrls = files.map(f => URL.createObjectURL(f));
-    this.pageCount = files.length;
+    // Stage the files instead of immediately scanning
+    this.addStagedFiles(files);
+    this.scanService.clearPendingFiles();
+  }
+
+  // --- Staging methods ---
+
+  addStagedFiles(files: File[]) {
+    for (const file of files) {
+      this.stagedFiles.push(file);
+      this.stagedPreviewUrls.push(URL.createObjectURL(file));
+    }
+    this.cdr.detectChanges();
+  }
+
+  removeStagedFile(index: number) {
+    URL.revokeObjectURL(this.stagedPreviewUrls[index]);
+    this.stagedFiles.splice(index, 1);
+    this.stagedPreviewUrls.splice(index, 1);
+
+    // If all files removed, go back to dashboard
+    if (this.stagedFiles.length === 0) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+    this.cdr.detectChanges();
+  }
+
+  onAddMoreFiles(event: any) {
+    const files = Array.from(event.target.files) as File[];
+    if (files.length > 0) {
+      this.addStagedFiles(files);
+    }
+    event.target.value = '';
+  }
+
+  startScanning() {
+    if (this.stagedFiles.length === 0) return;
+
+    this.isStaging = false;
+    this.isLoading = true;
+
+    // Copy staged data to the active scan state
+    this.imagePreviewUrls = [...this.stagedPreviewUrls];
+    this.pageCount = this.stagedFiles.length;
 
     // Send all images in one request
-    this.scanService.scanImages(files).subscribe({
+    this.scanService.scanImages(this.stagedFiles).subscribe({
       next: (response) => {
         this.isLoading = false;
         this.rawText = response.rawText || { error: 'No data returned' };
-        this.scanService.clearPendingFiles();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -171,12 +217,11 @@ export class ScanResults implements OnInit {
   onNewFileSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
     if (files.length > 0) {
-      this.scanService.setPendingFiles(files);
-      // Reset state and re-run the pipeline
+      // Reset everything and go back to staging
       this.gradeResult = null;
       this.error = null;
       this.rawText = null;
-      this.isLoading = true;
+      this.isLoading = false;
       this.overrides.clear();
       this.overrideSaved = false;
 
@@ -184,27 +229,17 @@ export class ScanResults implements OnInit {
       for (const url of this.imagePreviewUrls) {
         URL.revokeObjectURL(url);
       }
-      // Create new preview URLs
-      this.imagePreviewUrls = files.map(f => URL.createObjectURL(f));
-      this.pageCount = files.length;
+      for (const url of this.stagedPreviewUrls) {
+        URL.revokeObjectURL(url);
+      }
 
-      // Start scanning all files in one request
-      this.scanService.scanImages(files).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          this.rawText = response.rawText || { error: 'No data returned' };
-          this.scanService.clearPendingFiles();
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          this.isLoading = false;
-          const backendMessage = err.error?.error || err.error?.message || 'Failed to process image.';
-          this.error = `Backend Error: ${backendMessage}`;
-          this.cdr.detectChanges();
-        }
-      });
+      // Reset staged state with new files
+      this.stagedFiles = [];
+      this.stagedPreviewUrls = [];
+      this.imagePreviewUrls = [];
+      this.isStaging = true;
+      this.addStagedFiles(files);
 
-      // Reset the input so the same file can be re-selected
       event.target.value = '';
     }
   }

@@ -147,6 +147,189 @@
   font-size: 48px;
   color: #dc3545;
 }
+/* ===== Staging Layout ===== */
+.staging-layout {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.staging-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.staging-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.staging-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staging-icon-wrapper .material-icons-outlined {
+  font-size: 24px;
+  color: var(--color-primary);
+}
+
+.staging-card-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 2px;
+}
+
+.staging-card-header p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Staged Files Grid */
+.staged-files-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.staged-file-card {
+  position: relative;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.staged-file-card:hover {
+  border-color: var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.staged-preview-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  background: #f5f5f5;
+}
+
+.staged-file-info {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.staged-page-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.staged-file-name {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staged-remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.staged-file-card:hover .staged-remove-btn {
+  opacity: 1;
+}
+
+.staged-remove-btn:hover {
+  background: rgba(220, 53, 69, 0.85);
+}
+
+.staged-remove-btn .material-icons-outlined {
+  font-size: 16px;
+}
+
+/* Add More Card */
+.staged-file-card.add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 190px;
+  border: 2px dashed var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  gap: 8px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.staged-file-card.add-card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.add-icon {
+  font-size: 32px;
+  color: var(--color-text-muted);
+  transition: color 0.2s ease;
+}
+
+.staged-file-card.add-card:hover .add-icon {
+  color: var(--color-primary);
+}
+
+.add-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  transition: color 0.2s ease;
+}
+
+.staged-file-card.add-card:hover .add-label {
+  color: var(--color-primary);
+}
+
+/* Staging Actions */
+.staging-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.staging-actions .btn-grade {
+  width: auto;
+  padding: 12px 24px;
+}
 
 /* ===== Results Layout (Pre-Grading) ===== */
 .results-layout {

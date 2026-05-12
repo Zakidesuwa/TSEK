@@ -1,13 +1,63 @@
 <div class="scan-page">
-  <!-- Hidden file input for Scan Another -->
+  <!-- Hidden file inputs -->
   <input type="file" accept="image/*" multiple #scanInput class="hidden-input" (change)="onNewFileSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" multiple #addMoreInput class="hidden-input" (change)="onAddMoreFiles($event)" style="display: none;">
 
   <div class="scan-header">
     <button class="back-btn" (click)="router.navigate(['/dashboard'])">
       <span class="material-icons-outlined">arrow_back</span>
     </button>
-    <h1>Scan Results</h1>
+    <h1>{{ isStaging ? 'Prepare Scan' : 'Scan Results' }}</h1>
   </div>
+
+  <!-- ===== STAGING STATE ===== -->
+  @if (isStaging) {
+  <div class="staging-layout">
+    <div class="staging-card">
+      <div class="staging-card-header">
+        <div class="staging-icon-wrapper">
+          <span class="material-icons-outlined">photo_library</span>
+        </div>
+        <div>
+          <h3>Exam Pages</h3>
+          <p>Add all pages of the student's answer sheet before scanning</p>
+        </div>
+      </div>
+
+      <div class="staged-files-grid">
+        @for (url of stagedPreviewUrls; track url; let i = $index) {
+        <div class="staged-file-card">
+          <img [src]="url" [alt]="'Page ' + (i + 1)" class="staged-preview-img" />
+          <div class="staged-file-info">
+            <span class="staged-page-label">Page {{ i + 1 }}</span>
+            <span class="staged-file-name">{{ stagedFiles[i].name }}</span>
+          </div>
+          <button class="staged-remove-btn" (click)="removeStagedFile(i)" title="Remove this page">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+        }
+
+        <!-- Add More Card -->
+        <button class="staged-file-card add-card" (click)="addMoreInput.click()">
+          <span class="material-icons-outlined add-icon">add_photo_alternate</span>
+          <span class="add-label">Add Page</span>
+        </button>
+      </div>
+
+      <div class="staging-actions">
+        <button class="btn-outline" (click)="router.navigate(['/dashboard'])">
+          <span class="material-icons-outlined btn-icon">arrow_back</span>
+          Cancel
+        </button>
+        <button class="btn-grade" (click)="startScanning()" [disabled]="stagedFiles.length === 0">
+          <span class="material-icons-outlined">document_scanner</span>
+          Start Scanning ({{ stagedFiles.length }} {{ stagedFiles.length === 1 ? 'page' : 'pages' }})
+        </button>
+      </div>
+    </div>
+  </div>
+  }
 
   <!-- Processing State -->
   @if (isLoading) {
@@ -51,7 +101,7 @@
   }
 
   <!-- Results State (Pre-Grading) -->
-  @if (!isLoading && !error && !gradeResult) {
+  @if (!isStaging && !isLoading && !error && !gradeResult) {
   <div class="results-layout">
     <!-- Left: Image + Detected Data -->
     <div class="results-left">
@@ -153,7 +203,7 @@
         </button>
 
         <button class="btn-discard" (click)="router.navigate(['/dashboard'])" [disabled]="isGrading">
-          Discard & Go Back
+          Discard &amp; Go Back
         </button>
       </div>
 
@@ -224,7 +274,7 @@
     <div class="student-banner success">
       <span class="material-icons-outlined">person_check</span>
       <div>
-        <strong>Student Identified & Enrolled</strong>
+        <strong>Student Identified &amp; Enrolled</strong>
         <p>Student ID {{ rawText.studentId }} is enrolled in this class. Score has been saved automatically.</p>
       </div>
     </div>
