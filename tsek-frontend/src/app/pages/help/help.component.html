@@ -68,6 +68,52 @@
     </div>
   </div>
 
+  <!-- Terms of Service -->
+  <div class="help-card">
+    <div class="card-header">
+      <span class="material-icons-outlined card-icon">description</span>
+      <h2>Terms of Service</h2>
+    </div>
+    <div class="policy-list">
+      @for (term of termsOfService; track term.title) {
+        <div class="policy-item" [class.open]="term.open">
+          <button class="policy-title" (click)="togglePolicy(term)">
+            <span>{{ term.title }}</span>
+            <span class="material-icons-outlined policy-chevron">expand_more</span>
+          </button>
+          @if (term.open) {
+            <div class="policy-content">
+              <p>{{ term.content }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Privacy Policy -->
+  <div class="help-card">
+    <div class="card-header">
+      <span class="material-icons-outlined card-icon">privacy_tip</span>
+      <h2>Privacy Policy</h2>
+    </div>
+    <div class="policy-list">
+      @for (policy of privacyPolicy; track policy.title) {
+        <div class="policy-item" [class.open]="policy.open">
+          <button class="policy-title" (click)="togglePolicy(policy)">
+            <span>{{ policy.title }}</span>
+            <span class="material-icons-outlined policy-chevron">expand_more</span>
+          </button>
+          @if (policy.open) {
+            <div class="policy-content">
+              <p>{{ policy.content }}</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
   <!-- Contact -->
   <div class="help-card">
     <div class="card-header">
