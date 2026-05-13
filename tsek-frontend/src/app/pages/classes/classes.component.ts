@@ -88,16 +88,6 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   private readonly studentsPerPage = 8;
   allStudents: StudentRow[] = [];
 
-  // ===== Statistics Modal =====
-  showStatsModal = false;
-  selectedExamStats: ExamStats | null = null;
-  selectedExamName = '';
-
-  // ===== Delete Exam Confirmation Modal =====
-  showDeleteModal = false;
-  examToDelete: number | null = null;
-  examNameToDelete: string = '';
-
   // ===== Delete Class Confirmation Modal =====
   showDeleteClassModal = false;
   classToDelete: any = null;
@@ -107,13 +97,17 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   showRemoveStudentModal = false;
   studentToRemove: { name: string, number: string } | null = null;
 
+  // ===== Add Student Form =====
+  showAddStudentForm = false;
+  newStudent = { full_name: '', student_id_number: '' };
+  isAddingStudent = false;
+  addStudentError = '';
+
   isLoadingClasses = true;
-  isLoadingExams = true;
   isDeletingExam = false;
   isRemovingStudent = false;
 
   classes: any[] = [];
-  createdExams: ExamCard[] = [];
 
   ngOnInit() {
     this.isLoadingClasses = true;
@@ -127,83 +121,6 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         this.isLoadingClasses = false;
       }
     });
-
-    this.fetchExams();
-  }
-
-  fetchExams() {
-    this.isLoadingExams = true;
-    this.http.get<ExamCard[]>(`${environment.apiUrl}/api/exams`).subscribe({
-      next: (data) => {
-        this.createdExams = data;
-        this.isLoadingExams = false;
-        
-        // Check if we need to open stats automatically from history page
-        const openStatsId = this.route.snapshot.queryParams['openStats'];
-        if (openStatsId) {
-          const exam = this.createdExams.find(e => e.id === Number(openStatsId));
-          if (exam) {
-            this.openStatsModal(exam);
-          }
-        }
-      },
-      error: () => {
-        this.isLoadingExams = false;
-      }
-    });
-  }
-
-  deleteExam(id: number, name: string = 'this exam') {
-    this.examToDelete = id;
-    this.examNameToDelete = name;
-    this.showDeleteModal = true;
-  }
-
-  confirmDelete() {
-    if (this.examToDelete) {
-      this.isDeletingExam = true;
-      this.http.delete(`${environment.apiUrl}/api/exams/${this.examToDelete}`).subscribe({
-        next: () => {
-          this.fetchExams();
-          this.isDeletingExam = false;
-          this.closeDeleteModal();
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          this.isDeletingExam = false;
-          console.error('Failed to delete exam', err);
-          alert('Failed to delete exam. Please try again.');
-          this.closeDeleteModal();
-          this.cdr.detectChanges();
-        }
-      });
-    }
-  }
-
-  closeDeleteModal() {
-    this.showDeleteModal = false;
-    this.examToDelete = null;
-    this.examNameToDelete = '';
-  }
-
-  // ===== Stats Modal Methods =====
-  openStatsModal(exam: ExamCard): void {
-    this.selectedExamName = exam.name;
-    this.http.get<ExamStats>(`${environment.apiUrl}/api/exams/${exam.id}/statistics`).subscribe({
-      next: (data) => {
-        this.selectedExamStats = data;
-        this.showStatsModal = true;
-      },
-      error: (err) => {
-        console.error('Failed to load stats:', err);
-        alert('Failed to load statistics for this exam.');
-      }
-    });
-  }
-
-  closeStatsModal(): void {
-    this.showStatsModal = false;
-    this.selectedExamStats = null;
   }
 
   ngAfterViewInit(): void {
