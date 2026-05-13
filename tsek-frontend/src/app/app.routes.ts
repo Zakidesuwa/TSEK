@@ -48,6 +48,11 @@ export const routes: Routes = [
           import('./pages/classes/classes.component').then(m => m.ClassesComponent)
       },
       {
+        path: 'exams',
+        loadComponent: () =>
+          import('./pages/exams/exams').then(m => m.Exams)
+      },
+      {
         path: 'history',
         loadComponent: () =>
           import('./pages/history/history.component').then(m => m.HistoryComponent)
