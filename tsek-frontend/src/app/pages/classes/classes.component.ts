@@ -2,38 +2,22 @@ import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetec
 import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 interface ClassCard {
+  id: number;
   subject: string;
   section: string;
   students: number;
   nextQuiz: string;
 }
 
-interface ExamCard {
-  id: number;
-  subject: string;
-  date: string;
-  name: string;
-  types: string;
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
 interface StudentRow {
   name: string;
   number: string;
   scores: string[];
-}
-
-interface ExamStats {
-  totalStudents: number;
-  averageScore: number;
-  totalItems: number;
-  distribution: { well: number; good: number; needsImprovement: number };
-  mostMissed: { item: string; count: number }[];
 }
 
 @Component({
@@ -65,7 +49,6 @@ interface ExamStats {
 })
 export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   http = inject(HttpClient);
-  route = inject(ActivatedRoute);
   @ViewChild('carouselTrack') carouselTrack!: ElementRef<HTMLDivElement>;
 
   canScrollLeft = false;
@@ -97,14 +80,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   showRemoveStudentModal = false;
   studentToRemove: { name: string, number: string } | null = null;
 
-  // ===== Add Student Form =====
-  showAddStudentForm = false;
-  newStudent = { full_name: '', student_id_number: '' };
-  isAddingStudent = false;
-  addStudentError = '';
-
   isLoadingClasses = true;
-  isDeletingExam = false;
   isRemovingStudent = false;
 
   classes: any[] = [];
@@ -180,6 +156,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         },
         error: (err) => {
           console.error('Failed to add class:', err);
+          alert('Failed to add class. Please try again.');
         }
       });
     }
@@ -189,13 +166,19 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   openClassDetail(cls: any): void {
     this.selectedClass = cls;
     
-    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${cls.id}/students`).subscribe(data => {
-      this.allStudents = data.students;
-      this.selectedClassExams = data.exams;
-      this.currentPage = 1;
-      this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
-      this.updatePaginatedStudents();
-      this.showClassDetailModal = true;
+    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${cls.id}/students`).subscribe({
+      next: (data) => {
+        this.allStudents = data.students;
+        this.selectedClassExams = data.exams;
+        this.currentPage = 1;
+        this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
+        this.updatePaginatedStudents();
+        this.showClassDetailModal = true;
+      },
+      error: (err) => {
+        console.error('Failed to load class details:', err);
+        alert('Failed to load class details. Please try again.');
+      }
     });
   }
 
@@ -237,7 +220,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     this.isAddingStudent = true;
     this.addStudentError = null;
 
-    this.http.post<any>(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students`, {
+    this.http.post<any>(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students`, {
       full_name: this.newStudent.full_name,
       student_id_number: this.newStudent.student_id_number
     }).subscribe({
@@ -266,7 +249,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     if (!this.selectedClass || !this.studentToRemove) return;
 
     this.isRemovingStudent = true;
-    this.http.delete(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students/${this.studentToRemove.number}`).subscribe({
+    this.http.delete(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students/${this.studentToRemove.number}`).subscribe({
       next: () => {
         this.refreshClassStudents();
         this.isRemovingStudent = false;
@@ -290,14 +273,16 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
 
   private refreshClassStudents(): void {
     if (!this.selectedClass) return;
-    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students`).subscribe(data => {
+    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students`).subscribe(data => {
       this.allStudents = data.students;
       this.selectedClassExams = data.exams;
       this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
       if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
       this.updatePaginatedStudents();
       // Update the student count on the class card
-      (this.selectedClass as any).students = this.allStudents.length;
+      if (this.selectedClass) {
+        this.selectedClass.students = this.allStudents.length;
+      }
       this.cdr.detectChanges();
     });
   }

@@ -31,7 +31,7 @@
             </div>
           }
         } @else {
-          @for (cls of classes; track cls.section) {
+          @for (cls of classes; track cls.id) {
           <div class="class-card" (click)="openClassDetail(cls)">
             <div class="class-card-header">
               <div class="class-card-info">
@@ -208,114 +208,6 @@
       <span class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</span>
       <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
         <span class="material-icons-outlined">chevron_right</span>
-      </button>
-    </div>
-  </div>
-</div>
-}
-
-<!-- ===== STATS MODAL ===== -->
-@if (showStatsModal && selectedExamStats) {
-<div class="modal-overlay" @modalFadeAnim (click)="closeStatsModal()">
-  <div class="modal-container stats-modal" @modalScaleAnim (click)="$event.stopPropagation()">
-    <div class="detail-header">
-      <div>
-        <h2 class="detail-title">{{ selectedExamName }} - Statistics</h2>
-        <p class="detail-subtitle">Performance overview for {{ selectedExamStats.totalStudents }} scanned paper(s)</p>
-      </div>
-      <button class="detail-close-btn" (click)="closeStatsModal()">
-        <span class="material-icons-outlined">close</span>
-      </button>
-    </div>
-
-    <div class="stats-content">
-      <div class="stats-summary">
-        <div class="stat-box">
-          <span class="stat-label">AVERAGE SCORE</span>
-          <span class="stat-value">{{ selectedExamStats.averageScore }}<small>/{{ selectedExamStats.totalItems
-              }}</small></span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-label">TOTAL SCANNED</span>
-          <span class="stat-value">{{ selectedExamStats.totalStudents }}</span>
-        </div>
-      </div>
-
-      <div class="stats-distribution">
-        <h3 class="stats-section-title">Grade Distribution</h3>
-        <div class="dist-bar-container">
-          <div class="dist-bar-row">
-            <span class="dist-label">Well (>80%)</span>
-            <div class="dist-bar-wrapper">
-              <div class="dist-bar well-bar"
-                [style.width.%]="selectedExamStats.totalStudents ? (selectedExamStats.distribution.well / selectedExamStats.totalStudents) * 100 : 0">
-              </div>
-            </div>
-            <span class="dist-count">{{ selectedExamStats.distribution.well }}</span>
-          </div>
-          <div class="dist-bar-row">
-            <span class="dist-label">Good (60-80%)</span>
-            <div class="dist-bar-wrapper">
-              <div class="dist-bar good-bar"
-                [style.width.%]="selectedExamStats.totalStudents ? (selectedExamStats.distribution.good / selectedExamStats.totalStudents) * 100 : 0">
-              </div>
-            </div>
-            <span class="dist-count">{{ selectedExamStats.distribution.good }}</span>
-          </div>
-          <div class="dist-bar-row">
-            <span class="dist-label">Improvement (<60%)</span>
-                <div class="dist-bar-wrapper">
-                  <div class="dist-bar improve-bar"
-                    [style.width.%]="selectedExamStats.totalStudents ? (selectedExamStats.distribution.needsImprovement / selectedExamStats.totalStudents) * 100 : 0">
-                  </div>
-                </div>
-                <span class="dist-count">{{ selectedExamStats.distribution.needsImprovement }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="stats-difficult">
-        <h3 class="stats-section-title">Most Missed Questions</h3>
-        @if (selectedExamStats.mostMissed.length > 0) {
-        <ul class="missed-list">
-          @for (item of selectedExamStats.mostMissed; track item.item) {
-          <li class="missed-item">
-            <span class="missed-q">Question {{ item.item }}</span>
-            <span class="missed-c">{{ item.count }} student(s) got this wrong</span>
-          </li>
-          }
-        </ul>
-        } @else {
-        <p class="stats-empty">No mistakes recorded yet.</p>
-        }
-      </div>
-    </div>
-  </div>
-</div>
-}
-
-<!-- ===== DELETE CONFIRMATION MODAL ===== -->
-@if (showDeleteModal) {
-<div class="modal-overlay" @modalFadeAnim (click)="closeDeleteModal()">
-  <div class="modal-container delete-confirm-modal" @modalScaleAnim (click)="$event.stopPropagation()">
-    <div class="delete-modal-icon">
-      <span class="material-icons-outlined">warning_amber</span>
-    </div>
-    <h2 class="modal-title">Delete Exam?</h2>
-    <p class="delete-modal-text">
-      Are you sure you want to delete <strong>{{ examNameToDelete }}</strong>? 
-      This action cannot be undone and all associated results will be permanently removed.
-    </p>
-
-    <div class="modal-actions">
-      <button class="modal-btn-cancel" (click)="closeDeleteModal()" [disabled]="isDeletingExam">CANCEL</button>
-      <button class="modal-btn-delete" (click)="confirmDelete()" [disabled]="isDeletingExam">
-        @if (isDeletingExam) {
-          <div class="btn-spinner"></div>
-          DELETING...
-        } @else {
-          DELETE EXAM
-        }
       </button>
     </div>
   </div>
