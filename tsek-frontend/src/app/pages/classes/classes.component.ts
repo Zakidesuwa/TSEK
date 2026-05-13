@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 interface ClassCard {
+  id: number;
   subject: string;
   section: string;
   students: number;
@@ -160,7 +161,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   }
 
   confirmDelete() {
-    if (this.examToDelete) {
+    if (this.examToDelete !== null) {
       this.isDeletingExam = true;
       this.http.delete(`${environment.apiUrl}/api/exams/${this.examToDelete}`).subscribe({
         next: () => {
@@ -263,6 +264,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         },
         error: (err) => {
           console.error('Failed to add class:', err);
+          alert('Failed to add class. Please try again.');
         }
       });
     }
@@ -272,13 +274,19 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   openClassDetail(cls: any): void {
     this.selectedClass = cls;
     
-    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${cls.id}/students`).subscribe(data => {
-      this.allStudents = data.students;
-      this.selectedClassExams = data.exams;
-      this.currentPage = 1;
-      this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
-      this.updatePaginatedStudents();
-      this.showClassDetailModal = true;
+    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${cls.id}/students`).subscribe({
+      next: (data) => {
+        this.allStudents = data.students;
+        this.selectedClassExams = data.exams;
+        this.currentPage = 1;
+        this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
+        this.updatePaginatedStudents();
+        this.showClassDetailModal = true;
+      },
+      error: (err) => {
+        console.error('Failed to load class details:', err);
+        alert('Failed to load class details. Please try again.');
+      }
     });
   }
 
@@ -320,7 +328,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     this.isAddingStudent = true;
     this.addStudentError = null;
 
-    this.http.post<any>(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students`, {
+    this.http.post<any>(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students`, {
       full_name: this.newStudent.full_name,
       student_id_number: this.newStudent.student_id_number
     }).subscribe({
@@ -349,7 +357,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     if (!this.selectedClass || !this.studentToRemove) return;
 
     this.isRemovingStudent = true;
-    this.http.delete(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students/${this.studentToRemove.number}`).subscribe({
+    this.http.delete(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students/${this.studentToRemove.number}`).subscribe({
       next: () => {
         this.refreshClassStudents();
         this.isRemovingStudent = false;
@@ -373,14 +381,16 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
 
   private refreshClassStudents(): void {
     if (!this.selectedClass) return;
-    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${(this.selectedClass as any).id}/students`).subscribe(data => {
+    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students`).subscribe(data => {
       this.allStudents = data.students;
       this.selectedClassExams = data.exams;
       this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
       if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
       this.updatePaginatedStudents();
       // Update the student count on the class card
-      (this.selectedClass as any).students = this.allStudents.length;
+      if (this.selectedClass) {
+        this.selectedClass.students = this.allStudents.length;
+      }
       this.cdr.detectChanges();
     });
   }

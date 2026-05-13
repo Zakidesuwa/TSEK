@@ -31,7 +31,7 @@
             </div>
           }
         } @else {
-          @for (cls of classes; track cls.section) {
+          @for (cls of classes; track cls.id) {
           <div class="class-card" (click)="openClassDetail(cls)">
             <div class="class-card-header">
               <div class="class-card-info">
