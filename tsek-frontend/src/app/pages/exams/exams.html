@@ -1,0 +1,264 @@
+<div class="exams-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Exams</h1>
+      <p class="page-subtitle">Manage and review all your created exams</p>
+    </div>
+    <a routerLink="/generate-exam" class="btn-create-exam">
+      <span class="material-icons-outlined">add</span>
+      CREATE EXAM
+    </a>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="exams-toolbar">
+    <div class="search-box">
+      <span class="material-icons-outlined search-icon">search</span>
+      <input
+        type="text"
+        placeholder="Search exams by name, subject, or type..."
+        class="search-input"
+        [(ngModel)]="searchTerm"
+      />
+      @if (searchTerm) {
+        <button class="clear-btn" (click)="searchTerm = ''">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      }
+    </div>
+
+    <div class="sort-box">
+      <span class="material-icons-outlined">sort</span>
+      <select class="sort-select" [(ngModel)]="sortBy">
+        <option value="date">Newest First</option>
+        <option value="subject">Subject</option>
+        <option value="status">Status</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Stats Summary -->
+  <div class="exams-summary">
+    <div class="summary-card">
+      <div class="summary-icon">
+        <span class="material-icons-outlined">assignment</span>
+      </div>
+      <div class="summary-content">
+        <p class="summary-label">Total Exams</p>
+        <h3 class="summary-value">{{ createdExams.length }}</h3>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon active">
+        <span class="material-icons-outlined">check_circle</span>
+      </div>
+      <div class="summary-content">
+        <p class="summary-label">Active</p>
+        <h3 class="summary-value">{{ createdExams.filter(e => e.status === 'ACTIVE').length }}</h3>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon">
+        <span class="material-icons-outlined">cancel</span>
+      </div>
+      <div class="summary-content">
+        <p class="summary-label">Inactive</p>
+        <h3 class="summary-value">{{ createdExams.filter(e => e.status === 'INACTIVE').length }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exams Grid -->
+  <div class="exams-section">
+    <div class="exams-grid">
+      @if (isLoadingExams) {
+        @for (s of [1,2,3,4,5,6]; track s) {
+          <div class="exam-card skeleton-card">
+            <div class="skeleton skeleton-text medium" style="width: 80%;"></div>
+            <div class="skeleton skeleton-text short" style="width: 60%; margin-top: 12px;"></div>
+            <div class="skeleton skeleton-title" style="width: 100%; margin-top: 16px;"></div>
+            <div class="skeleton skeleton-text medium" style="width: 70%; margin-top: 8px;"></div>
+            <div class="skeleton skeleton-badge" style="margin-top: 16px;"></div>
+          </div>
+        }
+      } @else {
+        @for (exam of filteredExams; track exam.id) {
+          <div class="exam-card" (click)="openStatsModal(exam)">
+            <div class="exam-card-header">
+              <button
+                class="exam-delete-btn"
+                title="Delete Exam"
+                (click)="deleteExam(exam.id, exam.name); $event.stopPropagation()"
+              >
+                <span class="material-icons-outlined">delete_outline</span>
+              </button>
+              <span class="exam-status-badge" [class.active]="exam.status === 'ACTIVE'">
+                {{ exam.status }}
+              </span>
+            </div>
+
+            <div class="exam-card-content">
+              <span class="exam-card-subject">{{ exam.subject }}</span>
+              <h4 class="exam-card-name">{{ exam.name }}</h4>
+              <p class="exam-card-types">{{ exam.types }}</p>
+              <p class="exam-card-date">
+                <span class="material-icons-outlined date-icon">calendar_today</span>
+                {{ exam.date | date:'MMM dd, yyyy' }}
+              </p>
+            </div>
+
+            <div class="exam-card-footer">
+              <button class="btn-view-stats">
+                View Statistics
+                <span class="material-icons-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <span class="material-icons-outlined">assignment_late</span>
+            </div>
+            <p class="empty-state-text">
+              @if (searchTerm) {
+                No exams match your search.
+              } @else {
+                No exams created yet.
+              }
+            </p>
+            <a routerLink="/generate-exam" class="btn-create-first">
+              Create your first exam
+            </a>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATISTICS MODAL ===== -->
+@if (showStatsModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeStatsModal()">
+    <div class="modal-container modal-large" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icon-wrapper">
+          <span class="material-icons-outlined">bar_chart</span>
+        </div>
+        <div class="modal-header-content">
+          <h2 class="modal-title">{{ selectedExamName }}</h2>
+          <p class="modal-subtitle">Exam Statistics & Performance Analysis</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeStatsModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (selectedExamStats) {
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h4 class="stat-label">Total Students</h4>
+              <p class="stat-value">{{ selectedExamStats.totalStudents }}</p>
+            </div>
+            <div class="stat-card">
+              <h4 class="stat-label">Average Score</h4>
+              <p class="stat-value">{{ selectedExamStats.averageScore | number:'1.1-2' }}%</p>
+            </div>
+            <div class="stat-card">
+              <h4 class="stat-label">Total Items</h4>
+              <p class="stat-value">{{ selectedExamStats.totalItems }}</p>
+            </div>
+          </div>
+
+          <div class="stats-section">
+            <h3 class="stats-section-title">Performance Distribution</h3>
+            <div class="distribution-bars">
+              <div class="distribution-bar">
+                <div class="bar-label">
+                  <span>Well (90-100%)</span>
+                  <span class="bar-value">{{ selectedExamStats.distribution.well }}</span>
+                </div>
+                <div class="bar-container">
+                  <div class="bar-fill well"
+                    [style.width.%]="(selectedExamStats.distribution.well / selectedExamStats.totalStudents) * 100"
+                  ></div>
+                </div>
+              </div>
+              <div class="distribution-bar">
+                <div class="bar-label">
+                  <span>Good (75-89%)</span>
+                  <span class="bar-value">{{ selectedExamStats.distribution.good }}</span>
+                </div>
+                <div class="bar-container">
+                  <div class="bar-fill good"
+                    [style.width.%]="(selectedExamStats.distribution.good / selectedExamStats.totalStudents) * 100"
+                  ></div>
+                </div>
+              </div>
+              <div class="distribution-bar">
+                <div class="bar-label">
+                  <span>Needs Improvement (<75%)</span>
+                  <span class="bar-value">{{ selectedExamStats.distribution.needsImprovement }}</span>
+                </div>
+                <div class="bar-container">
+                  <div class="bar-fill needsImprovement"
+                    [style.width.%]="(selectedExamStats.distribution.needsImprovement / selectedExamStats.totalStudents) * 100"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          @if (selectedExamStats.mostMissed && selectedExamStats.mostMissed.length > 0) {
+            <div class="stats-section">
+              <h3 class="stats-section-title">Most Missed Items</h3>
+              <div class="missed-items-list">
+                @for (item of selectedExamStats.mostMissed.slice(0, 5); track item.item) {
+                  <div class="missed-item">
+                    <span class="missed-item-label">{{ item.item }}</span>
+                    <span class="missed-item-count">{{ item.count }} students</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeStatsModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== DELETE CONFIRMATION MODAL ===== -->
+@if (showDeleteModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeDeleteModal()">
+    <div class="modal-container modal-small" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icon-wrapper warning">
+          <span class="material-icons-outlined">warning</span>
+        </div>
+        <h2 class="modal-title">Delete Exam?</h2>
+      </div>
+
+      <div class="modal-body">
+        <p class="delete-message">
+          Are you sure you want to delete <strong>{{ examNameToDelete }}</strong>?
+          This action cannot be undone.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDeleteModal()" [disabled]="isDeletingExam">
+          CANCEL
+        </button>
+        <button class="btn-danger" (click)="confirmDelete()" [disabled]="isDeletingExam">
+          {{ isDeletingExam ? 'DELETING...' : 'DELETE' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

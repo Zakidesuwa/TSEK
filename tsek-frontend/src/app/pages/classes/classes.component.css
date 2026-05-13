@@ -10,19 +10,23 @@
 /* Page Header */
 .page-header {
   margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .page-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   color: var(--color-text-primary);
   margin-bottom: 4px;
+  letter-spacing: -0.5px;
 }
 
 .page-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text-secondary);
-  font-weight: 400;
+  font-weight: 500;
 }
 
 /* ===== CLASS CARDS CAROUSEL ===== */
@@ -1238,6 +1242,59 @@
   display: inline-block;
   margin-right: 8px;
   vertical-align: middle;
+}
+
+/* ===== ADD CLASS SECTION ===== */
+.add-class-section {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.add-class-btn {
+  flex: 1;
+  min-width: 200px;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(74, 103, 65, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-class-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 103, 65, 0.3);
+}
+
+.view-exams-link {
+  flex: 1;
+  min-width: 200px;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e8ecf2 0%, #dfe5ed 100%);
+  color: #608756;
+  text-decoration: none;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 12px rgba(96, 135, 86, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.view-exams-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(96, 135, 86, 0.15);
+  border-color: #608756;
 }
 
 @keyframes spin {
