@@ -330,16 +330,35 @@ export class Exams implements OnInit {
   }
 
   getAnswerSheetItemAnswer(sectionKey: string, index: number): string {
-    const answer = this.selectedAnswerSheet?.answerKey?.[sectionKey]?.[index];
+    const answerKey = this.selectedAnswerSheet?.answerKey?.[sectionKey];
+    if (!answerKey) {
+      return '-';
+    }
+
+    const direct = answerKey[index];
+    const fallback = answerKey[index - 1];
+    const answer = direct ?? fallback;
+
     if (answer == null || (Array.isArray(answer) && answer.length === 0) || answer === '') {
       return '-';
     }
+
     return Array.isArray(answer) ? answer.join(', ') : String(answer);
   }
 
   getMostMissedLabel(item: { item: string | number; count: number }): string {
     const num = Number(item.item);
+    const total = this.selectedExamStats?.totalItems ?? NaN;
     if (!Number.isNaN(num)) {
+      if (num === 0 && !Number.isNaN(total) && total > 0) {
+        return 'Item 1';
+      }
+      if (num >= 1 && num <= total) {
+        return `Item ${num}`;
+      }
+      if (!Number.isNaN(total) && num >= 0 && num < total) {
+        return `Item ${num + 1}`;
+      }
       return `Item ${num + 1}`;
     }
     return String(item.item);
@@ -368,10 +387,6 @@ export class Exams implements OnInit {
           const val = this.selectedAnswerSheet.answerKey?.[section.key]?.[i] || '-';
           const itemNumber = section.startItem ? section.startItem + i - 1 : i;
           rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${itemNumber}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
-        }
-        for (let i = 1; i <= section.selected; i++) {
-          const val = this.selectedAnswerSheet.answerKey?.[section.key]?.[i] || '-';
-          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
         }
       } else if (section.key === 'trueOrFalse') {
         for (let i = 1; i <= section.selected; i++) {

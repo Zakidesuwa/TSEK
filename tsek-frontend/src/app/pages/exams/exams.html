@@ -213,11 +213,11 @@
           @if (selectedExamStats.mostMissed && selectedExamStats.mostMissed.length > 0) {
             <div class="stats-section">
               <h3 class="stats-section-title">Most Missed Items</h3>
-              <div class="missed-items-list">
+              <div class="exam-missed-items-list">
                 @for (item of selectedExamStats.mostMissed.slice(0, 5); track item.item) {
-                  <div class="missed-item">
-                    <span class="missed-item-label">{{ getMostMissedLabel(item) }}</span>
-                    <span class="missed-item-count">{{ item.count }} students</span>
+                  <div class="exam-missed-item">
+                    <span class="exam-missed-item-label">{{ getMostMissedLabel(item) }}</span>
+                    <span class="exam-missed-item-count">{{ item.count }} students</span>
                   </div>
                 }
               </div>
@@ -337,10 +337,32 @@
                     <span>{{ section.selected }} items</span>
                   </div>
                   <div class="answer-items">
-                    @for (let i = 1; i <= section.selected; i++) {
-                      <div class="answer-item-row">
-                        <span class="item-num">{{ section.startItem + i - 1 }}</span>
-                        <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                    @if (section.key === 'multipleChoice') {
+                      <div class="mc-items">
+                        @for (let i = 1; i <= section.selected; i++) {
+                          <div class="mc-item">
+                            <span class="item-num">{{ section.startItem + i - 1 }}</span>
+                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                          </div>
+                        }
+                      </div>
+                    } @else if (section.key === 'trueOrFalse') {
+                      <div class="tf-items">
+                        @for (let i = 1; i <= section.selected; i++) {
+                          <div class="tf-item">
+                            <span class="item-num">{{ section.startItem + i - 1 }}</span>
+                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="text-items">
+                        @for (let i = 1; i <= section.selected; i++) {
+                          <div class="text-item">
+                            <span class="item-num">{{ section.startItem + i - 1 }}</span>
+                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                          </div>
+                        }
                       </div>
                     }
                   </div>
