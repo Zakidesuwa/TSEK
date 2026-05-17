@@ -333,8 +333,11 @@
               @if (section.enabled) {
                 <div class="answer-section-preview">
                   <div class="answer-section-title">
-                    <h4>{{ section.label }}</h4>
-                    <span>{{ section.selected }} items</span>
+                    <div>
+                      <h4>{{ section.label }}</h4>
+                      <p class="answer-section-meta">{{ section.selected }} items · {{ section.pointName || section.key }} · {{ section.defaultPoints }} pts each</p>
+                    </div>
+                    <span class="answer-section-count">Items {{ section.startItem }} – {{ section.startItem + section.selected - 1 }}</span>
                   </div>
                   <div class="answer-items">
                     @if (section.key === 'multipleChoice') {
