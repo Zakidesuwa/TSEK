@@ -286,7 +286,16 @@ export class Exams implements OnInit {
     this.selectedAnswerSheet = null;
     this.http.get<any>(`${environment.apiUrl}/api/exams/${examId}/answersheet`).subscribe({
       next: (data) => {
-        this.selectedAnswerSheet = data;
+        let currentGlobal = 1;
+        const annotatedConfig = Array.isArray(data.config)
+          ? data.config.map((section: any) => {
+              const startItem = currentGlobal;
+              currentGlobal += section.enabled ? section.selected : 0;
+              return { ...section, startItem };
+            })
+          : [];
+
+        this.selectedAnswerSheet = { ...data, config: annotatedConfig };
         this.showAnswerSheetModal = true;
         this.isLoadingAnswerSheet = false;
       },
@@ -313,12 +322,27 @@ export class Exams implements OnInit {
     };
     try {
       localStorage.setItem('importedExamDraft', JSON.stringify(draft));
-      // navigate to generate exam page
       window.location.href = '/generate-exam';
     } catch (e) {
       console.error('Failed to save draft for import', e);
       alert('Failed to prepare exam for editing.');
     }
+  }
+
+  getAnswerSheetItemAnswer(sectionKey: string, index: number): string {
+    const answer = this.selectedAnswerSheet?.answerKey?.[sectionKey]?.[index];
+    if (answer == null || (Array.isArray(answer) && answer.length === 0) || answer === '') {
+      return '-';
+    }
+    return Array.isArray(answer) ? answer.join(', ') : String(answer);
+  }
+
+  getMostMissedLabel(item: { item: string | number; count: number }): string {
+    const num = Number(item.item);
+    if (!Number.isNaN(num)) {
+      return `Item ${num + 1}`;
+    }
+    return String(item.item);
   }
 
   exportAnswerSheetPdf(): void {
@@ -334,11 +358,17 @@ export class Exams implements OnInit {
         for (let i = 1; i <= section.selected; i++) {
           const val = this.selectedAnswerSheet.answerKey?.multipleChoice?.[i];
           let answerText = '-';
-          if (Array.isArray(val)) answerText = val.join(',');
+          if (Array.isArray(val)) answerText = val.join(', ');
           else if (val) answerText = String(val);
-          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${answerText}</td></tr>`);
+          const itemNumber = section.startItem ? section.startItem + i - 1 : i;
+          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${itemNumber}</td><td style="padding:6px;border:1px solid #ddd">${answerText}</td></tr>`);
         }
       } else if (section.key === 'identification' || section.key === 'enumeration') {
+        for (let i = 1; i <= section.selected; i++) {
+          const val = this.selectedAnswerSheet.answerKey?.[section.key]?.[i] || '-';
+          const itemNumber = section.startItem ? section.startItem + i - 1 : i;
+          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${itemNumber}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
+        }
         for (let i = 1; i <= section.selected; i++) {
           const val = this.selectedAnswerSheet.answerKey?.[section.key]?.[i] || '-';
           rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
@@ -346,7 +376,8 @@ export class Exams implements OnInit {
       } else if (section.key === 'trueOrFalse') {
         for (let i = 1; i <= section.selected; i++) {
           const val = this.selectedAnswerSheet.answerKey?.trueOrFalse?.[i] || '-';
-          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
+          const itemNumber = section.startItem ? section.startItem + i - 1 : i;
+          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${itemNumber}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
         }
       }
 

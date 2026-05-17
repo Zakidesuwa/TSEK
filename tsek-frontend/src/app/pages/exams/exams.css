@@ -655,6 +655,18 @@
   border-left: 3px solid #ef5350;
 }
 
+.missed-item-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.missed-item-count {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 600;
+}
+
 .format-summary {
   display: flex;
   flex-direction: column;
@@ -733,27 +745,6 @@
 .item-answer { color: #666; font-size: 0.95rem; }
 
 
-.missed-item-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-  border-left: 3px solid #ef5350;
-}
-
-.missed-item-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.missed-item-count {
-  font-size: 0.85rem;
-  color: #999;
-  font-weight: 600;
-}
 
 /* Modal Footer */
 .modal-footer {
