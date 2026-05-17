@@ -143,12 +143,99 @@ export class GenerateExamComponent implements OnInit {
         }
         this.isLoading = false;
         this.cdr.detectChanges();
+        // Try loading an imported exam draft (if user clicked Edit as New)
+        this.loadImportedDraft();
       },
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  /** Load an imported exam draft saved in localStorage by the exams page */
+  loadImportedDraft() {
+    try {
+      const raw = localStorage.getItem('importedExamDraft');
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+
+      // Apply basic fields
+      this.examTitle = draft.examTitle || this.examTitle;
+
+      // Map config -> sections
+      if (Array.isArray(draft.config)) {
+        this.sections = draft.config.map((c: any) => ({
+          label: c.label || c.key,
+          key: c.key,
+          enabled: !!c.enabled,
+          options: c.options || (c.key === 'multipleChoice' ? [20,30,50,100] : [5,10,15]),
+          selected: c.selected || 0,
+          pointName: c.pointName || c.label || c.key,
+          defaultPoints: c.defaultPoints ?? 1
+        }));
+
+        // Restore saved points
+        this.savedPoints = {};
+        this.sections.forEach(s => this.savedPoints[s.key] = s.defaultPoints);
+      }
+
+      // Restore answer key into internal structures
+      if (draft.answerKey) {
+        // Build answerTabs like proceedToAnswerKey
+        this.answerTabs = (this.sections.filter(s => s.enabled)).map(s => ({
+          key: s.key as any,
+          label: s.pointName,
+          icon: this.tabIconMap[s.key] || 'quiz',
+          itemCount: s.selected,
+          pointsPerItem: this.savedPoints[s.key] ?? s.defaultPoints,
+          options: this.getOptionsForKey(s.key)
+        }));
+
+        // Initialize answers/textAnswers
+        this.answers = {};
+        this.textAnswers = {};
+        for (const tab of this.answerTabs) {
+          this.answers[tab.key] = {} as any;
+          this.textAnswers[tab.key] = {} as any;
+          for (let i = 1; i <= tab.itemCount; i++) {
+            this.answers[tab.key][i] = new Set<string>();
+            this.textAnswers[tab.key][i] = '';
+          }
+        }
+
+        // Fill from draft.answerKey
+        const ak = draft.answerKey;
+        for (const key of Object.keys(ak || {})) {
+          const sectionKey = key as any;
+          const items = ak[key];
+          if (items) {
+            for (const idxStr of Object.keys(items)) {
+              const idx = parseInt(idxStr, 10);
+              const val = items[idxStr];
+              if (Array.isArray(val)) {
+                // multiple choice stored as array
+                this.answers[sectionKey][idx] = new Set(val.map(String));
+              } else if (typeof val === 'string') {
+                this.textAnswers[sectionKey][idx] = val;
+                this.answers[sectionKey][idx].clear();
+                if (val.trim()) this.answers[sectionKey][idx].add('answered');
+              }
+            }
+          }
+        }
+
+        // Move to answer key step so user can edit
+        this.currentStep = 'answerKey';
+        this.activeAnswerTab = this.answerTabs[0]?.key ?? 'multipleChoice';
+      }
+
+      // Remove the imported draft to avoid accidental reuse
+      localStorage.removeItem('importedExamDraft');
+      this.cdr.detectChanges();
+    } catch (e) {
+      console.error('Failed to load imported exam draft', e);
+    }
   }
 
   get pointSections(): PointSection[] {

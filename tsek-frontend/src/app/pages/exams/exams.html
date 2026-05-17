@@ -228,6 +228,7 @@
 
       <div class="modal-footer">
         <button class="btn-secondary" (click)="openFormatModal(selectedExamId!, selectedExamName)">VIEW FORMAT</button>
+        <button class="btn-secondary" (click)="openAnswerSheetModal(selectedExamId!, selectedExamName)">VIEW ANSWER SHEET</button>
         <button class="btn-secondary" (click)="closeStatsModal()">CLOSE</button>
       </div>
     </div>
@@ -295,6 +296,84 @@
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeFormatModal()">CLOSE</button>
         <button class="btn-danger" (click)="exportFormatPdf()">EXPORT PDF</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== ANSWER SHEET PREVIEW MODAL ===== -->
+@if (showAnswerSheetModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeAnswerSheetModal()">
+    <div class="modal-container modal-large" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icon-wrapper">
+          <span class="material-icons-outlined">visibility</span>
+        </div>
+        <div class="modal-header-content">
+          <h2 class="modal-title">{{ selectedExamName }} — Answer Sheet</h2>
+          <p class="modal-subtitle">Preview of the exact answer sheet. You can import this as a new editable exam.</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeAnswerSheetModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (isLoadingAnswerSheet) {
+          <p>Loading answer sheet...</p>
+        } @else if (selectedAnswerSheet) {
+          <div class="answer-sheet-preview">
+            <h3>{{ selectedAnswerSheet.examTitle }}</h3>
+            <p>Total items: {{ selectedAnswerSheet.totalItems }}</p>
+
+            <!-- Render answer key by section -->
+            @for (section of selectedAnswerSheet.config; track section.key) {
+              @if (section.enabled) {
+                <div class="answer-section-preview">
+                  <h4>{{ section.label }}</h4>
+                  <div class="answer-items">
+                    @if (section.key === 'multipleChoice') {
+                      <div class="mc-items">
+                        @for (let i = 1; i <= section.selected; i++) {
+                          <div class="mc-item">
+                            <span class="item-num">{{ i }}</span>
+                            <span class="item-answer">{{ selectedAnswerSheet.answerKey?.multipleChoice?.[i] ? Array.from(selectedAnswerSheet.answerKey.multipleChoice[i]).join(',') : '-' }}</span>
+                          </div>
+                        }
+                      </div>
+                    } @else if (section.key === 'identification' || section.key === 'enumeration') {
+                      <div class="text-items">
+                        @for (let i = 1; i <= section.selected; i++) {
+                          <div class="text-item">
+                            <span class="item-num">{{ i }}</span>
+                            <span class="item-answer">{{ selectedAnswerSheet.answerKey?.[section.key]?.[i] || '-' }}</span>
+                          </div>
+                        }
+                      </div>
+                    } @else if (section.key === 'trueOrFalse') {
+                      <div class="tf-items">
+                        @for (let i = 1; i <= section.selected; i++) {
+                          <div class="tf-item">
+                            <span class="item-num">{{ i }}</span>
+                            <span class="item-answer">{{ selectedAnswerSheet.answerKey?.trueOrFalse?.[i] || '-' }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        } @else {
+          <p class="modal-empty">Answer sheet not available.</p>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAnswerSheetModal()">CLOSE</button>
+        <button class="btn-secondary" (click)="exportAnswerSheetPdf()">PRINT / EXPORT PDF</button>
+        <button class="btn-secondary" (click)="editAsNewFromAnswerSheet()">EDIT AS NEW</button>
       </div>
     </div>
   </div>

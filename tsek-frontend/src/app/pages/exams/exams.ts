@@ -78,6 +78,11 @@ export class Exams implements OnInit {
   selectedExamFormat: { examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; }>; } | null = null;
   isLoadingFormat = false;
   
+  // Answer Sheet Modal (full answer key preview)
+  showAnswerSheetModal = false;
+  selectedAnswerSheet: any = null;
+  isLoadingAnswerSheet = false;
+  
   // Delete Modal
   showDeleteModal = false;
   examToDelete: number | null = null;
@@ -265,6 +270,128 @@ export class Exams implements OnInit {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Unable to open a new window for PDF export. Please allow pop-ups and try again.');
+      return;
+    }
+
+    printWindow.document.write(body);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  }
+
+  openAnswerSheetModal(examId: number, examName: string): void {
+    this.selectedExamId = examId;
+    this.selectedExamName = examName;
+    this.isLoadingAnswerSheet = true;
+    this.selectedAnswerSheet = null;
+    this.http.get<any>(`${environment.apiUrl}/api/exams/${examId}/answersheet`).subscribe({
+      next: (data) => {
+        this.selectedAnswerSheet = data;
+        this.showAnswerSheetModal = true;
+        this.isLoadingAnswerSheet = false;
+      },
+      error: (err) => {
+        this.isLoadingAnswerSheet = false;
+        console.error('Failed to load answer sheet:', err);
+        alert('Failed to load the answer sheet.');
+      }
+    });
+  }
+
+  closeAnswerSheetModal(): void {
+    this.showAnswerSheetModal = false;
+    this.selectedAnswerSheet = null;
+  }
+
+  editAsNewFromAnswerSheet(): void {
+    if (!this.selectedAnswerSheet) return;
+    const draft = {
+      examTitle: this.selectedAnswerSheet.examTitle,
+      totalItems: this.selectedAnswerSheet.totalItems,
+      config: this.selectedAnswerSheet.config,
+      answerKey: this.selectedAnswerSheet.answerKey
+    };
+    try {
+      localStorage.setItem('importedExamDraft', JSON.stringify(draft));
+      // navigate to generate exam page
+      window.location.href = '/generate-exam';
+    } catch (e) {
+      console.error('Failed to save draft for import', e);
+      alert('Failed to prepare exam for editing.');
+    }
+  }
+
+  exportAnswerSheetPdf(): void {
+    if (!this.selectedAnswerSheet) return;
+
+    const title = `${this.selectedAnswerSheet.examTitle} — Answer Sheet`;
+
+    // Build sections HTML
+    const sectionsHtml = (this.selectedAnswerSheet.config || []).filter((s: any) => s.enabled).map((section: any) => {
+      const rows: string[] = [];
+
+      if (section.key === 'multipleChoice') {
+        for (let i = 1; i <= section.selected; i++) {
+          const val = this.selectedAnswerSheet.answerKey?.multipleChoice?.[i];
+          let answerText = '-';
+          if (Array.isArray(val)) answerText = val.join(',');
+          else if (val) answerText = String(val);
+          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${answerText}</td></tr>`);
+        }
+      } else if (section.key === 'identification' || section.key === 'enumeration') {
+        for (let i = 1; i <= section.selected; i++) {
+          const val = this.selectedAnswerSheet.answerKey?.[section.key]?.[i] || '-';
+          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
+        }
+      } else if (section.key === 'trueOrFalse') {
+        for (let i = 1; i <= section.selected; i++) {
+          const val = this.selectedAnswerSheet.answerKey?.trueOrFalse?.[i] || '-';
+          rows.push(`<tr><td style="width:80px;padding:6px;border:1px solid #ddd;text-align:center">${i}</td><td style="padding:6px;border:1px solid #ddd">${val}</td></tr>`);
+        }
+      }
+
+      return `
+        <div style="margin-bottom:18px">
+          <h3 style="margin:6px 0 8px; font-size:16px">${section.label}</h3>
+          <table style="width:100%; border-collapse:collapse; font-size:13px"> 
+            <thead>
+              <tr>
+                <th style="width:80px;padding:8px;border:1px solid #ddd;background:#f5f5f5">Item</th>
+                <th style="padding:8px;border:1px solid #ddd;background:#f5f5f5">Answer</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('\n');
+
+    const body = `
+      <html>
+      <head>
+        <title>${title}</title>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>
+          body { font-family: Inter, Arial, sans-serif; color: #222; margin: 24px; }
+          h1 { font-size: 20px; margin-bottom: 6px; }
+          h3 { font-size: 15px; margin: 0 0 6px 0; }
+          table { margin-top: 8px; }
+          @media print { body { margin: 12mm; } }
+        </style>
+      </head>
+      <body>
+        <h1>${title}</h1>
+        <p style="margin:4px 0 12px">Total items: ${this.selectedAnswerSheet.totalItems}</p>
+        ${sectionsHtml}
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Unable to open a new window for export. Please allow pop-ups and try again.');
       return;
     }
 
