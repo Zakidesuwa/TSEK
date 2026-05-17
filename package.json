@@ -1,6 +1,0 @@
-{
-  "private": true,
-  "scripts": {
-    "build": "cd tsek-frontend && npm install && npm run build"
-  }
-}
