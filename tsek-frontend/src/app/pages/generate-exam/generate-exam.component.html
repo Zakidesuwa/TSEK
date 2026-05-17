@@ -126,6 +126,19 @@
               }
             </div>
           </div>
+
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">QUIZ DEADLINE</label>
+              <input type="datetime-local" class="form-input date-input" [class.input-error]="formErrors.deadline" [(ngModel)]="examDeadline">
+              @if (formErrors.deadline) {
+                <p class="form-error-message">
+                  <span class="material-icons-outlined">error_outline</span>
+                  {{ formErrors.deadline }}
+                </p>
+              }
+            </div>
+          </div>
         </div>
 
         <!-- Structure Setup -->

@@ -14,7 +14,7 @@ router.get('/api/classes', authMiddleware, async (req, res) => {
         c.section_code as section,
         COUNT(ce.student_id) as students,
         COALESCE(
-          (SELECT TO_CHAR(MAX(created_at), 'Mon DD') FROM exams WHERE class_id = c.id),
+          (SELECT TO_CHAR(MAX(COALESCE(exam_date, created_at::date)), 'Mon DD') FROM exams WHERE class_id = c.id),
           'TBD'
         ) as "nextQuiz"
       FROM classes c
@@ -93,13 +93,19 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
         const { maxScore } = examMaxScores[i];
 
         const resultRes = await db.query(`
-          SELECT score FROM exam_results WHERE exam_id = $1 AND student_id = $2
+          SELECT score, scanned_image_url FROM exam_results WHERE exam_id = $1 AND student_id = $2
         `, [exam.id, student.id]);
         
         if (resultRes.rows.length > 0) {
-          scores.push(`${resultRes.rows[0].score}/${maxScore}`);
+          scores.push({
+            value: `${resultRes.rows[0].score}/${maxScore}`,
+            imageUrl: resultRes.rows[0].scanned_image_url || null
+          });
         } else {
-          scores.push(`--/${maxScore}`);
+          scores.push({
+            value: `--/${maxScore}`,
+            imageUrl: null
+          });
         }
       }
       return {

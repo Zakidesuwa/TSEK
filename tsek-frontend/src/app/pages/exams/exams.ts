@@ -10,6 +10,7 @@ interface ExamCard {
   id: number;
   subject: string;
   date: string;
+  deadline?: string;
   name: string;
   types: string;
   status: 'ACTIVE' | 'INACTIVE';

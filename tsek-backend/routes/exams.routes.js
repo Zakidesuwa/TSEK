@@ -13,7 +13,8 @@ router.get('/api/exams', authMiddleware, async (req, res) => {
         c.class_name as subject,
         e.exam_title as name,
         e.total_items,
-        e.created_at as date,
+        COALESCE(e.exam_date, e.created_at::date) as date,
+        e.deadline,
         'Multiple Choice' as types,
         'ACTIVE' as status
       FROM exams e
@@ -30,13 +31,21 @@ router.get('/api/exams', authMiddleware, async (req, res) => {
 
 // Create an exam
 router.post('/api/exams', authMiddleware, async (req, res) => {
-  const { class_id, exam_title, total_items, config, answer_key } = req.body;
+  const { class_id, exam_title, total_items, config, answer_key, exam_date, deadline } = req.body;
   try {
     const result = await db.query(`
-      INSERT INTO exams (class_id, exam_title, total_items, config, answer_key)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO exams (class_id, exam_title, total_items, config, answer_key, exam_date, deadline)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
-    `, [class_id, exam_title, total_items, JSON.stringify(config), JSON.stringify(answer_key)]);
+    `, [
+      class_id,
+      exam_title,
+      total_items,
+      JSON.stringify(config),
+      JSON.stringify(answer_key),
+      exam_date || null,
+      deadline || null
+    ]);
     
     res.json({ success: true, exam_id: result.rows[0].id });
   } catch (err) {

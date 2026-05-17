@@ -17,7 +17,7 @@ interface ClassCard {
 interface StudentRow {
   name: string;
   number: string;
-  scores: string[];
+  scores: Array<{ value: string; imageUrl: string | null }>;
 }
 
 @Component({
@@ -79,6 +79,22 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   // ===== Remove Student Confirmation Modal =====
   showRemoveStudentModal = false;
   studentToRemove: { name: string, number: string } | null = null;
+
+  // ===== Scanned Image Modal =====
+  showScanModal = false;
+  selectedScanUrl: string | null = null;
+
+  viewScan(url: string) {
+    this.selectedScanUrl = url;
+    this.showScanModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeScanModal() {
+    this.showScanModal = false;
+    this.selectedScanUrl = null;
+    this.cdr.detectChanges();
+  }
 
   isLoadingClasses = true;
   isRemovingStudent = false;
@@ -306,7 +322,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     const rows = this.allStudents.map(student => [
       student.name,
       student.number,
-      ...student.scores
+      ...student.scores.map(s => s.value)
     ]);
 
     const csvContent = [headers, ...rows]

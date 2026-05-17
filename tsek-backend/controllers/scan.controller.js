@@ -123,10 +123,29 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
       });
     }
 
+    // Save the first page to the uploads directory to provide a scanned image link
+    let imageUrl = null;
+    if (files.length > 0) {
+      const fs = require('fs');
+      const path = require('path');
+      const uploadsDir = path.join(__dirname, '../uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      const file = files[0];
+      const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+      const filepath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filepath, file.buffer);
+      
+      imageUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+    }
+
     res.status(200).json({
       message: 'Scanning complete',
       rawText: parsedJson,
-      pageCount: files.length
+      pageCount: files.length,
+      imageUrl: imageUrl
     });
 
   } catch (error) {
@@ -141,7 +160,7 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 const db = require('../db');
 
 exports.gradeExam = async (req, res) => {
-  const { exam_id, studentId, answers } = req.body;
+  const { exam_id, studentId, answers, scanned_image_url } = req.body;
 
   if (!exam_id || !answers) {
     return res.status(400).json({ message: 'exam_id and answers are required.' });
@@ -247,10 +266,11 @@ exports.gradeExam = async (req, res) => {
 
           // Insert into exam_results only if student is enrolled
           await db.query(`
-            INSERT INTO exam_results (exam_id, student_id, score, graded_items)
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4
-          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems)]);
+            INSERT INTO exam_results (exam_id, student_id, score, graded_items, scanned_image_url)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT ON CONSTRAINT unique_exam_student 
+            DO UPDATE SET score = $3, graded_items = $4, scanned_image_url = COALESCE($5, exam_results.scanned_image_url)
+          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems), scanned_image_url || null]);
         }
       }
     }

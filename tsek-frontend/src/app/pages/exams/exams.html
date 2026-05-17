@@ -102,10 +102,18 @@
               <span class="exam-card-subject">{{ exam.subject }}</span>
               <h4 class="exam-card-name">{{ exam.name }}</h4>
               <p class="exam-card-types">{{ exam.types }}</p>
-              <p class="exam-card-date">
-                <span class="material-icons-outlined date-icon">calendar_today</span>
-                {{ exam.date | date:'MMM dd, yyyy' }}
-              </p>
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px;">
+                <p class="exam-card-date" style="margin: 0; display: inline-flex; align-items: center; gap: 4px;">
+                  <span class="material-icons-outlined date-icon" style="font-size: 16px; margin: 0;">calendar_today</span>
+                  {{ exam.date | date:'MMM dd, yyyy' }}
+                </p>
+                @if (exam.deadline) {
+                  <p class="exam-card-deadline" style="margin: 0; font-size: 13px; color: #ef4444; display: inline-flex; align-items: center; gap: 4px; font-weight: 500;">
+                    <span class="material-icons-outlined" style="font-size: 16px; color: #ef4444; margin: 0;">alarm</span>
+                    Deadline: {{ exam.deadline | date:'MMM dd, yyyy, h:mm a' }}
+                  </p>
+                }
+              </div>
             </div>
 
             <div class="exam-card-footer">

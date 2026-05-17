@@ -241,7 +241,16 @@
             <td class="student-name-cell">{{ student.name }}</td>
             <td class="student-number-cell">{{ student.number }}</td>
             @for (score of student.scores; track $index) {
-            <td class="student-score-cell">{{ score }}</td>
+            <td class="student-score-cell">
+              <div class="score-container" style="display: inline-flex; align-items: center; gap: 8px;">
+                <span>{{ score.value }}</span>
+                @if (score.imageUrl) {
+                  <button (click)="viewScan(score.imageUrl)" class="scan-btn" title="View Scanned Answer Sheet" style="background: none; border: none; padding: 0; display: inline-flex; align-items: center; color: var(--color-primary, #6366f1); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#6366f1'">
+                    <span class="material-icons-outlined" style="font-size: 18px; margin: 0; line-height: 1;">image</span>
+                  </button>
+                }
+              </div>
+            </td>
             }
             <td class="student-action-cell">
               <button class="student-remove-btn" (click)="removeStudent(student)" title="Remove from class">
@@ -276,7 +285,7 @@
 
 <!-- ===== DELETE CLASS CONFIRMATION MODAL ===== -->
 @if (showDeleteClassModal && classToDelete) {
-<div class="modal-overlay" @modalFadeAnim (click)="closeDeleteClassModal()">
+<div class="modal-overlay" @modalFadeAnim (click)="closeDeleteClassModal()" style="z-index: 10000;">
   <div class="modal-container delete-confirm-modal" @modalScaleAnim (click)="$event.stopPropagation()">
     <div class="delete-modal-icon">
       <span class="material-icons-outlined">warning_amber</span>
@@ -304,7 +313,7 @@
 
 <!-- ===== REMOVE STUDENT CONFIRMATION MODAL ===== -->
 @if (showRemoveStudentModal) {
-<div class="modal-overlay" @modalFadeAnim (click)="closeRemoveStudentModal()">
+<div class="modal-overlay" @modalFadeAnim (click)="closeRemoveStudentModal()" style="z-index: 10000;">
   <div class="modal-container delete-confirm-modal" @modalScaleAnim (click)="$event.stopPropagation()">
     <div class="delete-modal-icon">
       <span class="material-icons-outlined">person_remove</span>
@@ -325,6 +334,31 @@
           REMOVE STUDENT
         }
       </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== SCANNED IMAGE PREVIEW MODAL ===== -->
+@if (showScanModal) {
+<div class="modal-overlay" @modalFadeAnim (click)="closeScanModal()" style="display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; z-index: 9999; backdrop-filter: blur(8px); background: rgba(15, 23, 42, 0.65);">
+  <div class="modal-container" @modalScaleAnim (click)="$event.stopPropagation()" style="width: 90%; max-width: 800px; max-height: 85vh; background: #ffffff; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(226, 232, 240, 0.8);">
+    <!-- Modal Header -->
+    <div style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="material-icons-outlined" style="color: var(--color-primary, #6366f1); font-size: 24px;">image</span>
+        <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #1e293b;">Scanned Answer Sheet</h2>
+      </div>
+      <button (click)="closeScanModal()" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'; this.style.color='#0f172a'" onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b'">
+        <span class="material-icons-outlined" style="font-size: 20px;">close</span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div style="padding: 24px; overflow-y: auto; display: flex; align-items: center; justify-content: center; background: #0f172a; flex: 1; min-height: 300px;">
+      @if (selectedScanUrl) {
+        <img [src]="selectedScanUrl" alt="Scanned Student Answer Sheet" style="max-width: 100%; max-height: 65vh; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); object-fit: contain; border: 2px solid rgba(255, 255, 255, 0.1);">
+      }
     </div>
   </div>
 </div>

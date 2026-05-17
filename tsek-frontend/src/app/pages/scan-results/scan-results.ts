@@ -54,6 +54,7 @@ export class ScanResults implements OnInit {
 
   exams: any[] = [];
   selectedExamId: number | null = null;
+  scannedImageUrl: string | null = null;
   gradeResult: any = null;
 
   // Enrollment Prompt State
@@ -124,6 +125,7 @@ export class ScanResults implements OnInit {
       next: (response) => {
         this.isLoading = false;
         this.rawText = response.rawText || { error: 'No data returned' };
+        this.scannedImageUrl = response.imageUrl || null;
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -157,7 +159,8 @@ export class ScanResults implements OnInit {
     const payload = {
       exam_id: this.selectedExamId,
       studentId: this.rawText.studentId,
-      answers: this.rawText.answers
+      answers: this.rawText.answers,
+      scanned_image_url: this.scannedImageUrl || null
     };
 
     this.http.post(`${environment.apiUrl}/api/scan/grade`, payload).subscribe({

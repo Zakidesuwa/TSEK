@@ -15,3 +15,7 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Scanned assets & scratch
+tsek-backend/uploads/
+tsek-backend/scratch/

@@ -136,6 +136,20 @@ async function runMigrations() {
     if (err.code !== '42701') console.error('Migration error:', err);
   }
 
+  try {
+    await pool.query('ALTER TABLE exams ADD COLUMN exam_date DATE;');
+    console.log('Migration: Added exam_date column to exams');
+  } catch (err) {
+    if (err.code !== '42701') console.error('Migration error:', err);
+  }
+
+  try {
+    await pool.query('ALTER TABLE exams ADD COLUMN deadline TIMESTAMP;');
+    console.log('Migration: Added deadline column to exams');
+  } catch (err) {
+    if (err.code !== '42701') console.error('Migration error:', err);
+  }
+
   await pool.end();
 }
 

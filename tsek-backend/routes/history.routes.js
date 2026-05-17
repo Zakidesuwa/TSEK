@@ -14,7 +14,7 @@ router.get('/api/history', authMiddleware, async (req, res) => {
         c.section_code as section,
         e.exam_title as name,
         e.total_items,
-        e.created_at as date,
+        COALESCE(e.exam_date, e.created_at::date) as date,
         (SELECT COUNT(*) FROM exam_results er WHERE er.exam_id = e.id) as scans
       FROM exams e
       JOIN classes c ON e.class_id = c.id

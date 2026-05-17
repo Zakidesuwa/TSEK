@@ -81,6 +81,7 @@ export class GenerateExamComponent implements OnInit {
       this.examTitle = '';
       this.paperSize = 'A4';
       this.examDate = '';
+      this.examDeadline = '';
       this.numberOfChoices = 4;
       this.selectedClassId = this.classes.length > 0 ? this.classes[0].id : null;
 
@@ -111,13 +112,14 @@ export class GenerateExamComponent implements OnInit {
   examTitle = '';
   paperSize = 'A4';
   examDate = '';
+  examDeadline = '';
   numberOfChoices = 4;
   isLoading = true;
   selectedClassId: number | null = null;
   classes: any[] = [];
   
   // Validation errors
-  formErrors: { title?: string; class?: string; date?: string } = {};
+  formErrors: { title?: string; class?: string; date?: string; deadline?: string } = {};
 
   sections: ExamSection[] = [
     { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
@@ -307,6 +309,34 @@ export class GenerateExamComponent implements OnInit {
     return null;
   }
 
+  /** Validate deadline input */
+  validateExamDeadline(): string | null {
+    if (!this.examDeadline) {
+      return 'Please select a quiz deadline.';
+    }
+
+    const deadlineObj = new Date(this.examDeadline);
+    const today = new Date();
+
+    if (isNaN(deadlineObj.getTime())) {
+      return 'Invalid deadline format.';
+    }
+
+    if (deadlineObj < today) {
+      return 'Deadline cannot be in the past. Please select a future time.';
+    }
+
+    if (this.examDate) {
+      const examDateObj = new Date(this.examDate);
+      examDateObj.setHours(0, 0, 0, 0);
+      if (deadlineObj < examDateObj) {
+        return 'Deadline must be on or after the exam date.';
+      }
+    }
+
+    return null;
+  }
+
   /** Validate all form fields before proceeding */
   validateForm(): boolean {
     this.formErrors = {};
@@ -327,6 +357,12 @@ export class GenerateExamComponent implements OnInit {
     const dateError = this.validateExamDate();
     if (dateError) {
       this.formErrors.date = dateError;
+    }
+
+    // Validate exam deadline
+    const deadlineError = this.validateExamDeadline();
+    if (deadlineError) {
+      this.formErrors.deadline = deadlineError;
     }
 
     return Object.keys(this.formErrors).length === 0;
@@ -636,7 +672,9 @@ export class GenerateExamComponent implements OnInit {
       exam_title: this.examTitle,
       total_items: this.answerTabs.reduce((sum, t) => sum + t.itemCount, 0),
       config: finalConfig,
-      answer_key: answerKey
+      answer_key: answerKey,
+      exam_date: this.examDate,
+      deadline: this.examDeadline
     };
 
     this.http.post(`${environment.apiUrl}/api/exams`, payload).subscribe({
