@@ -329,6 +329,10 @@ export class Exams implements OnInit {
     }
   }
 
+  getSectionRange(count: number): number[] {
+    return Array.from({ length: count }, (_, index) => index + 1);
+  }
+
   getAnswerSheetItemAnswer(sectionKey: string, index: number): string {
     const answerKey = this.selectedAnswerSheet?.answerKey?.[sectionKey];
     if (!answerKey) {

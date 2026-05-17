@@ -342,28 +342,28 @@
                   <div class="answer-items">
                     @if (section.key === 'multipleChoice') {
                       <div class="mc-items">
-                        @for (let i = 1; i <= section.selected; i++) {
+                        @for (num of getSectionRange(section.selected); track num) {
                           <div class="mc-item">
-                            <span class="item-num">{{ section.startItem + i - 1 }}</span>
-                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                            <span class="item-num">{{ section.startItem + num - 1 }}</span>
+                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, num) }}</span>
                           </div>
                         }
                       </div>
                     } @else if (section.key === 'trueOrFalse') {
                       <div class="tf-items">
-                        @for (let i = 1; i <= section.selected; i++) {
+                        @for (num of getSectionRange(section.selected); track num) {
                           <div class="tf-item">
-                            <span class="item-num">{{ section.startItem + i - 1 }}</span>
-                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                            <span class="item-num">{{ section.startItem + num - 1 }}</span>
+                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, num) }}</span>
                           </div>
                         }
                       </div>
                     } @else {
                       <div class="text-items">
-                        @for (let i = 1; i <= section.selected; i++) {
+                        @for (num of getSectionRange(section.selected); track num) {
                           <div class="text-item">
-                            <span class="item-num">{{ section.startItem + i - 1 }}</span>
-                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, i) }}</span>
+                            <span class="item-num">{{ section.startItem + num - 1 }}</span>
+                            <span class="item-answer">{{ getAnswerSheetItemAnswer(section.key, num) }}</span>
                           </div>
                         }
                       </div>
