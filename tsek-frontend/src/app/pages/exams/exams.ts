@@ -71,6 +71,12 @@ export class Exams implements OnInit {
   showStatsModal = false;
   selectedExamStats: ExamStats | null = null;
   selectedExamName = '';
+  selectedExamId: number | null = null;
+
+  // Exam Format Modal
+  showFormatModal = false;
+  selectedExamFormat: { examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; }>; } | null = null;
+  isLoadingFormat = false;
   
   // Delete Modal
   showDeleteModal = false;
@@ -162,6 +168,7 @@ export class Exams implements OnInit {
   }
 
   openStatsModal(exam: ExamCard): void {
+    this.selectedExamId = exam.id;
     this.selectedExamName = exam.name;
     this.http.get<ExamStats>(`${environment.apiUrl}/api/exams/${exam.id}/statistics`).subscribe({
       next: (data) => {
@@ -178,6 +185,93 @@ export class Exams implements OnInit {
   closeStatsModal(): void {
     this.showStatsModal = false;
     this.selectedExamStats = null;
+  }
+
+  openFormatModal(examId: number, examName: string): void {
+    this.selectedExamId = examId;
+    this.selectedExamName = examName;
+    this.isLoadingFormat = true;
+    this.selectedExamFormat = null;
+    this.http.get<{ examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; }>; }>(`${environment.apiUrl}/api/exams/${examId}/format`).subscribe({
+      next: (data) => {
+        this.selectedExamFormat = data;
+        this.showFormatModal = true;
+        this.isLoadingFormat = false;
+      },
+      error: (err) => {
+        this.isLoadingFormat = false;
+        console.error('Failed to load exam format:', err);
+        alert('Failed to load the exam format. Please try again.');
+      }
+    });
+  }
+
+  closeFormatModal(): void {
+    this.showFormatModal = false;
+    this.selectedExamFormat = null;
+  }
+
+  exportFormatPdf(): void {
+    if (!this.selectedExamFormat) return;
+
+    const title = `${this.selectedExamFormat.examTitle} Format`;
+    const rows = this.selectedExamFormat.config
+      .filter(section => section.enabled)
+      .map(section => `
+        <tr>
+          <td>${section.label}</td>
+          <td>${section.selected}</td>
+          <td>${section.pointName}</td>
+          <td>${section.defaultPoints}</td>
+          <td>${section.selected * section.defaultPoints}</td>
+        </tr>
+      `)
+      .join('');
+
+    const body = `
+      <html>
+      <head>
+        <title>${title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 24px; color: #1a1a1a; }
+          h1 { font-size: 24px; margin-bottom: 8px; }
+          p { margin: 4px 0 16px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background: #f4f5f7; font-weight: 700; }
+        </style>
+      </head>
+      <body>
+        <h1>${title}</h1>
+        <p>Total Items: ${this.selectedExamFormat.totalItems}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Section</th>
+              <th>Item Count</th>
+              <th>Item Type</th>
+              <th>Points Each</th>
+              <th>Total Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Unable to open a new window for PDF export. Please allow pop-ups and try again.');
+      return;
+    }
+
+    printWindow.document.write(body);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   }
 
   getStatusColor(status: string): string {

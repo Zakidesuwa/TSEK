@@ -227,7 +227,74 @@
       </div>
 
       <div class="modal-footer">
+        <button class="btn-secondary" (click)="openFormatModal(selectedExamId!, selectedExamName)">VIEW FORMAT</button>
         <button class="btn-secondary" (click)="closeStatsModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ===== FORMAT PREVIEW MODAL ===== -->
+@if (showFormatModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeFormatModal()">
+    <div class="modal-container modal-large" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icon-wrapper">
+          <span class="material-icons-outlined">description</span>
+        </div>
+        <div class="modal-header-content">
+          <h2 class="modal-title">{{ selectedExamName }} Format</h2>
+          <p class="modal-subtitle">Preview the created exam structure and export it as PDF.</p>
+        </div>
+        <button class="modal-close-btn" (click)="closeFormatModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (isLoadingFormat) {
+          <p>Loading exam format...</p>
+        } @else if (selectedExamFormat) {
+          <div class="format-summary">
+            <div class="format-row">
+              <span>Total Items</span>
+              <strong>{{ selectedExamFormat.totalItems }}</strong>
+            </div>
+            <div class="format-table-wrapper">
+              <table class="format-table">
+                <thead>
+                  <tr>
+                    <th>Section</th>
+                    <th>Item Count</th>
+                    <th>Item Type</th>
+                    <th>Points Each</th>
+                    <th>Total Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (section of selectedExamFormat.config; track section.key) {
+                    @if (section.enabled) {
+                    <tr>
+                      <td>{{ section.label }}</td>
+                      <td>{{ section.selected }}</td>
+                      <td>{{ section.pointName }}</td>
+                      <td>{{ section.defaultPoints }}</td>
+                      <td>{{ section.selected * section.defaultPoints }}</td>
+                    </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else {
+          <p class="modal-empty">This exam format is not available.</p>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeFormatModal()">CLOSE</button>
+        <button class="btn-danger" (click)="exportFormatPdf()">EXPORT PDF</button>
       </div>
     </div>
   </div>

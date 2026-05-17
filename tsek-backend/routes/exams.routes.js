@@ -45,6 +45,34 @@ router.post('/api/exams', authMiddleware, async (req, res) => {
   }
 });
 
+// Get exam format details
+router.get('/api/exams/:id/format', authMiddleware, async (req, res) => {
+  const examId = req.params.id;
+  const instructorId = req.user.id;
+  try {
+    const result = await db.query(`
+      SELECT e.exam_title as exam_title, e.total_items, e.config
+      FROM exams e
+      JOIN classes c ON e.class_id = c.id
+      WHERE e.id = $1 AND c.instructor_id = $2
+    `, [examId, instructorId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Exam not found or you do not have access to this exam.' });
+    }
+
+    const row = result.rows[0];
+    res.json({
+      examTitle: row.exam_title,
+      totalItems: row.total_items,
+      config: typeof row.config === 'string' ? JSON.parse(row.config) : row.config
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch exam format' });
+  }
+});
+
 // Delete an exam
 router.delete('/api/exams/:id', authMiddleware, async (req, res) => {
   const examId = req.params.id;
