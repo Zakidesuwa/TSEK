@@ -103,9 +103,17 @@ export class Exams implements OnInit {
       next: (data) => {
         this.createdExams = data;
         this.isLoadingExams = false;
+        try {
+          this.cdr.detectChanges();
+        } catch (e) {
+          // ignore - detectChanges may not be necessary in some environments
+        }
       },
       error: () => {
         this.isLoadingExams = false;
+        try {
+          this.cdr.detectChanges();
+        } catch (e) {}
       }
     });
   }
