@@ -84,6 +84,18 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   isRemovingStudent = false;
 
   classes: any[] = [];
+  searchQuery = '';
+
+  get filteredClasses() {
+    if (!this.searchQuery?.trim()) {
+      return this.classes;
+    }
+    const query = this.searchQuery.trim().toLowerCase();
+    return this.classes.filter(c =>
+      c.subject.toLowerCase().includes(query) ||
+      c.section.toLowerCase().includes(query)
+    );
+  }
 
   ngOnInit() {
     this.isLoadingClasses = true;
@@ -285,6 +297,29 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
       }
       this.cdr.detectChanges();
     });
+  }
+
+  exportClassScores(): void {
+    if (!this.selectedClass) return;
+
+    const headers = ['Student Name', 'Student Number', ...this.selectedClassExams];
+    const rows = this.allStudents.map(student => [
+      student.name,
+      student.number,
+      ...student.scores
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${this.selectedClass.subject}-${this.selectedClass.section}-scores.csv`.replace(/\s+/g, '_');
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   // ===== Delete Class Methods =====

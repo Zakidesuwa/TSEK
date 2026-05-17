@@ -1,8 +1,14 @@
 <div class="classes-page">
   <!-- Page Header -->
   <div class="page-header">
-    <h1 class="page-title">Classes</h1>
-    <p class="page-subtitle">Check what's new with your classes and quizzes.</p>
+    <div>
+      <h1 class="page-title">Classes</h1>
+      <p class="page-subtitle">Check what's new with your classes and quizzes.</p>
+    </div>
+    <div class="classes-search-wrapper">
+      <span class="material-icons-outlined search-icon">search</span>
+      <input type="text" class="search-input" placeholder="Search class" [(ngModel)]="searchQuery" />
+    </div>
   </div>
 
   <!-- Class Cards Carousel -->
@@ -31,7 +37,7 @@
             </div>
           }
         } @else {
-          @for (cls of classes; track cls.id) {
+          @for (cls of filteredClasses; track cls.id) {
           <div class="class-card" (click)="openClassDetail(cls)">
             <div class="class-card-header">
               <div class="class-card-info">
@@ -52,6 +58,12 @@
             <span class="material-icons-outlined">school</span>
             <p>You haven't added any classes yet.</p>
             <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
+          </div>
+          } @if (filteredClasses.length === 0 && classes.length > 0) {
+          <div class="empty-state-card full-width">
+            <span class="material-icons-outlined">search_off</span>
+            <p>No classes match your search.</p>
+            <button class="btn-text" (click)="searchQuery = ''">Clear Search</button>
           </div>
           }
         }
@@ -117,6 +129,10 @@
         </p>
       </div>
       <div class="detail-header-actions">
+        <button class="export-btn" (click)="exportClassScores()" title="Export class scores">
+          <span class="material-icons-outlined">file_download</span>
+          Export Scores
+        </button>
         <button class="delete-class-btn" (click)="deleteClass(selectedClass)" title="Delete class">
           <span class="material-icons-outlined">delete_outline</span>
           Delete Class
@@ -129,6 +145,50 @@
           <span class="material-icons-outlined">close</span>
         </button>
       </div>
+    </div>
+
+    <div class="detail-overview">
+      <section class="overview-card">
+        <div class="overview-card-header">
+          <h3>Class List</h3>
+          <span>{{ allStudents.length }} students</span>
+        </div>
+        <div class="overview-card-body">
+          @if (allStudents.length > 0) {
+          <ul class="overview-list">
+            @for (student of allStudents.slice(0, 6); track student.number) {
+            <li>
+              <strong>{{ student.name }}</strong>
+              <span>{{ student.number }}</span>
+            </li>
+            }
+          </ul>
+          } @else {
+          <p class="overview-empty">No students are enrolled yet.</p>
+          }
+          @if (allStudents.length > 6) {
+          <p class="overview-note">+ {{ allStudents.length - 6 }} more students</p>
+          }
+        </div>
+      </section>
+
+      <section class="overview-card">
+        <div class="overview-card-header">
+          <h3>Quiz List</h3>
+          <span>{{ selectedClassExams.length }} quizzes</span>
+        </div>
+        <div class="overview-card-body">
+          @if (selectedClassExams.length > 0) {
+          <ul class="overview-list">
+            @for (exam of selectedClassExams; track exam) {
+            <li>{{ exam }}</li>
+            }
+          </ul>
+          } @else {
+          <p class="overview-empty">No quizzes have been created yet.</p>
+          }
+        </div>
+      </section>
     </div>
 
     <!-- Add Student Form -->
