@@ -93,7 +93,7 @@
                   </td>
                   <td>
                     <div class="progress-bar-container">
-                      <div class="progress-bar" [style.width.%]="exam.progress"></div>
+                      <div class="progress-bar" [style.width.%]="getProgress(exam)"></div>
                     </div>
                   </td>
                 </tr>
@@ -131,9 +131,9 @@
               </div>
               <div class="mobile-exam-progress-wrapper">
                 <div class="progress-bar-container small">
-                  <div class="progress-bar" [style.width.%]="exam.progress"></div>
+                  <div class="progress-bar" [style.width.%]="getProgress(exam)"></div>
                 </div>
-                <span class="mobile-exam-percent">{{ exam.progress }}%</span>
+                <span class="mobile-exam-percent">{{ getProgress(exam) }}%</span>
               </div>
             </div>
           } @empty {

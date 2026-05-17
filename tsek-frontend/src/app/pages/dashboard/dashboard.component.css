@@ -326,14 +326,21 @@
 
 /* Progress Bar */
 .progress-bar-container {
-  width: 120px;
+  width: 100%;
+  max-width: 180px;
+  min-width: 100px;
   height: 8px;
   background-color: var(--color-border-light);
   border-radius: 4px;
   overflow: hidden;
 }
 
+.progress-bar-container.small {
+  max-width: 150px;
+}
+
 .progress-bar {
+  width: 0%;
   height: 100%;
   background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
   border-radius: 4px;

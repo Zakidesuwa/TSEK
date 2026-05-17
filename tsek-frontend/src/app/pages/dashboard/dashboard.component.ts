@@ -82,6 +82,17 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  getProgress(exam: RecentExam | any): number {
+    if (!exam) return 0;
+    let p = Number(exam.progress ?? 0);
+    if (Number.isNaN(p)) p = 0;
+    // If API returns 0..1 fractional progress, convert to percent
+    if (p > 0 && p <= 1) p = p * 100;
+    // Clamp to 0-100 and round
+    p = Math.round(Math.max(0, Math.min(100, p)));
+    return p;
+  }
+
   onFileSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
     if (files.length > 0) {
