@@ -141,7 +141,7 @@
           <div class="detected-item">
             <span class="material-icons-outlined">badge</span>
             <div>
-              <label>Student ID <span class="edit-hint">(Editable)</span></label>
+              <label>LRN / Student ID <span class="edit-hint">(Editable)</span></label>
               <input type="text" class="student-id-input" [(ngModel)]="rawText.studentId" placeholder="Not detected" />
             </div>
           </div>
@@ -275,7 +275,7 @@
       <span class="material-icons-outlined">person_check</span>
       <div>
         <strong>Student Identified &amp; Enrolled</strong>
-        <p>Student ID {{ rawText.studentId }} is enrolled in this class. Score has been saved automatically.</p>
+        <p>LRN/Student ID {{ rawText.studentId }} is enrolled in this class. Score has been saved automatically.</p>
       </div>
     </div>
     }
@@ -284,7 +284,7 @@
       <span class="material-icons-outlined">person_off</span>
       <div>
         <strong>Student Not Enrolled</strong>
-        <p>Student ID {{ rawText.studentId }} was detected but is not part of this class. Score was NOT saved.</p>
+        <p>LRN/Student ID {{ rawText.studentId }} was detected but is not part of this class. Score was NOT saved.</p>
       </div>
     </div>
     }
@@ -394,7 +394,7 @@
       </div>
       <h2 class="modal-title">Student Not Enrolled</h2>
       <p class="modal-text">
-        The student with ID <strong>{{ tempEnrollData?.studentId }}</strong> was detected, 
+        The student with LRN/ID <strong>{{ tempEnrollData?.studentId }}</strong> was detected, 
         but they are not currently enrolled in this class. 
       </p>
 
@@ -419,7 +419,7 @@
                   <span class="material-icons-outlined">account_circle</span>
                   <div class="suggestion-text-col">
                     <strong class="suggestion-name">{{ similar.name }}</strong>
-                    <span class="suggestion-id">ID: {{ similar.student_id_number }}</span>
+                    <span class="suggestion-id">LRN/ID: {{ similar.student_id_number }}</span>
                   </div>
                 </div>
                 <div class="suggestion-action-badge">

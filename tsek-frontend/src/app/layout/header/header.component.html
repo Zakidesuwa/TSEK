@@ -12,9 +12,60 @@
   </div>
   <div class="header-right">
     <span class="header-date">{{ currentDate }}</span>
-    <button class="header-icon-btn" title="Notifications">
-      <span class="material-icons-outlined">notifications</span>
-    </button>
+    <div class="notifications-container" style="position: relative; display: flex; align-items: center;">
+      <button class="header-icon-btn" title="Notifications" (click)="toggleNotifications($event)" style="position: relative;">
+        <span class="material-icons-outlined">notifications</span>
+        @if (notifications.length > 0) {
+          <span class="notification-badge" style="position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background-color: #eb962a; border-radius: 50%;"></span>
+        }
+      </button>
+
+      @if (isNotificationsOpen) {
+      <div class="notifications-dropdown" @dropdownAnim (click)="$event.stopPropagation()" style="position: absolute; right: 0; top: 100%; margin-top: 10px; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.06); padding: 12px; z-index: 1000; max-height: 400px; overflow-y: auto;">
+        <div class="dropdown-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.06); margin-bottom: 8px;">
+          <span class="dropdown-title" style="font-weight: 700; color: #1a1a1a; font-size: 14px;">Notifications</span>
+          <span class="dropdown-subtitle" style="font-size: 12px; color: #666;">{{ notifications.length }} active</span>
+        </div>
+        
+        @if (isLoadingNotifications) {
+          <div style="padding: 20px; text-align: center; color: #666; font-size: 13px;">Loading...</div>
+        } @else if (notifications.length === 0) {
+          <div style="padding: 24px; text-align: center; color: #888; font-size: 13px;">
+            <span class="material-icons-outlined" style="font-size: 32px; display: block; margin-bottom: 6px; color: #ccc;">notifications_off</span>
+            No deadline alerts at this time.
+          </div>
+        } @else {
+          <div class="notifications-list" style="display: flex; flex-direction: column; gap: 8px;">
+            @for (notif of notifications; track notif.id) {
+              <div class="notification-item" style="padding: 14px 16px; border-radius: 10px; font-size: 13px; line-height: 1.5; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s; border: 1px solid rgba(0,0,0,0.04); position: relative; overflow: hidden;"
+                [style.background]="notif.type === 'warning' ? '#fff9f0' : '#f4fbf7'"
+              >
+                <!-- Left accent line -->
+                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px;"
+                  [style.background]="notif.type === 'warning' ? '#eb962a' : '#206a3d'">
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 6px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-icons-outlined" style="font-size: 16px;" [style.color]="notif.type === 'warning' ? '#d97d11' : '#1b522c'">
+                      {{ notif.type === 'warning' ? 'error_outline' : 'event' }}
+                    </span>
+                    <span style="font-weight: 700; font-size: 13px; letter-spacing: -0.01em;" [style.color]="notif.type === 'warning' ? '#b05e0c' : '#1b522c'">
+                      {{ notif.type === 'warning' ? 'Deadline Passed' : 'Upcoming Deadline' }}
+                    </span>
+                  </div>
+                  <button (click)="dismissNotification(notif.id, $event)" style="background: none; border: none; cursor: pointer; color: #999; padding: 2px; border-radius: 50%; display: flex; align-items: center; margin-top: -2px; margin-right: -4px;" onmouseover="this.style.color='#333'; this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.color='#999'; this.style.background='none'">
+                    <span class="material-icons-outlined" style="font-size: 16px;">close</span>
+                  </button>
+                </div>
+                <div style="color: #4b5563; padding-left: 6px;">{{ notif.message }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      }
+    </div>
     <div class="profile-container">
       <button class="header-icon-btn profile-btn" title="Profile" (click)="toggleDropdown($event)">
         <span class="material-icons-outlined">account_circle</span>

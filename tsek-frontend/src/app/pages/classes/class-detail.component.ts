@@ -218,6 +218,27 @@ export class ClassDetailComponent implements OnInit {
     this.selectedExamClassInfo = '';
   }
 
+  removeStudent(studentIdNumber: string): void {
+    if (!confirm('Are you sure you want to remove this student from this class? This will also permanently delete their scanned exam grades for this class.')) {
+      return;
+    }
+
+    this.http.delete(`${environment.apiUrl}/api/classes/${this.classId}/students/${studentIdNumber}`).subscribe({
+      next: () => {
+        // Refresh the student list and update total counts
+        this.students = this.students.filter(s => s.number !== studentIdNumber);
+        if (this.classInfo) {
+          this.classInfo.students = this.students.length;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to remove student:', err);
+        alert('Failed to remove the student. Please try again.');
+      }
+    });
+  }
+
   openFormatModal(examId: number, examName: string): void {
     this.selectedExamId = examId;
     this.selectedExamName = examName;

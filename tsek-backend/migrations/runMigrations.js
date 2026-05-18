@@ -150,6 +150,45 @@ async function runMigrations() {
     if (err.code !== '42701') console.error('Migration error:', err);
   }
 
+  try {
+    await pool.query('ALTER TABLE exam_results ALTER COLUMN scanned_image_url TYPE TEXT;');
+    console.log('Migration: Changed scanned_image_url to TEXT for base64 storage');
+  } catch (err) {
+    console.error('Migration error (scanned_image_url type):', err);
+  }
+
+  // Many-to-Many Exam Assignment & Page Count Migrations
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS exam_classes (
+        exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+        class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+        PRIMARY KEY (exam_id, class_id)
+      );
+    `);
+    console.log('Migration: Ensured exam_classes join table exists');
+  } catch (err) {
+    console.error('Migration error (exam_classes):', err);
+  }
+
+  try {
+    await pool.query(`
+      INSERT INTO exam_classes (exam_id, class_id)
+      SELECT id, class_id FROM exams WHERE class_id IS NOT NULL
+      ON CONFLICT DO NOTHING;
+    `);
+    console.log('Migration: Backfilled exam_classes from exams table');
+  } catch (err) {
+    console.error('Migration error (backfill exam_classes):', err);
+  }
+
+  try {
+    await pool.query('ALTER TABLE exam_results ADD COLUMN page_count INTEGER DEFAULT 1;');
+    console.log('Migration: Added page_count column to exam_results');
+  } catch (err) {
+    if (err.code !== '42701') console.error('Migration error (page_count):', err);
+  }
+
   await pool.end();
 }
 

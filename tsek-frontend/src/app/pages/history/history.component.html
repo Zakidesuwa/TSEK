@@ -4,7 +4,7 @@
     <p class="page-subtitle">View past exam results and grading history.</p>
   </div>
 
-  @if (isLoading) {
+  @if (isInitialLoading) {
     <div class="history-container">
       <table class="history-table skeleton-table">
         <thead>
@@ -12,6 +12,7 @@
             <th>EXAM NAME</th>
             <th>CLASS</th>
             <th>DATE</th>
+            <th>DEADLINE</th>
             <th>ITEMS</th>
             <th>SCANS</th>
             <th>ACTION</th>
@@ -23,6 +24,7 @@
               <td><div class="skeleton skeleton-text long"></div></td>
               <td><div class="skeleton skeleton-text medium"></div></td>
               <td><div class="skeleton skeleton-text short"></div></td>
+              <td><div class="skeleton skeleton-text short" style="width: 80px;"></div></td>
               <td><div class="skeleton skeleton-text short" style="width: 20px;"></div></td>
               <td><div class="skeleton skeleton-text short" style="width: 20px;"></div></td>
               <td><div class="skeleton skeleton-badge"></div></td>
@@ -32,7 +34,11 @@
       </table>
     </div>
   } @else {
-    <div class="history-container">
+    <div class="history-container" [class.updating]="isUpdating">
+      <div class="loading-bar-container" [class.visible]="isUpdating">
+        <div class="loading-bar"></div>
+      </div>
+
       @if (historyRecords.length === 0) {
         <div class="empty-state-card full-width">
           <span class="material-icons-outlined">history_toggle_off</span>
@@ -43,20 +49,58 @@
         <table class="history-table">
           <thead>
             <tr>
-              <th>EXAM NAME</th>
-              <th>CLASS</th>
-              <th>DATE</th>
-              <th>ITEMS</th>
-              <th>SCANS</th>
+              <th class="sortable-header" (click)="toggleSort('name')">
+                EXAM NAME
+                @if (currentSortBy === 'name') {
+                  <span class="material-icons-outlined sort-icon" [class.descending]="currentSortOrder === 'DESC'">arrow_upward</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="toggleSort('subject')">
+                CLASS
+                @if (currentSortBy === 'subject') {
+                  <span class="material-icons-outlined sort-icon" [class.descending]="currentSortOrder === 'DESC'">arrow_upward</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="toggleSort('date')">
+                DATE
+                @if (currentSortBy === 'date') {
+                  <span class="material-icons-outlined sort-icon" [class.descending]="currentSortOrder === 'DESC'">arrow_upward</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="toggleSort('deadline')">
+                DEADLINE
+                @if (currentSortBy === 'deadline') {
+                  <span class="material-icons-outlined sort-icon" [class.descending]="currentSortOrder === 'DESC'">arrow_upward</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="toggleSort('total_items')">
+                ITEMS
+                @if (currentSortBy === 'total_items') {
+                  <span class="material-icons-outlined sort-icon" [class.descending]="currentSortOrder === 'DESC'">arrow_upward</span>
+                }
+              </th>
+              <th class="sortable-header" (click)="toggleSort('scans')">
+                SCANS
+                @if (currentSortBy === 'scans') {
+                  <span class="material-icons-outlined sort-icon" [class.descending]="currentSortOrder === 'DESC'">arrow_upward</span>
+                }
+              </th>
               <th>ACTION</th>
             </tr>
           </thead>
           <tbody>
-            @for (record of historyRecords; track record.id) {
+            @for (record of historyRecords; track record.id + '-' + currentSortBy + '-' + currentSortOrder + '-' + currentPage) {
               <tr>
                 <td class="primary-cell">{{ record.name }}</td>
                 <td>{{ record.subject }} - {{ record.section }}</td>
                 <td>{{ record.date | date:'mediumDate' }}</td>
+                <td style="font-weight: 500; color: #1f3f24;">
+                  @if (record.deadline) {
+                    {{ record.deadline | date:'mediumDate' }}
+                  } @else {
+                    <span style="color: #b0b8ad; font-style: italic; font-weight: 400;">No deadline</span>
+                  }
+                </td>
                 <td>{{ record.total_items }}</td>
                 <td>{{ record.scans }}</td>
                 <td>

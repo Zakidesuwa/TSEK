@@ -11,7 +11,8 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
       SELECT 
         er.score,
         e.config,
-        e.total_items
+        e.total_items,
+        er.page_count
       FROM exam_results er
       JOIN exams e ON er.exam_id = e.id
       JOIN classes c ON e.class_id = c.id
@@ -20,8 +21,10 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
     
     let totalScore = 0;
     let totalPossible = 0;
+    let totalSheets = 0;
     statsRes.rows.forEach(row => {
       totalScore += parseFloat(row.score);
+      totalSheets += row.page_count || 1;
       let maxScore = row.total_items;
       try {
         const config = typeof row.config === 'string' ? JSON.parse(row.config) : row.config;
@@ -33,7 +36,6 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
     });
     
     const accuracyNum = totalPossible > 0 ? (totalScore / totalPossible * 100) : 0;
-    const totalSheets = statsRes.rows.length;
     
     const examsRes = await db.query(`
       SELECT COUNT(e.id) FROM exams e
@@ -57,7 +59,6 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
   }
 });
 
-// Recent Exams
 router.get('/api/dashboard/recent-exams', authMiddleware, async (req, res) => {
   const instructorId = req.user.id;
   try {
@@ -65,11 +66,34 @@ router.get('/api/dashboard/recent-exams', authMiddleware, async (req, res) => {
       SELECT 
         e.id, 
         e.exam_title as name, 
-        c.class_name as subject, 
+        COALESCE(
+          (
+            SELECT STRING_AGG(cl.class_name || ' (' || cl.section_code || ')', ', ')
+            FROM exam_classes ec
+            JOIN classes cl ON ec.class_id = cl.id
+            WHERE ec.exam_id = e.id
+          ), 
+          c.class_name
+        ) as subject, 
         e.total_items,
         e.config,
-        'COMPLETED' as status,
-        100 as progress
+        COALESCE(
+          (
+            SELECT COUNT(DISTINCT ce.student_id)
+            FROM exam_classes ec
+            JOIN class_enrollments ce ON ec.class_id = ce.class_id
+            WHERE ec.exam_id = e.id
+          ),
+          0
+        ) as total_students,
+        COALESCE(
+          (
+            SELECT COUNT(DISTINCT er.student_id)
+            FROM exam_results er
+            WHERE er.exam_id = e.id
+          ),
+          0
+        ) as completed_students
       FROM exams e
       JOIN classes c ON e.class_id = c.id
       WHERE c.instructor_id = $1
@@ -86,13 +110,27 @@ router.get('/api/dashboard/recent-exams', authMiddleware, async (req, res) => {
         }
       } catch (e) {}
       
+      const completedStudents = parseInt(row.completed_students, 10);
+      const totalStudents = Math.max(parseInt(row.total_students, 10), completedStudents);
+      
+      let progress = 100;
+      let status = 'COMPLETED';
+      
+      if (totalStudents > 0) {
+        progress = Math.min(100, Math.round((completedStudents / totalStudents) * 100));
+        status = progress === 100 ? 'COMPLETED' : 'IN PROGRESS';
+      } else if (completedStudents === 0) {
+        progress = 0;
+        status = 'IN PROGRESS';
+      }
+      
       return {
         id: row.id,
         name: row.name,
         subject: row.subject,
         volume: volume,
-        status: row.status,
-        progress: row.progress
+        status: status,
+        progress: progress
       };
     });
 
@@ -122,6 +160,93 @@ router.get('/api/dashboard/classes', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch class blocks' });
+  }
+});
+
+// Get deadline notifications
+router.get('/api/dashboard/notifications', authMiddleware, async (req, res) => {
+  const instructorId = req.user.id;
+  try {
+    const result = await db.query(`
+      SELECT 
+        e.id,
+        e.exam_title as name,
+        COALESCE(
+          (
+            SELECT STRING_AGG(cl.class_name || ' (' || cl.section_code || ')', ', ')
+            FROM exam_classes ec
+            JOIN classes cl ON ec.class_id = cl.id
+            WHERE ec.exam_id = e.id
+          ), 
+          c.class_name
+        ) as subject,
+        e.deadline,
+        COALESCE(
+          (
+            SELECT COUNT(DISTINCT ce.student_id)
+            FROM exam_classes ec
+            JOIN class_enrollments ce ON ec.class_id = ce.class_id
+            WHERE ec.exam_id = e.id
+          ),
+          0
+        ) as total_students,
+        COALESCE(
+          (
+            SELECT COUNT(DISTINCT er.student_id)
+            FROM exam_results er
+            WHERE er.exam_id = e.id
+          ),
+          0
+        ) as completed_students
+      FROM exams e
+      JOIN classes c ON e.class_id = c.id
+      WHERE c.instructor_id = $1
+        AND e.deadline IS NOT NULL
+        AND (
+          (e.deadline >= NOW() AND e.deadline <= NOW() + INTERVAL '3 days')
+          OR 
+          (e.deadline < NOW() AND e.deadline >= NOW() - INTERVAL '7 days')
+        )
+      ORDER BY e.deadline ASC
+    `, [instructorId]);
+
+    const notifications = [];
+    result.rows.forEach(row => {
+      const deadlineDate = new Date(row.deadline);
+      const now = new Date();
+      const isMissed = deadlineDate < now;
+      const completedStudents = parseInt(row.completed_students, 10);
+      const totalEnrolled = parseInt(row.total_students, 10);
+      const totalStudents = Math.max(totalEnrolled, completedStudents);
+      
+      const isCompleted = totalStudents > 0 && completedStudents >= totalStudents;
+
+      if (isMissed) {
+        if (!isCompleted && totalStudents > 0) {
+          notifications.push({
+            id: `missed-${row.id}`,
+            type: 'warning',
+            message: `The deadline for "${row.name}" (${row.subject}) passed on ${deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. Only ${completedStudents}/${totalStudents} sheets were graded.`,
+            examId: row.id
+          });
+        }
+      } else {
+        if (!isCompleted) {
+          const gradedText = totalStudents > 0 ? `${completedStudents}/${totalStudents}` : `${completedStudents}`;
+          notifications.push({
+            id: `approaching-${row.id}`,
+            type: 'info',
+            message: `"${row.name}" (${row.subject}) deadline is approaching: ${deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}. Currently graded: ${gradedText}.`,
+            examId: row.id
+          });
+        }
+      }
+    });
+
+    res.json(notifications);
+  } catch (err) {
+    console.error('Error fetching notifications:', err);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
 

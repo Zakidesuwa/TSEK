@@ -63,7 +63,7 @@ export class SidebarComponent {
 
   navItems = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-    { label: 'Generate Exam', icon: 'edit_note', route: '/generate-exam' },
+    { label: 'Generate Answer Sheet', icon: 'edit_note', route: '/generate-exam' },
     { label: 'Classes', icon: 'school', route: '/classes' },
     { label: 'Exams', icon: 'assessment', route: '/exams' },
     { label: 'History', icon: 'history', route: '/history' }

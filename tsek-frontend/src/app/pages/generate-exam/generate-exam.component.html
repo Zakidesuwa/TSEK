@@ -1,7 +1,7 @@
 <div class="generate-exam">
   <!-- Page Header -->
   <div class="page-header">
-    <h1 class="page-title">Generate Exam</h1>
+    <h1 class="page-title">Generate Answer Sheet</h1>
     <p class="page-subtitle">
       @if (currentStep === 'configure') {
         Configure your exam layout.
@@ -84,13 +84,21 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">CLASS / SECTION</label>
+              <label class="form-label">ASSIGNEE CLASSES / SECTIONS</label>
               @if (classes.length > 0) {
-                <select class="form-select" [class.input-error]="formErrors.class" [(ngModel)]="selectedClassId">
+                <div class="class-checkbox-list" [class.input-error]="formErrors.class" style="border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 12px; max-height: 150px; overflow-y: auto; background: var(--bg-card, #fff);">
                   @for (cls of classes; track cls.id) {
-                    <option [value]="cls.id">{{ cls.subject }} ({{ cls.section }})</option>
+                    <label class="class-checkbox-item" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 14px; color: var(--text-color, #333);">
+                      <input 
+                        type="checkbox" 
+                        [checked]="selectedClassIds.includes(cls.id)" 
+                        (change)="toggleAssignClass(cls.id)" 
+                        style="width: 16px; height: 16px; accent-color: var(--primary-color, #4a6741); cursor: pointer;"
+                      >
+                      <span>{{ cls.subject }} ({{ cls.section }})</span>
+                    </label>
                   }
-                </select>
+                </div>
                 @if (formErrors.class) {
                   <p class="form-error-message">
                     <span class="material-icons-outlined">error_outline</span>
@@ -264,7 +272,7 @@
               <div class="info-box"></div>
             </div>
             <div class="info-field">
-              <label>PROGRAM & BLOCK</label>
+              <label>GRADE LEVEL, SECTION & STRAND</label>
               <div class="info-box"></div>
             </div>
             <div class="info-field">
@@ -274,7 +282,7 @@
           </div>
 
           <div class="student-id-section">
-            <div class="student-id-label">STUDENT ID NUMBER</div>
+            <div class="student-id-label">LEARNER REFERENCE NUMBER (LRN)</div>
             <div class="id-bubble-grid">
               @for (col of studentIdColumnsArray; track $index) {
                 <div class="id-bubble-col">

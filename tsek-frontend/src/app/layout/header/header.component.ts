@@ -1,6 +1,8 @@
-import { Component, Output, EventEmitter, inject, HostListener } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, inject, HostListener } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
@@ -21,14 +23,18 @@ import { trigger, transition, style, animate } from '@angular/animations';
     ])
   ]
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   @Output() menuToggle = new EventEmitter<void>();
   @Output() logoutRequested = new EventEmitter<void>();
   currentDate: string;
   isDropdownOpen = false;
+  isNotificationsOpen = false;
+  notifications: any[] = [];
+  isLoadingNotifications = true;
 
   authService = inject(AuthService);
   router = inject(Router);
+  http = inject(HttpClient);
 
   get user() {
     const token = this.authService.getToken();
@@ -48,9 +54,42 @@ export class HeaderComponent {
     this.currentDate = this.formatDate(new Date());
   }
 
+  ngOnInit() {
+    this.fetchNotifications();
+  }
+
   toggleDropdown(event: Event) {
     event.stopPropagation();
     this.isDropdownOpen = !this.isDropdownOpen;
+    this.isNotificationsOpen = false;
+  }
+
+  toggleNotifications(event: Event) {
+    event.stopPropagation();
+    this.isNotificationsOpen = !this.isNotificationsOpen;
+    this.isDropdownOpen = false;
+    if (this.isNotificationsOpen) {
+      this.fetchNotifications();
+    }
+  }
+
+  fetchNotifications() {
+    this.isLoadingNotifications = true;
+    this.http.get<any[]>(`${environment.apiUrl}/api/dashboard/notifications`).subscribe({
+      next: (data) => {
+        this.notifications = data;
+        this.isLoadingNotifications = false;
+      },
+      error: (err) => {
+        console.error('Failed to load notifications', err);
+        this.isLoadingNotifications = false;
+      }
+    });
+  }
+
+  dismissNotification(id: string, event: Event) {
+    event.stopPropagation();
+    this.notifications = this.notifications.filter(n => n.id !== id);
   }
 
   logout() {
@@ -59,8 +98,9 @@ export class HeaderComponent {
   }
 
   @HostListener('document:click')
-  closeDropdown() {
+  closeDropdowns() {
     this.isDropdownOpen = false;
+    this.isNotificationsOpen = false;
   }
 
   private formatDate(date: Date): string {

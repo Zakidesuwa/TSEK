@@ -14,7 +14,12 @@ router.get('/api/classes', authMiddleware, async (req, res) => {
         c.section_code as section,
         COUNT(ce.student_id) as students,
         COALESCE(
-          (SELECT TO_CHAR(MAX(COALESCE(exam_date, created_at::date)), 'Mon DD') FROM exams WHERE class_id = c.id),
+          (
+            SELECT TO_CHAR(MAX(COALESCE(e.exam_date, e.created_at::date)), 'Mon DD') 
+            FROM exams e 
+            JOIN exam_classes ec ON e.id = ec.exam_id 
+            WHERE ec.class_id = c.id
+          ),
           'TBD'
         ) as "nextQuiz"
       FROM classes c
@@ -55,8 +60,14 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
   try {
     const classId = req.params.id;
     
-    // 1. Fetch all exams for this class
-    const examsRes = await db.query('SELECT id, exam_title, total_items, config FROM exams WHERE class_id = $1 ORDER BY created_at ASC', [classId]);
+    // Fetch all exams associated with this class via exam_classes
+    const examsRes = await db.query(`
+      SELECT DISTINCT e.id, e.exam_title, e.total_items, e.config 
+      FROM exams e 
+      JOIN exam_classes ec ON e.id = ec.exam_id 
+      WHERE ec.class_id = $1 
+      ORDER BY e.id ASC
+    `, [classId]);
     const classExams = examsRes.rows;
     
     // Pre-calculate max scores for each exam
@@ -71,9 +82,7 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
       return { id: exam.id, maxScore };
     });
 
-    const examNames = classExams.map(e => e.exam_title);
-
-    // 2. Fetch all students enrolled in this class
+    // Fetch all students enrolled in this class
     const studentsRes = await db.query(`
       SELECT 
         s.id,
@@ -85,7 +94,7 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
       ORDER BY s.full_name ASC
     `, [classId]);
     
-    // 3. For each student, find their scores for the respective exams
+    // For each student, find their scores for the respective exams
     const students = await Promise.all(studentsRes.rows.map(async (student) => {
       const scores = [];
       for (let i = 0; i < classExams.length; i++) {
@@ -93,13 +102,14 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
         const { maxScore } = examMaxScores[i];
 
         const resultRes = await db.query(`
-          SELECT score, scanned_image_url FROM exam_results WHERE exam_id = $1 AND student_id = $2
+          SELECT score, (scanned_image_url IS NOT NULL AND scanned_image_url != '') as has_image FROM exam_results WHERE exam_id = $1 AND student_id = $2
         `, [exam.id, student.id]);
         
         if (resultRes.rows.length > 0) {
+          const hasImage = resultRes.rows[0].has_image;
           scores.push({
             value: `${resultRes.rows[0].score}/${maxScore}`,
-            imageUrl: resultRes.rows[0].scanned_image_url || null
+            imageUrl: hasImage ? `${req.protocol}://${req.get('host')}/api/exams/${exam.id}/students/${student.id}/image` : null
           });
         } else {
           scores.push({
@@ -114,6 +124,7 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
         scores: scores
       };
     }));
+    
     res.json({ 
       exams: classExams.map(e => ({ id: e.id, exam_title: e.exam_title })), 
       students 
@@ -182,6 +193,18 @@ router.post('/api/classes/:id/students', authMiddleware, async (req, res) => {
 router.delete('/api/classes/:classId/students/:studentId', authMiddleware, async (req, res) => {
   const { classId, studentId } = req.params;
   try {
+    // 1. First, delete all exam results for this student on all exams belonging to this class
+    await db.query(
+      `DELETE FROM exam_results 
+       WHERE student_id = (SELECT id FROM students WHERE student_id_number = $2)
+         AND exam_id IN (
+           SELECT ec.exam_id FROM exam_classes ec
+           WHERE ec.class_id = $1
+         )`,
+      [classId, studentId]
+    );
+
+    // 2. Next, remove the student from the class roster
     await db.query(
       `DELETE FROM class_enrollments 
        WHERE class_id = $1 
@@ -189,7 +212,7 @@ router.delete('/api/classes/:classId/students/:studentId', authMiddleware, async
       [classId, studentId]
     );
 
-    res.json({ message: 'Student removed from class' });
+    res.json({ message: 'Student removed from class and exam results deleted' });
   } catch (err) {
     console.error('Error removing student:', err);
     res.status(500).json({ error: 'Failed to remove student' });
@@ -212,29 +235,15 @@ router.delete('/api/classes/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Class not found or you do not have permission to delete it.' });
     }
 
-    // Delete exam results for exams in this class
-    await db.query(
-      `DELETE FROM exam_results 
-       WHERE exam_id IN (SELECT id FROM exams WHERE class_id = $1)`,
-      [classId]
-    );
-
-    // Delete exams for this class
-    await db.query(
-      'DELETE FROM exams WHERE class_id = $1',
-      [classId]
-    );
-
-    // Delete class enrollments
-    await db.query(
-      'DELETE FROM class_enrollments WHERE class_id = $1',
-      [classId]
-    );
-
-    // Delete the class itself
+    // Delete class itself (will cascade delete class_enrollments and exam_classes links)
     await db.query(
       'DELETE FROM classes WHERE id = $1',
       [classId]
+    );
+
+    // Clean up orphaned exams (exams no longer associated with any class; will cascade delete their exam_results)
+    await db.query(
+      'DELETE FROM exams WHERE id NOT IN (SELECT DISTINCT exam_id FROM exam_classes)'
     );
 
     res.json({ message: 'Class deleted successfully' });

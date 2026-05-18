@@ -82,22 +82,26 @@ exports.scanImage = async (req, res) => {
       ? `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
 You are given ${files.length} images. These are ${files.length} PAGES of the SAME student's exam answer sheet. The items continue across pages with sequential numbering (e.g., page 1 has items 1-50, page 2 has items 51-100, etc.).
 
-1. Identify the Student ID number encoded in the grid bubbles. The Student ID grid is on PAGE 1 ONLY.
-   - There are exactly 9 columns in the Student ID grid.
+1. Identify the Learner Reference Number (LRN) / Student ID encoded in the grid bubbles. The LRN grid is on PAGE 1 ONLY.
+   - There are exactly 12 columns in the LRN / Student ID grid.
    - The grid has exactly 10 rows of bubbles. The top-most row is ALWAYS 0, the second row down is 1, the third row down is 2, and so on until the bottom row which is 9.
    - Look at each column individually from left to right.
    - For each column, count how many rows down the shaded bubble is to determine the correct number (0-9). Pay extreme attention to horizontal alignment.
-   - Combine these 9 numbers to form the final Student ID.
+   - Combine these 12 numbers to form the final LRN / Student ID.
+   - IMPORTANT: If the grid is completely blank or no bubbles are shaded, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
 
-2. If there is a name field (handwritten or printed) on page 1, identify the student's full name.
+2. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
 3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+   - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
 4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+   - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
 5. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
+6. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
-  "studentIdReasoning": "Briefly list the shaded number found in each of the 9 columns from left to right (e.g., 'Col 1: 2, Col 2: 0, Col 3: 2...') to ensure accuracy.",
-  "studentId": "123456789",
+  "studentIdReasoning": "Briefly list the shaded number found in each of the 12 columns from left to right (e.g., 'Col 1: 2, Col 2: 0...') to ensure accuracy.",
+  "studentId": "123456789012",
   "studentName": "JOHN DOE",
   "answers": {
     "1": "A",
@@ -106,25 +110,29 @@ Return the result STRICTLY as a valid, stringified JSON object using the followi
     "52": "PHOTOSYNTHESIS"
   }
 }
-Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object. If an item is unreadable or completely blank, leave the answer as null.`
+Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object.`
       : `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
 Look carefully at the provided student answer sheet image. 
 
-1. Identify the Student ID number encoded in the grid bubbles. 
-   - There are exactly 9 columns in the Student ID grid.
+1. Identify the Learner Reference Number (LRN) / Student ID encoded in the grid bubbles. 
+   - There are exactly 12 columns in the LRN / Student ID grid.
    - The grid has exactly 10 rows of bubbles. The top-most row is ALWAYS 0, the second row down is 1, the third row down is 2, and so on until the bottom row which is 9.
    - Look at each column individually from left to right.
    - For each column, count how many rows down the shaded bubble is to determine the correct number (0-9). Pay extreme attention to horizontal alignment.
-   - Combine these 9 numbers to form the final Student ID.
+   - Combine these 12 numbers to form the final LRN / Student ID.
+   - IMPORTANT: If the grid is completely blank or no bubbles are shaded, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
 
-2. If there is a name field (handwritten or printed), identify the student's full name.
+2. If there is a name field (handwritten or printed), identify the student's full name. If it is blank, return null or "".
 3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+   - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
 4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+   - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
+5. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
-  "studentIdReasoning": "Briefly list the shaded number found in each of the 9 columns from left to right (e.g., 'Col 1: 2, Col 2: 0, Col 3: 2...') to ensure accuracy.",
-  "studentId": "123456789",
+  "studentIdReasoning": "Briefly list the shaded number found in each of the 12 columns from left to right (e.g., 'Col 1: 2, Col 2: 0...') to ensure accuracy.",
+  "studentId": "123456789012",
   "studentName": "JOHN DOE",
   "answers": {
     "1": "A",
@@ -134,7 +142,7 @@ Return the result STRICTLY as a valid, stringified JSON object using the followi
     "5": "T"
   }
 }
-Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object. If an item is unreadable or completely blank, leave the answer as null.`;
+Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object.`;
 
     let responseText;
     try {
@@ -174,22 +182,13 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
       });
     }
 
-    // Save the first page to the uploads directory to provide a scanned image link
+    // Convert the first page image buffer directly into a Base64 string for DB storage
     let imageUrl = null;
     if (files.length > 0) {
-      const fs = require('fs');
-      const path = require('path');
-      const uploadsDir = path.join(__dirname, '../uploads');
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-      
       const file = files[0];
-      const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
-      const filepath = path.join(uploadsDir, filename);
-      fs.writeFileSync(filepath, file.buffer);
-      
-      imageUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+      const base64Data = file.buffer.toString('base64');
+      const mimeType = file.mimetype || 'image/jpeg';
+      imageUrl = `data:${mimeType};base64,${base64Data}`;
     }
 
     res.status(200).json({
@@ -211,7 +210,7 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 const db = require('../db');
 
 exports.gradeExam = async (req, res) => {
-  const { exam_id, studentId, answers, scanned_image_url } = req.body;
+  const { exam_id, studentId, answers, scanned_image_url, page_count } = req.body;
 
   if (!exam_id || !answers) {
     return res.status(400).json({ message: 'exam_id and answers are required.' });
@@ -317,11 +316,11 @@ exports.gradeExam = async (req, res) => {
 
           // Insert into exam_results only if student is enrolled
           await db.query(`
-            INSERT INTO exam_results (exam_id, student_id, score, graded_items, scanned_image_url)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO exam_results (exam_id, student_id, score, graded_items, scanned_image_url, page_count)
+            VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT ON CONSTRAINT unique_exam_student 
-            DO UPDATE SET score = $3, graded_items = $4, scanned_image_url = COALESCE($5, exam_results.scanned_image_url)
-          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems), scanned_image_url || null]);
+            DO UPDATE SET score = $3, graded_items = $4, scanned_image_url = COALESCE($5, exam_results.scanned_image_url), page_count = COALESCE($6, exam_results.page_count)
+          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems), scanned_image_url || null, page_count || 1]);
         }
       }
     }
@@ -382,7 +381,7 @@ exports.gradeExam = async (req, res) => {
 };
 
 exports.saveOverride = async (req, res) => {
-  const { exam_id, studentId, adjustedScore, overriddenItems } = req.body;
+  const { exam_id, studentId, adjustedScore, overriddenItems, page_count } = req.body;
 
   if (!exam_id || adjustedScore === undefined) {
     return res.status(400).json({ message: 'exam_id and adjustedScore are required.' });
@@ -406,15 +405,15 @@ exports.saveOverride = async (req, res) => {
 
         if (existing.rows.length > 0) {
           await db.query(
-            'UPDATE exam_results SET score = $1, graded_items = $4 WHERE exam_id = $2 AND student_id = $3',
-            [adjustedScore, exam_id, studentDbId, JSON.stringify(overriddenItems)]
+            'UPDATE exam_results SET score = $1, graded_items = $4, page_count = COALESCE($5, exam_results.page_count) WHERE exam_id = $2 AND student_id = $3',
+            [adjustedScore, exam_id, studentDbId, JSON.stringify(overriddenItems), page_count || 1]
           );
         } else {
           await db.query(`
-            INSERT INTO exam_results (exam_id, student_id, score, graded_items) 
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4
-          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(overriddenItems)]);
+            INSERT INTO exam_results (exam_id, student_id, score, graded_items, page_count) 
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4, page_count = COALESCE($5, exam_results.page_count)
+          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(overriddenItems), page_count || 1]);
         }
 
         return res.status(200).json({

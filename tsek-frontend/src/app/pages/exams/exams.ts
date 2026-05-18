@@ -191,10 +191,12 @@ export class Exams implements OnInit {
       next: (data) => {
         this.selectedExamStats = data;
         this.showStatsModal = true;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load stats:', err);
         alert('Failed to load statistics for this exam.');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -215,11 +217,13 @@ export class Exams implements OnInit {
         this.selectedExamFormat = data;
         this.showFormatModal = true;
         this.isLoadingFormat = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoadingFormat = false;
         console.error('Failed to load exam format:', err);
         alert('Failed to load the exam format. Please try again.');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -311,11 +315,13 @@ export class Exams implements OnInit {
         this.selectedAnswerSheet = { ...data, config: annotatedConfig };
         this.showAnswerSheetModal = true;
         this.isLoadingAnswerSheet = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.isLoadingAnswerSheet = false;
         console.error('Failed to load answer sheet:', err);
         alert('Failed to load the answer sheet.');
+        this.cdr.detectChanges();
       }
     });
   }

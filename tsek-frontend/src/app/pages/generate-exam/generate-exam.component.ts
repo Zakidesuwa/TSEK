@@ -83,7 +83,7 @@ export class GenerateExamComponent implements OnInit {
       this.examDate = '';
       this.examDeadline = '';
       this.numberOfChoices = 4;
-      this.selectedClassId = this.classes.length > 0 ? this.classes[0].id : null;
+      this.selectedClassIds = this.classes.length > 0 ? [this.classes[0].id] : [];
 
       this.sections = [
         { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
@@ -115,7 +115,7 @@ export class GenerateExamComponent implements OnInit {
   examDeadline = '';
   numberOfChoices = 4;
   isLoading = true;
-  selectedClassId: number | null = null;
+  selectedClassIds: number[] = [];
   classes: any[] = [];
   
   // Validation errors
@@ -141,7 +141,7 @@ export class GenerateExamComponent implements OnInit {
       next: data => {
         this.classes = data;
         if (this.classes.length > 0) {
-          this.selectedClassId = this.classes[0].id;
+          this.selectedClassIds = [this.classes[0].id];
         }
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -153,6 +153,15 @@ export class GenerateExamComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  toggleAssignClass(classId: number) {
+    const index = this.selectedClassIds.indexOf(classId);
+    if (index > -1) {
+      this.selectedClassIds.splice(index, 1);
+    } else {
+      this.selectedClassIds.push(classId);
+    }
   }
 
   /** Load an imported exam draft saved in localStorage by the exams page */
@@ -342,8 +351,8 @@ export class GenerateExamComponent implements OnInit {
     this.formErrors = {};
 
     // Validate class selection
-    if (!this.selectedClassId) {
-      this.formErrors.class = 'Please select a class.';
+    if (!this.selectedClassIds || this.selectedClassIds.length === 0) {
+      this.formErrors.class = 'Please select at least one class.';
     }
 
     // Validate exam title
@@ -374,7 +383,7 @@ export class GenerateExamComponent implements OnInit {
   }
 
   get studentIdColumnsArray(): number[] {
-    return [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 9 digit ID
+    return Array.from({ length: 12 }, (_, i) => i + 1); // 12-digit LRN
   }
 
   get mcColumns(): any[][] {
@@ -668,7 +677,8 @@ export class GenerateExamComponent implements OnInit {
     }));
 
     const payload = {
-      class_id: this.selectedClassId,
+      class_id: this.selectedClassIds[0], // backward compatibility
+      class_ids: this.selectedClassIds,
       exam_title: this.examTitle,
       total_items: this.answerTabs.reduce((sum, t) => sum + t.itemCount, 0),
       config: finalConfig,

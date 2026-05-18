@@ -11,6 +11,7 @@ interface HistoryRecord {
   name: string;
   total_items: number;
   date: string;
+  deadline?: string;
   scans: string; // From COUNT()
 }
 
@@ -28,28 +29,60 @@ export class HistoryComponent implements OnInit {
   
   allRecords: HistoryRecord[] = [];
   historyRecords: HistoryRecord[] = [];
-  isLoading = true;
+  isInitialLoading = true;
+  isUpdating = false;
 
   // Pagination
   currentPage = 1;
   itemsPerPage = 10;
   totalPages = 1;
 
+  currentSortBy = 'date';
+  currentSortOrder = 'DESC';
+
   ngOnInit() {
-    this.http.get<HistoryRecord[]>(`${environment.apiUrl}/api/history`).subscribe({
+    this.fetchHistory(true);
+  }
+
+  fetchHistory(isInitial = false) {
+    if (isInitial) {
+      this.isInitialLoading = true;
+    } else {
+      this.isUpdating = true;
+    }
+    this.cdr.detectChanges();
+    this.http.get<HistoryRecord[]>(`${environment.apiUrl}/api/history`, {
+      params: {
+        sortBy: this.currentSortBy,
+        sortOrder: this.currentSortOrder
+      }
+    }).subscribe({
       next: (data) => {
         this.allRecords = data;
         this.totalPages = Math.max(1, Math.ceil(this.allRecords.length / this.itemsPerPage));
         this.updatePaginatedRecords();
-        this.isLoading = false;
+        this.isInitialLoading = false;
+        this.isUpdating = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to fetch history', err);
-        this.isLoading = false;
+        this.isInitialLoading = false;
+        this.isUpdating = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  toggleSort(field: string): void {
+    if (this.currentSortBy === field) {
+      this.currentSortOrder = this.currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
+    } else {
+      this.currentSortBy = field;
+      this.currentSortOrder = 'DESC';
+    }
+    this.currentPage = 1; // Reset to page 1 when sort changes
+    this.fetchHistory(false);
   }
 
   changePage(page: number): void {

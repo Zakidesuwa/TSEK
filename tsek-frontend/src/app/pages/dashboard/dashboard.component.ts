@@ -40,12 +40,27 @@ export class DashboardComponent implements OnInit {
   statCards: StatCard[] = [];
   recentExams: RecentExam[] = [];
   classBlocks: ClassBlock[] = [];
+  notifications: any[] = [];
 
   isLoadingStats = true;
   isLoadingExams = true;
   isLoadingClasses = true;
+  isLoadingNotifications = true;
 
   ngOnInit() {
+    // Fetch deadline notifications
+    this.http.get<any[]>(`${environment.apiUrl}/api/dashboard/notifications`).subscribe({
+      next: (data) => {
+        this.notifications = data;
+        this.isLoadingNotifications = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load notifications', err);
+        this.isLoadingNotifications = false;
+      }
+    });
+
     // Fetch dashboard stats
     this.http.get<any>(`${environment.apiUrl}/api/dashboard/stats`).subscribe(data => {
       this.statCards = [
@@ -71,6 +86,11 @@ export class DashboardComponent implements OnInit {
       this.isLoadingClasses = false;
       this.cdr.detectChanges();
     });
+  }
+
+  dismissNotification(id: string) {
+    this.notifications = this.notifications.filter(n => n.id !== id);
+    this.cdr.detectChanges();
   }
 
   getStatusClass(status: string): string {

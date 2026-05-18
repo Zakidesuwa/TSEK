@@ -161,7 +161,8 @@ export class ScanResults implements OnInit {
       studentId: this.rawText.studentId,
       studentName: this.rawText.studentName || '',
       answers: this.rawText.answers,
-      scanned_image_url: this.scannedImageUrl || null
+      scanned_image_url: this.scannedImageUrl || null,
+      page_count: this.pageCount
     };
 
     this.http.post(`${environment.apiUrl}/api/scan/grade`, payload).subscribe({
@@ -345,7 +346,8 @@ export class ScanResults implements OnInit {
       exam_id: this.selectedExamId,
       studentId: this.rawText?.studentId,
       adjustedScore: this.adjustedScore,
-      overriddenItems: Array.from(this.overrides)
+      overriddenItems: Array.from(this.overrides),
+      page_count: this.pageCount
     };
 
     this.http.post(`${environment.apiUrl}/api/scan/grade/override`, payload).subscribe({

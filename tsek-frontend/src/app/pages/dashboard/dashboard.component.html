@@ -5,6 +5,39 @@
     <p class="page-subtitle">Welcome back. Here's what's happening with your exams today.</p>
   </div>
 
+  <!-- Deadline Notifications Panel -->
+  @if (notifications.length > 0) {
+    <div class="notifications-panel" style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px;">
+      @for (notif of notifications; track notif.id) {
+        <div class="notification-alert" [class]="notif.type" style="display: flex; align-items: flex-start; justify-content: space-between; padding: 16px 20px; border-radius: 12px; font-size: 14px; line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); position: relative; overflow: hidden;"
+          [style.background]="notif.type === 'warning' ? '#fff9f0' : '#f4fbf7'"
+        >
+          <!-- Left accent line -->
+          <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 5px;"
+            [style.background]="notif.type === 'warning' ? '#eb962a' : '#206a3d'">
+          </div>
+
+          <div style="display: flex; align-items: flex-start; gap: 16px; padding-left: 4px;">
+            <div style="padding-top: 2px;">
+              <span class="material-icons-outlined" style="font-size: 24px;" [style.color]="notif.type === 'warning' ? '#d97d11' : '#1b522c'">
+                {{ notif.type === 'warning' ? 'error_outline' : 'event' }}
+              </span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-weight: 700; font-size: 15px; letter-spacing: -0.01em;" [style.color]="notif.type === 'warning' ? '#b05e0c' : '#1b522c'">
+                {{ notif.type === 'warning' ? 'Action Required: Deadline Passed' : 'Notice: Upcoming Deadline' }}
+              </span>
+              <span style="color: #4b5563;">{{ notif.message }}</span>
+            </div>
+          </div>
+          <button class="dismiss-btn" (click)="dismissNotification(notif.id)" style="background: none; border: none; cursor: pointer; color: #999; padding: 6px; display: flex; align-items: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.color='#333'; this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.color='#999'; this.style.background='none'">
+            <span class="material-icons-outlined" style="font-size: 20px;">close</span>
+          </button>
+        </div>
+      }
+    </div>
+  }
+
   <!-- Stat Cards -->
   <div class="stat-cards">
     @if (isLoadingStats) {
@@ -41,7 +74,7 @@
   </div>
 
   <!-- TSEK NOW Mobile Button (Hidden on Desktop) -->
-  <input type="file" accept="image/*" multiple #fileInputMobile class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" capture="environment" multiple #fileInputMobile class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
   <button class="tsek-now-btn mobile-only" (click)="fileInputMobile.click()">
     <span class="material-icons-outlined">camera_alt</span>
     TSEK NOW

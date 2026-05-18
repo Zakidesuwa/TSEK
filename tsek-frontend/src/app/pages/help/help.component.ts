@@ -12,7 +12,7 @@ export class HelpComponent {
   faqs = [
     {
       question: 'How do I create an exam?',
-      answer: 'Go to "Generate Exam" from the sidebar. Select a class, name your exam, then configure your sections (Multiple Choice, True/False, Identification). Set the answer key and click "Save & Generate" to create a printable OMR sheet.',
+      answer: 'Go to "Generate Answer Sheet" from the sidebar. Select a class, name your exam, then configure your sections (Multiple Choice, True/False, Identification). Set the answer key and click "Save & Generate" to create a printable OMR sheet.',
       open: false
     },
     {
