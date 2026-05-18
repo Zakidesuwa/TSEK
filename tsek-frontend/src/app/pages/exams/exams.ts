@@ -186,7 +186,7 @@ export class Exams implements OnInit {
   openStatsModal(exam: ExamCard): void {
     this.selectedExamId = exam.id;
     this.selectedExamName = exam.name;
-    this.selectedExamClassInfo = exam.sectionCode ? `${exam.subject} (${exam.sectionCode})` : exam.subject;
+    this.selectedExamClassInfo = exam.sectionCode ? exam.sectionCode : exam.subject;
     this.http.get<ExamStats>(`${environment.apiUrl}/api/exams/${exam.id}/statistics`).subscribe({
       next: (data) => {
         this.selectedExamStats = data;
