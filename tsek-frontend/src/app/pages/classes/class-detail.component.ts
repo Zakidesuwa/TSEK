@@ -36,7 +36,7 @@ export class ClassDetailComponent implements OnInit {
   classInfo: ClassInfo | null = null;
   examNames: string[] = [];
   students: StudentRow[] = [];
-  activeTab: 'feed' | 'resources' | 'works' | 'list' | 'messages' = 'feed';
+  activeTab: 'list' | 'exams' | 'summary' = 'summary';
   postContent = '';
   isLoading = true;
   errorMessage = '';
@@ -98,12 +98,12 @@ export class ClassDetailComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: 'feed' | 'resources' | 'works' | 'list' | 'messages'): void {
+  setActiveTab(tab: 'list' | 'exams' | 'summary'): void {
     this.activeTab = tab;
   }
 
   onTabClick(tabId: any): void {
-    const validTabs = ['feed', 'resources', 'works', 'list', 'messages'];
+    const validTabs = ['list', 'exams', 'summary'];
     if (validTabs.includes(tabId)) {
       this.setActiveTab(tabId);
     }
@@ -118,11 +118,9 @@ export class ClassDetailComponent implements OnInit {
 
   get tabItems() {
     return [
-      { id: 'feed', label: 'Class Feed', icon: 'article' },
-      { id: 'resources', label: 'Activities / Resources', icon: 'inventory_2' },
-      { id: 'works', label: 'Student Works', icon: 'folder_open' },
-      { id: 'list', label: 'Class List', icon: 'group' },
-      { id: 'messages', label: 'Messages', icon: 'mail' }
+      { id: 'summary', label: 'Summary', icon: 'dashboard' },
+      { id: 'exams', label: 'Exams', icon: 'assignment' },
+      { id: 'list', label: 'Class List', icon: 'group' }
     ];
   }
 }
