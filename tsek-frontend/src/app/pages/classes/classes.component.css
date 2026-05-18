@@ -58,40 +58,19 @@
   color: var(--color-text-muted);
 }
 
-/* ===== CLASS CARDS CAROUSEL ===== */
+/* ===== CLASS CARDS GRID ===== */
 .cards-section {
   margin-bottom: 32px;
 }
 
-.cards-track {
-  display: flex;
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  -ms-overflow-style: auto;
-  padding-bottom: 8px;
 }
-
-.cards-track::-webkit-scrollbar {
-  height: 10px;
-}
-
-.cards-track::-webkit-scrollbar-thumb {
-  background: rgba(74, 103, 65, 0.4);
-  border-radius: 999px;
-}
-
-.cards-track::-webkit-scrollbar-track {
-  background: rgba(229, 231, 235, 0.6);
-  border-radius: 999px;
-}
-
-/* Carousel Fade Shadows */
 
 .class-card {
-  min-width: 340px;
-  max-width: 420px;
-  flex-shrink: 0;
+  width: 100%;
   background: linear-gradient(180deg, rgba(236, 248, 236, 0.95), #ffffff);
   border-radius: 24px;
   padding: 28px;
