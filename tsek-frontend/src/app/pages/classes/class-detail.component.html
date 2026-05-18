@@ -54,24 +54,79 @@
                 </div>
               </div>
             </div>
-            <div class="placeholder-card">
-              <p>Class summary information displayed here.</p>
+
+            <!-- Grades & Scores Sheet Section -->
+            <div class="summary-section-header">
+              <h3>Student Exam Scores</h3>
+              @if (students.length > 0) {
+                <button type="button" class="btn-export" (click)="exportToExcel()">
+                  <span class="material-icons-outlined">download</span>
+                  Export to Excel
+                </button>
+              }
             </div>
+
+            @if (students.length > 0) {
+              <div class="table-responsive">
+                <table class="scores-table">
+                  <thead>
+                    <tr>
+                      <th>Student Info</th>
+                      @for (examName of examNames; track examName) {
+                        <th style="text-align: center;">{{ examName }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (student of students; track student.number) {
+                      <tr>
+                        <td>
+                          <div class="student-name">{{ student.name }}</div>
+                          <div class="student-number">{{ student.number }}</div>
+                        </td>
+                        @for (score of student.scores; track $index) {
+                          <td style="text-align: center;">
+                            @if (score.imageUrl) {
+                              <button
+                                type="button"
+                                class="score-badge clickable"
+                                (click)="viewScan(score.imageUrl)"
+                                title="Click to view scanned exam image">
+                                <span class="material-icons-outlined score-icon">visibility</span>
+                                {{ score.value }}
+                              </button>
+                            } @else {
+                              <span class="score-badge unscored">
+                                {{ score.value }}
+                              </span>
+                            }
+                          </td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="placeholder-card">
+                <p>No student scores to display yet. Add students and scan exams to see grades.</p>
+              </div>
+            }
           </section>
         } @else if (activeTab === 'exams') {
           <section class="exams-panel">
             <div class="list-header">
               <h2>Exams</h2>
-              <span>{{ examNames.length }} total</span>
+              <span>{{ exams.length }} total</span>
             </div>
-            @if (examNames.length > 0) {
+            @if (exams.length > 0) {
               <ul class="exam-list">
-                @for (exam of examNames; track exam) {
-                  <li>
+                @for (exam of exams; track exam.id) {
+                  <li (click)="openStatsModal(exam.id, exam.exam_title)" class="clickable-exam-item">
                     <div>
-                      <strong>{{ exam }}</strong>
+                      <strong>{{ exam.exam_title }}</strong>
                     </div>
-                    <span class="material-icons-outlined">chevron_right</span>
+                    <span class="material-icons-outlined chevron-icon">chevron_right</span>
                   </li>
                 }
               </ul>
@@ -85,7 +140,7 @@
           <section class="list-panel">
             <div class="list-header">
               <h2>Class List</h2>
-              <span>{{ students.length }} enrolled</span>
+              <span class="enrolled-badge">{{ students.length }} enrolled</span>
             </div>
             @if (students.length > 0) {
               <ul class="student-list">
@@ -111,4 +166,252 @@
 
     <aside class="detail-sidebar">
       <div class="sidebar-card">
-  
+        <!-- Sidebar content can go here in the future -->
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ===== SCANNED IMAGE MODAL ===== -->
+@if (showScanModal && selectedScanUrl) {
+<div class="modal-overlay" (click)="closeScanModal()">
+  <div class="modal-container scan-modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Scanned Exam Page</h3>
+      <button class="close-btn" (click)="closeScanModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div class="modal-body scan-modal-body">
+      <img [src]="selectedScanUrl" alt="Scanned Exam" class="scanned-image" />
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== STATISTICS MODAL ===== -->
+@if (showStatsModal) {
+<div class="modal-overlay" (click)="closeStatsModal()">
+  <div class="modal-container scan-modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="material-icons-outlined" style="font-size: 24px; color: #206a3d;">bar_chart</span>
+        <h3>{{ selectedExamName }} Statistics</h3>
+      </div>
+      <button class="close-btn" (click)="closeStatsModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    
+    <div class="modal-body" style="padding: 24px; display: block; max-height: 70vh; overflow-y: auto; background: #fafbfa;">
+      @if (selectedExamStats) {
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="material-icons-outlined" style="font-size: 28px; color: #206a3d;">group</span>
+            <div>
+              <p style="margin: 0; font-size: 13px; color: #556b55;">Total Students</p>
+              <strong style="font-size: 22px; color: #1f3f24;">{{ selectedExamStats.totalStudents }}</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="material-icons-outlined" style="font-size: 28px; color: #206a3d;">trending_up</span>
+            <div>
+              <p style="margin: 0; font-size: 13px; color: #556b55;">Average Score</p>
+              <strong style="font-size: 22px; color: #1f3f24;">{{ selectedExamStats.averageScore | number:'1.1-2' }}%</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="material-icons-outlined" style="font-size: 28px; color: #206a3d;">format_list_bulleted</span>
+            <div>
+              <p style="margin: 0; font-size: 13px; color: #556b55;">Total Items</p>
+              <strong style="font-size: 22px; color: #1f3f24;">{{ selectedExamStats.totalItems }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; border-top: 1px solid #eef2ed; padding-top: 20px;">
+          <h4 style="margin: 0 0 16px; font-size: 14px; color: #1f3f24; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Performance Distribution</h4>
+          <div class="distribution-bars">
+            <div class="distribution-bar" style="margin-bottom: 14px;">
+              <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; color: #2d3e2d; margin-bottom: 6px;">
+                <span>Well (90-100%)</span>
+                <strong>{{ selectedExamStats.distribution.well }} students</strong>
+              </div>
+              <div class="bar-container" style="height: 10px; background: #eef2ed; border-radius: 5px; overflow: hidden;">
+                <div class="bar-fill" style="height: 100%; background: #4a6741; border-radius: 5px; transition: width 0.3s;"
+                  [style.width.%]="selectedExamStats.totalStudents > 0 ? (selectedExamStats.distribution.well / selectedExamStats.totalStudents) * 100 : 0"
+                ></div>
+              </div>
+            </div>
+            <div class="distribution-bar" style="margin-bottom: 14px;">
+              <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; color: #2d3e2d; margin-bottom: 6px;">
+                <span>Good (75-89%)</span>
+                <strong>{{ selectedExamStats.distribution.good }} students</strong>
+              </div>
+              <div class="bar-container" style="height: 10px; background: #eef2ed; border-radius: 5px; overflow: hidden;">
+                <div class="bar-fill" style="height: 100%; background: #82a876; border-radius: 5px; transition: width 0.3s;"
+                  [style.width.%]="selectedExamStats.totalStudents > 0 ? (selectedExamStats.distribution.good / selectedExamStats.totalStudents) * 100 : 0"
+                ></div>
+              </div>
+            </div>
+            <div class="distribution-bar" style="margin-bottom: 14px;">
+              <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; color: #2d3e2d; margin-bottom: 6px;">
+                <span>Needs Improvement (&lt;75%)</span>
+                <strong>{{ selectedExamStats.distribution.needsImprovement }} students</strong>
+              </div>
+              <div class="bar-container" style="height: 10px; background: #eef2ed; border-radius: 5px; overflow: hidden;">
+                <div class="bar-fill" style="height: 100%; background: #c88888; border-radius: 5px; transition: width 0.3s;"
+                  [style.width.%]="selectedExamStats.totalStudents > 0 ? (selectedExamStats.distribution.needsImprovement / selectedExamStats.totalStudents) * 100 : 0"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if (selectedExamStats.mostMissed && selectedExamStats.mostMissed.length > 0) {
+          <div style="margin-top: 24px; border-top: 1px solid #eef2ed; padding-top: 20px;">
+            <h4 style="margin: 0 0 12px; font-size: 14px; color: #1f3f24; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Most Missed Items</h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              @for (item of selectedExamStats.mostMissed.slice(0, 5); track item.item) {
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #eef2ed; padding: 10px 16px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.01);">
+                  <span style="font-weight: 600; color: #1f3f24; font-size: 13px;">{{ getMostMissedLabel(item) }}</span>
+                  <span style="font-size: 12px; color: #b05050; font-weight: 600; background: rgba(200, 80, 80, 0.08); padding: 4px 10px; border-radius: 20px;">{{ item.count }} students missed</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="modal-header" style="border-top: 1px solid #eef2ed; border-bottom: none; display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; background: #fff;">
+      <button class="btn-export" style="background: #556b55;" (click)="openFormatModal(selectedExamId!, selectedExamName)">VIEW FORMAT</button>
+      <button class="btn-export" style="background: #206a3d;" (click)="openAnswerSheetModal(selectedExamId!, selectedExamName)">VIEW ANSWER KEY</button>
+      <button class="btn-export" style="background: none; color: #556b55; border: 1px solid #dde3dc;" (click)="closeStatsModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== FORMAT PREVIEW MODAL ===== -->
+@if (showFormatModal) {
+<div class="modal-overlay" (click)="closeFormatModal()">
+  <div class="modal-container scan-modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="material-icons-outlined" style="font-size: 24px; color: #206a3d;">description</span>
+        <h3>{{ selectedExamName }} Format</h3>
+      </div>
+      <button class="close-btn" (click)="closeFormatModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body" style="padding: 24px; display: block; max-height: 70vh; overflow-y: auto; background: #fafbfa;">
+      @if (isLoadingFormat) {
+        <p style="text-align: center; color: #556b55;">Loading exam format...</p>
+      } @else if (selectedExamFormat) {
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f7faf6; border: 1px solid #e8efe5; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px;">
+          <span style="font-weight: 600; color: #1f3f24;">Total Items</span>
+          <strong style="font-size: 18px; color: #206a3d;">{{ selectedExamFormat.totalItems }}</strong>
+        </div>
+        <div class="table-responsive">
+          <table class="scores-table">
+            <thead>
+              <tr>
+                <th>Section</th>
+                <th style="text-align: center;">Item Count</th>
+                <th>Item Type</th>
+                <th style="text-align: center;">Points Each</th>
+                <th style="text-align: center;">Total Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (section of selectedExamFormat.config; track section.key) {
+                @if (section.enabled) {
+                  <tr>
+                    <td style="font-weight: 600; color: #1f3f24;">{{ section.label }}</td>
+                    <td style="text-align: center;">{{ section.selected }}</td>
+                    <td style="color: #556b55;">{{ section.pointName }}</td>
+                    <td style="text-align: center;">{{ section.defaultPoints }}</td>
+                    <td style="text-align: center; font-weight: 600; color: #206a3d;">{{ section.selected * section.defaultPoints }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p style="text-align: center; color: #b05050;">This exam format is not available.</p>
+      }
+    </div>
+
+    <div class="modal-header" style="border-top: 1px solid #eef2ed; border-bottom: none; display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; background: #fff;">
+      <button class="btn-export" style="background: #206a3d;" (click)="exportFormatPdf()">EXPORT PDF</button>
+      <button class="btn-export" style="background: none; color: #556b55; border: 1px solid #dde3dc;" (click)="closeFormatModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== ANSWER SHEET PREVIEW MODAL ===== -->
+@if (showAnswerSheetModal) {
+<div class="modal-overlay" (click)="closeAnswerSheetModal()">
+  <div class="modal-container scan-modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="material-icons-outlined" style="font-size: 24px; color: #206a3d;">visibility</span>
+        <h3>{{ selectedExamName }} — Answer Key</h3>
+      </div>
+      <button class="close-btn" (click)="closeAnswerSheetModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body" style="padding: 24px; display: block; max-height: 70vh; overflow-y: auto; background: #fafbfa;">
+      @if (isLoadingAnswerSheet) {
+        <p style="text-align: center; color: #556b55;">Loading answer sheet...</p>
+      } @else if (selectedAnswerSheet) {
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Render answer key by section -->
+          @for (section of selectedAnswerSheet.config; track section.key) {
+            @if (section.enabled) {
+              <div style="border: 1px solid #eef2ed; border-radius: 16px; padding: 18px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f0f4ef;">
+                  <div>
+                    <h4 style="margin: 0; font-size: 15px; color: #1f3f24; font-weight: 700;">{{ section.label }}</h4>
+                    <p style="margin: 4px 0 0; font-size: 12px; color: #556b55;">
+                      {{ section.selected }} items · {{ section.defaultPoints }} pts each
+                    </p>
+                  </div>
+                  <span style="font-size: 11px; font-weight: 700; color: #206a3d; background: #eef5ee; padding: 4px 10px; border-radius: 20px;">
+                    Items {{ section.startItem }} – {{ section.startItem + section.selected - 1 }}
+                  </span>
+                </div>
+
+                <!-- Answer Items Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;">
+                  @for (num of getSectionRange(section.selected); track num) {
+                    <div style="display: flex; align-items: center; gap: 8px; background: #fafbfa; border: 1px solid #eef2ed; padding: 8px 12px; border-radius: 8px;">
+                      <span style="font-size: 11px; font-weight: 700; color: #556b55; font-family: monospace;">#{{ section.startItem + num - 1 }}</span>
+                      <strong style="font-size: 13px; color: #1f3f24; word-break: break-all;">{{ getAnswerSheetItemAnswer(section.key, num) }}</strong>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <p style="text-align: center; color: #b05050;">Answer sheet not available.</p>
+      }
+    </div>
+
+    <div class="modal-header" style="border-top: 1px solid #eef2ed; border-bottom: none; display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; background: #fff;">
+      <button class="btn-export" style="background: #206a3d;" (click)="exportAnswerSheetPdf()">PRINT / EXPORT PDF</button>
+      <button class="btn-export" style="background: #556b55;" (click)="editAsNewFromAnswerSheet()">EDIT AS NEW</button>
+      <button class="btn-export" style="background: none; color: #556b55; border: 1px solid #dde3dc;" (click)="closeAnswerSheetModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+}

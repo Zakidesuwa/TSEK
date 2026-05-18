@@ -105,9 +105,11 @@ export class ClassesComponent implements OnInit {
       next: (data) => {
         this.classes = data;
         this.isLoadingClasses = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingClasses = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -138,11 +140,13 @@ export class ClassesComponent implements OnInit {
             nextQuiz: 'TBD'
           });
           this.closeAddClassModal();
+          this.cdr.detectChanges();
           setTimeout(() => this.updateScrollState(), 100);
         },
         error: (err) => {
           console.error('Failed to add class:', err);
           alert('Failed to add class. Please try again.');
+          this.cdr.detectChanges();
         }
       });
     }

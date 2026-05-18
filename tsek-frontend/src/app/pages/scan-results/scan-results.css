@@ -1457,3 +1457,106 @@
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 
+/* ===== FUZZY SIMILARITY SUGGESTIONS MODAL STYLES ===== */
+.similarity-suggestions-box {
+  margin-top: 16px;
+  margin-bottom: 20px;
+  background: #f7faf6;
+  border: 1px solid #e2ece0;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+}
+
+.suggestions-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3b6134;
+  margin: 0 0 12px 0;
+}
+
+.suggestions-header .material-icons-outlined {
+  color: #8fa88a;
+  font-size: 18px;
+}
+
+.suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion-item-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  border: 1px solid #dde5db;
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.suggestion-item-btn:hover {
+  border-color: var(--color-primary);
+  background: #f1f8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(74, 103, 65, 0.06);
+}
+
+.suggestion-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suggestion-item-left .material-icons-outlined {
+  font-size: 24px;
+  color: #8fa88a;
+}
+
+.suggestion-text-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestion-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f351f;
+}
+
+.suggestion-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: #697c67;
+}
+
+.suggestion-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: #eef7ee;
+  border: 1px solid #cde2cd;
+  padding: 4px 10px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.suggestion-item-btn:hover .suggestion-action-badge {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary-dark);
+}
+

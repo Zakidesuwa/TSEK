@@ -114,8 +114,10 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
         scores: scores
       };
     }));
-    
-    res.json({ exams: examNames, students });
+    res.json({ 
+      exams: classExams.map(e => ({ id: e.id, exam_title: e.exam_title })), 
+      students 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch students' });

@@ -405,7 +405,34 @@
         </div>
       </div>
 
-      <p class="modal-subtext">Would you like to add this student to the class list and save their score?</p>
+      <!-- Similarity Suggestions -->
+      @if (gradeResult?.similarStudents && gradeResult.similarStudents.length > 0) {
+        <div class="similarity-suggestions-box">
+          <p class="suggestions-header">
+            <span class="material-icons-outlined">lightbulb</span>
+            Did you mean to record this score under one of these enrolled students?
+          </p>
+          <div class="suggestions-list">
+            @for (similar of gradeResult.similarStudents; track similar.id) {
+              <button type="button" class="suggestion-item-btn" (click)="recordUnderSimilar(similar)">
+                <div class="suggestion-item-left">
+                  <span class="material-icons-outlined">account_circle</span>
+                  <div class="suggestion-text-col">
+                    <strong class="suggestion-name">{{ similar.name }}</strong>
+                    <span class="suggestion-id">ID: {{ similar.student_id_number }}</span>
+                  </div>
+                </div>
+                <div class="suggestion-action-badge">
+                  <span class="material-icons-outlined">check</span>
+                  Use this record
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <p class="modal-subtext">Otherwise, would you like to enroll this new student to the class list and save their score?</p>
 
       <div class="modal-actions">
         <button class="btn-modal-secondary" (click)="cancelEnrollment()">IGNORE</button>

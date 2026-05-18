@@ -1,5 +1,56 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+function levenshteinDistance(s1, s2) {
+  const m = s1.length;
+  const n = s2.length;
+  const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,    // Deletion
+          dp[i][j - 1] + 1,    // Insertion
+          dp[i - 1][j - 1] + 1 // Substitution
+        );
+      }
+    }
+  }
+  return dp[m][n];
+}
+
+function calculateSimilarity(str1, str2) {
+  const s1 = String(str1 || '').toLowerCase().trim();
+  const s2 = String(str2 || '').toLowerCase().trim();
+  if (!s1 || !s2) return 0;
+  if (s1 === s2) return 1.0;
+
+  // 1. Direct substring
+  if (s1.includes(s2) || s2.includes(s1)) {
+    const minLen = Math.min(s1.length, s2.length);
+    const maxLen = Math.max(s1.length, s2.length);
+    return 0.5 + 0.4 * (minLen / maxLen);
+  }
+
+  // 2. Levenshtein similarity
+  const maxLen = Math.max(s1.length, s2.length);
+  const distance = levenshteinDistance(s1, s2);
+  const levSim = 1 - distance / maxLen;
+
+  // 3. Word overlap
+  const words1 = s1.split(/\s+/).filter(Boolean);
+  const words2 = s2.split(/\s+/).filter(Boolean);
+  const common = words1.filter(w => words2.some(w2 => w2.includes(w) || w.includes(w2)));
+  const wordSim = common.length > 0 ? (common.length / Math.max(words1.length, words2.length)) : 0;
+
+  return Math.max(levSim, wordSim * 0.8);
+}
+
 exports.scanImage = async (req, res) => {
   try {
     // Support both single file (legacy) and multiple files
@@ -275,6 +326,41 @@ exports.gradeExam = async (req, res) => {
       }
     }
 
+    let similarStudents = [];
+    if (!isEnrolled && classId) {
+      try {
+        const enrolledStudentsQuery = await db.query(`
+          SELECT s.id, s.full_name, s.student_id_number 
+          FROM students s
+          JOIN class_enrollments ce ON s.id = ce.student_id
+          WHERE ce.class_id = $1
+        `, [classId]);
+
+        const scannedName = req.body.studentName || '';
+        const scannedId = String(studentId || '').trim();
+
+        const calculated = enrolledStudentsQuery.rows.map(row => {
+          const nameSim = calculateSimilarity(scannedName, row.full_name);
+          const idSim = calculateSimilarity(scannedId, row.student_id_number);
+          
+          const combinedScore = Math.max(nameSim, idSim);
+          return {
+            id: row.id,
+            name: row.full_name,
+            student_id_number: row.student_id_number,
+            similarity: combinedScore
+          };
+        });
+
+        similarStudents = calculated
+          .filter(s => s.similarity > 0.35)
+          .sort((a, b) => b.similarity - a.similarity)
+          .slice(0, 5);
+      } catch (simError) {
+        console.error('Failed to calculate similar students:', simError);
+      }
+    }
+
     res.status(200).json({
       message: isEnrolled ? 'Grading complete' : 'Student not enrolled in this class',
       score: totalScore,
@@ -282,7 +368,8 @@ exports.gradeExam = async (req, res) => {
       studentFound: studentExists,
       isEnrolled: isEnrolled,
       classId: classId,
-      details: gradedItems
+      details: gradedItems,
+      similarStudents: similarStudents
     });
 
   } catch (err) {

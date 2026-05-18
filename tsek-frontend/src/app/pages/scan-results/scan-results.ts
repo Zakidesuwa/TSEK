@@ -159,6 +159,7 @@ export class ScanResults implements OnInit {
     const payload = {
       exam_id: this.selectedExamId,
       studentId: this.rawText.studentId,
+      studentName: this.rawText.studentName || '',
       answers: this.rawText.answers,
       scanned_image_url: this.scannedImageUrl || null
     };
@@ -215,6 +216,18 @@ export class ScanResults implements OnInit {
   cancelEnrollment() {
     this.showEnrollmentPrompt = false;
     this.tempEnrollData = null;
+  }
+
+  recordUnderSimilar(similar: any): void {
+    this.showEnrollmentPrompt = false;
+    this.tempEnrollData = null;
+
+    // Update the rawText student details to the corrected values
+    this.rawText.studentId = similar.student_id_number;
+    this.rawText.studentName = similar.name;
+
+    // Trigger processBubbles again with the corrected info
+    this.processBubbles();
   }
 
   onNewFileSelected(event: any) {
