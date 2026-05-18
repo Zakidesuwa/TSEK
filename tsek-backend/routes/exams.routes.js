@@ -11,6 +11,7 @@ router.get('/api/exams', authMiddleware, async (req, res) => {
       SELECT 
         e.id,
         c.class_name as subject,
+        c.section_code as "sectionCode",
         e.exam_title as name,
         e.total_items,
         COALESCE(e.exam_date, e.created_at::date) as date,

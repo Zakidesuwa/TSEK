@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
 interface ExamCard {
   id: number;
   subject: string;
+  sectionCode?: string;
   date: string;
   deadline?: string;
   name: string;
@@ -73,6 +74,7 @@ export class Exams implements OnInit {
   selectedExamStats: ExamStats | null = null;
   selectedExamName = '';
   selectedExamId: number | null = null;
+  selectedExamClassInfo = '';
 
   // Exam Format Modal
   showFormatModal = false;
@@ -184,6 +186,7 @@ export class Exams implements OnInit {
   openStatsModal(exam: ExamCard): void {
     this.selectedExamId = exam.id;
     this.selectedExamName = exam.name;
+    this.selectedExamClassInfo = exam.sectionCode ? `${exam.subject} (${exam.sectionCode})` : exam.subject;
     this.http.get<ExamStats>(`${environment.apiUrl}/api/exams/${exam.id}/statistics`).subscribe({
       next: (data) => {
         this.selectedExamStats = data;
@@ -199,6 +202,7 @@ export class Exams implements OnInit {
   closeStatsModal(): void {
     this.showStatsModal = false;
     this.selectedExamStats = null;
+    this.selectedExamClassInfo = '';
   }
 
   openFormatModal(examId: number, examName: string): void {
