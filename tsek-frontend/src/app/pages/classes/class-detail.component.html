@@ -38,7 +38,7 @@
         type="button"
         class="detail-tab-button"
         [class.active]="activeTab === tab.id"
-        (click)="setActiveTab(tab.id)">
+        (click)="onTabClick(tab.id)">
         <span class="material-icons-outlined">{{ tab.icon }}</span>
         {{ tab.label }}
       </button>
@@ -141,4 +141,4 @@
       </div>
     </aside>
   </div>
-}
+</div>

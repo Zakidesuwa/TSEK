@@ -22,7 +22,7 @@ interface ClassInfo {
 @Component({
   selector: 'app-class-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   templateUrl: './class-detail.component.html',
   styleUrl: './class-detail.component.css'
 })
@@ -100,6 +100,13 @@ export class ClassDetailComponent implements OnInit {
 
   setActiveTab(tab: 'feed' | 'resources' | 'works' | 'list' | 'messages'): void {
     this.activeTab = tab;
+  }
+
+  onTabClick(tabId: any): void {
+    const validTabs = ['feed', 'resources', 'works', 'list', 'messages'];
+    if (validTabs.includes(tabId)) {
+      this.setActiveTab(tabId);
+    }
   }
 
   createPost(): void {
