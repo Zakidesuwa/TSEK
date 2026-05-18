@@ -43,6 +43,11 @@ export const routes: Routes = [
           import('./pages/generate-exam/generate-exam.component').then(m => m.GenerateExamComponent)
       },
       {
+        path: 'classes/:id',
+        loadComponent: () =>
+          import('./pages/classes/class-detail.component').then(m => m.ClassDetailComponent)
+      },
+      {
         path: 'classes',
         loadComponent: () =>
           import('./pages/classes/classes.component').then(m => m.ClassesComponent)

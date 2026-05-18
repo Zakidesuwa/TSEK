@@ -2,7 +2,7 @@ import { Component, ChangeDetectorRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -49,21 +49,13 @@ interface StudentRow {
 })
 export class ClassesComponent implements OnInit {
   http = inject(HttpClient);
+  router = inject(Router);
 
   constructor(private cdr: ChangeDetectorRef) {}
 
   // ===== Add Class Modal =====
   showAddClassModal = false;
   newClass = { name: '', course: '', size: null as number | null };
-
-  // ===== Class Detail Page =====
-  selectedClass: ClassCard | null = null;
-  selectedClassExams: string[] = [];
-  selectedClassStudents: StudentRow[] = [];
-  currentPage = 1;
-  totalPages = 1;
-  private readonly studentsPerPage = 8;
-  allStudents: StudentRow[] = [];
 
   // ===== Delete Class Confirmation Modal =====
   showDeleteClassModal = false;
@@ -156,159 +148,13 @@ export class ClassesComponent implements OnInit {
     }
   }
 
-  // ===== Class Detail Modal Methods =====
+  // ===== Class Detail Route Navigation =====
   openClassDetail(cls: any): void {
-    this.selectedClass = cls;
-    
-    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${cls.id}/students`).subscribe({
-      next: (data) => {
-        this.allStudents = data.students;
-        this.selectedClassExams = data.exams;
-        this.currentPage = 1;
-        this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
-        this.updatePaginatedStudents();
-      },
-      error: (err) => {
-        console.error('Failed to load class details:', err);
-        alert('Failed to load class details. Please try again.');
-      }
-    });
-  }
-
-  closeClassDetailPage(): void {
-    this.selectedClass = null;
-    this.selectedClassExams = [];
-    this.selectedClassStudents = [];
-    this.currentPage = 1;
-    this.totalPages = 1;
-    this.allStudents = [];
-  }
-
-  changePage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.updatePaginatedStudents();
-    }
-  }
-
-  private updatePaginatedStudents(): void {
-    const start = (this.currentPage - 1) * this.studentsPerPage;
-    const end = start + this.studentsPerPage;
-    this.selectedClassStudents = this.allStudents.slice(start, end);
-  }
-
-  // ===== Student Management =====
-  showAddStudentForm = false;
-  isAddingStudent = false;
-  addStudentError: string | null = null;
-  newStudent = { full_name: '', student_id_number: '' };
-
-  toggleAddStudentForm(): void {
-    this.showAddStudentForm = !this.showAddStudentForm;
-    this.addStudentError = null;
-    if (this.showAddStudentForm) {
-      this.newStudent = { full_name: '', student_id_number: '' };
-    }
-  }
-
-  addStudent(): void {
-    if (!this.selectedClass || !this.newStudent.full_name || !this.newStudent.student_id_number) return;
-
-    this.isAddingStudent = true;
-    this.addStudentError = null;
-
-    this.http.post<any>(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students`, {
-      full_name: this.newStudent.full_name,
-      student_id_number: this.newStudent.student_id_number
-    }).subscribe({
-      next: (res) => {
-        this.isAddingStudent = false;
-        this.newStudent = { full_name: '', student_id_number: '' };
-        this.showAddStudentForm = false;
-        this.refreshClassStudents();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.isAddingStudent = false;
-        this.addStudentError = err.error?.error || 'Failed to add student.';
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  removeStudent(student: StudentRow): void {
-    if (!this.selectedClass) return;
-    this.studentToRemove = { name: student.name, number: student.number };
-    this.showRemoveStudentModal = true;
-  }
-
-  confirmRemoveStudent(): void {
-    if (!this.selectedClass || !this.studentToRemove) return;
-
-    this.isRemovingStudent = true;
-    this.http.delete(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students/${this.studentToRemove.number}`).subscribe({
-      next: () => {
-        this.refreshClassStudents();
-        this.isRemovingStudent = false;
-        this.closeRemoveStudentModal();
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.isRemovingStudent = false;
-        console.error('Failed to remove student:', err);
-        alert('Failed to remove student. Please try again.');
-        this.closeRemoveStudentModal();
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  closeRemoveStudentModal(): void {
-    this.showRemoveStudentModal = false;
-    this.studentToRemove = null;
+    this.router.navigate(['/classes', cls.id], { state: { classInfo: cls } });
   }
 
   private updateScrollState(): void {
-    // Placeholder for future logic if the horizontal class list needs scroll state updates.
-  }
-
-  private refreshClassStudents(): void {
-    if (!this.selectedClass) return;
-    this.http.get<{exams: string[], students: StudentRow[]}>(`${environment.apiUrl}/api/classes/${this.selectedClass.id}/students`).subscribe(data => {
-      this.allStudents = data.students;
-      this.selectedClassExams = data.exams;
-      this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
-      if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
-      this.updatePaginatedStudents();
-      // Update the student count on the class card
-      if (this.selectedClass) {
-        this.selectedClass.students = this.allStudents.length;
-      }
-      this.cdr.detectChanges();
-    });
-  }
-
-  exportClassScores(): void {
-    if (!this.selectedClass) return;
-
-    const headers = ['Student Name', 'Student Number', ...this.selectedClassExams];
-    const rows = this.allStudents.map(student => [
-      student.name,
-      student.number,
-      ...student.scores.map(s => s.value)
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
-      .join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${this.selectedClass.subject}-${this.selectedClass.section}-scores.csv`.replace(/\s+/g, '_');
-    link.click();
-    URL.revokeObjectURL(url);
+    // Placeholder for future logic if the class list layout requires scroll state updates.
   }
 
   // ===== Delete Class Methods =====
@@ -326,7 +172,6 @@ export class ClassesComponent implements OnInit {
         this.classes = this.classes.filter(c => c.id !== this.classToDelete.id);
         this.isDeletingClass = false;
         this.closeDeleteClassModal();
-        this.closeClassDetailPage();
         this.cdr.detectChanges();
       },
       error: (err) => {

@@ -1,0 +1,144 @@
+<div class="class-detail-page">
+  <div class="detail-hero">
+    <div class="detail-hero-left">
+      <a routerLink="/classes" class="detail-back-btn">
+        <span class="material-icons-outlined">arrow_back</span>
+        Back to Classes
+      </a>
+      <div class="detail-hero-copy">
+        <p class="detail-hero-label">Class Hub</p>
+        <h1 class="detail-hero-title">{{ classInfo?.subject }} <span class="detail-section">({{ classInfo?.section }})</span></h1>
+        <p class="detail-hero-subtitle">
+          {{ classInfo?.students ?? 0 }} students · Next quiz: {{ classInfo?.nextQuiz ?? 'TBD' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="detail-hero-panel">
+      <div class="hero-panel-row">
+        <span class="material-icons-outlined">calendar_month</span>
+        <div>
+          <p>Schedule</p>
+          <strong>Tuesdays, 4:00 PM - 5:00 PM</strong>
+        </div>
+      </div>
+      <div class="hero-panel-row">
+        <span class="material-icons-outlined">school</span>
+        <div>
+          <p>Class Type</p>
+          <strong>Lecture</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="detail-tabs">
+    @for (tab of tabItems; track tab.id) {
+      <button
+        type="button"
+        class="detail-tab-button"
+        [class.active]="activeTab === tab.id"
+        (click)="setActiveTab(tab.id)">
+        <span class="material-icons-outlined">{{ tab.icon }}</span>
+        {{ tab.label }}
+      </button>
+    }
+  </nav>
+
+  <div class="detail-body">
+    <div class="detail-main">
+      @if (isLoading) {
+        <div class="loading-card">Loading class details...</div>
+      } @else if (errorMessage) {
+        <div class="error-card">{{ errorMessage }}</div>
+      } @else {
+        @if (activeTab === 'feed') {
+          <section class="feed-panel">
+            <div class="feed-card">
+              <div class="feed-card-header">
+                <div>
+                  <h2>Create Post</h2>
+                  <p>Share a quick update with your learners.</p>
+                </div>
+                <span class="material-icons-outlined">person</span>
+              </div>
+              <textarea
+                class="post-input"
+                placeholder="Type here..."
+                [(ngModel)]="postContent"></textarea>
+              <div class="feed-actions">
+                <div class="feed-icons">
+                  <button type="button" class="icon-btn"><span class="material-icons-outlined">image</span></button>
+                  <button type="button" class="icon-btn"><span class="material-icons-outlined">smart_display</span></button>
+                  <button type="button" class="icon-btn"><span class="material-icons-outlined">attach_file</span></button>
+                </div>
+                <button class="btn-primary" (click)="createPost()" [disabled]="!postContent.trim()">Post</button>
+              </div>
+            </div>
+
+            <div class="placeholder-card">
+              <h3>Class Feed</h3>
+              <p>No posts yet. Start the conversation by posting an announcement or activity.</p>
+            </div>
+          </section>
+        } @else if (activeTab === 'resources') {
+          <section class="resources-panel">
+            <h2>Activities / Resources</h2>
+            <div class="placeholder-card">
+              <p>There are no new activities or resources yet.</p>
+            </div>
+          </section>
+        } @else if (activeTab === 'works') {
+          <section class="works-panel">
+            <h2>Student Works</h2>
+            <div class="placeholder-card">
+              <p>No student work submissions are available yet.</p>
+            </div>
+          </section>
+        } @else if (activeTab === 'list') {
+          <section class="list-panel">
+            <div class="list-header">
+              <h2>Class List</h2>
+              <span>{{ students.length }} enrolled</span>
+            </div>
+            @if (students.length > 0) {
+              <ul class="student-list">
+                @for (student of students; track student.number) {
+                  <li>
+                    <div>
+                      <strong>{{ student.name }}</strong>
+                      <span>{{ student.number }}</span>
+                    </div>
+                    <span class="material-icons-outlined">chevron_right</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <div class="placeholder-card">
+                <p>No students have been added to this class yet.</p>
+              </div>
+            }
+          </section>
+        } @else if (activeTab === 'messages') {
+          <section class="messages-panel">
+            <h2>Messages</h2>
+            <div class="placeholder-card">
+              <p>No messages yet. Use this space to connect with your class.</p>
+            </div>
+          </section>
+        }
+      }
+    </div>
+
+    <aside class="detail-sidebar">
+      <div class="sidebar-card">
+        <h3>Activities</h3>
+        <p>Nothing new to see here 👀</p>
+      </div>
+      <div class="sidebar-card">
+        <h3>Resources</h3>
+        <p>The resource library is waiting for its first upload.</p>
+      </div>
+    </aside>
+  </div>
+}
