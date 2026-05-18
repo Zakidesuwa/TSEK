@@ -59,80 +59,54 @@
 }
 
 /* ===== CLASS CARDS CAROUSEL ===== */
-.carousel-section {
+.cards-section {
   margin-bottom: 32px;
 }
 
-.carousel-container {
-  position: relative;
-}
-
-.carousel-track {
+.cards-track {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding-bottom: 4px;
+  scrollbar-width: thin;
+  -ms-overflow-style: auto;
+  padding-bottom: 8px;
 }
 
-.carousel-track::-webkit-scrollbar {
-  display: none;
+.cards-track::-webkit-scrollbar {
+  height: 10px;
+}
+
+.cards-track::-webkit-scrollbar-thumb {
+  background: rgba(74, 103, 65, 0.4);
+  border-radius: 999px;
+}
+
+.cards-track::-webkit-scrollbar-track {
+  background: rgba(229, 231, 235, 0.6);
+  border-radius: 999px;
 }
 
 /* Carousel Fade Shadows */
-.carousel-fade {
-  position: absolute;
-  top: 0;
-  bottom: 4px;
-  width: 48px;
-  z-index: 3;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-}
-
-.carousel-fade-left {
-  left: 0;
-  background: linear-gradient(to right, var(--color-bg), transparent);
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-}
-
-.carousel-fade-right {
-  right: 0;
-  background: linear-gradient(to left, var(--color-bg), transparent);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-}
-
-.carousel-container.can-scroll-left .carousel-fade-left {
-  opacity: 1;
-}
-
-.carousel-container.can-scroll-right .carousel-fade-right {
-  opacity: 1;
-}
 
 .class-card {
-  min-width: 260px;
-  max-width: 280px;
+  min-width: 340px;
+  max-width: 420px;
   flex-shrink: 0;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border-light);
+  background: linear-gradient(180deg, rgba(236, 248, 236, 0.95), #ffffff);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 16px 30px rgba(45, 62, 45, 0.08);
+  border: 1px solid rgba(74, 103, 65, 0.15);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  scroll-snap-align: start;
   transition: box-shadow var(--transition-normal), transform var(--transition-normal);
   cursor: pointer;
 }
 
 .class-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: 0 18px 35px rgba(45, 62, 45, 0.14);
+  transform: translateY(-4px);
 }
 
 .class-card-header {
@@ -191,14 +165,15 @@
 }
 
 .class-card-arrow {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
+  border: 1px solid rgba(74, 103, 65, 0.12);
 }
 
 .class-card-arrow:hover {
@@ -211,58 +186,195 @@
 }
 
 /* Carousel Navigation Buttons */
-.carousel-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-bg-card);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast), opacity var(--transition-normal), visibility var(--transition-normal);
-  z-index: 5;
-  opacity: 1;
-  visibility: visible;
-}
 
-.carousel-btn:hover {
-  background: var(--color-primary);
-  color: #fff;
-  box-shadow: var(--shadow-lg);
-}
-
-.carousel-btn.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.carousel-btn-left {
-  left: -16px;
-}
-
-.carousel-btn-right {
-  right: -16px;
-}
-
-.carousel-btn .material-icons-outlined {
-  font-size: 22px;
-}
-
-/* ===== CREATED EXAMS SECTION ===== */
+/* ===== Created Exams Section ===== */
 .created-exams-section {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
   padding: 24px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border-light);
+}
+
+/* ===== CLASS DETAIL PAGE ===== */
+.class-detail-page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.detail-page-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(76, 109, 77, 0.08), rgba(255,255,255,0.85));
+  border: 1px solid rgba(74, 103, 65, 0.16);
+  border-radius: 24px;
+  padding: 28px 32px;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: rgba(74, 103, 65, 0.12);
+  color: var(--color-primary);
+  border-radius: 16px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-back:hover {
+  background: rgba(74, 103, 65, 0.2);
+  transform: translateY(-1px);
+}
+
+.detail-page-topbar > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: 0 0 8px;
+}
+
+.detail-title {
+  font-size: 32px;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.detail-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 10px 0 0;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.detail-page-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.detail-meta-card {
+  background: var(--color-bg-card);
+  border: 1px solid rgba(74, 103, 65, 0.12);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 14px 32px rgba(74, 103, 65, 0.08);
+}
+
+.meta-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+.meta-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.detail-blocks {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+}
+
+.detail-block {
+  background: var(--color-bg-card);
+  border-radius: 24px;
+  border: 1px solid rgba(74, 103, 65, 0.12);
+  padding: 24px;
+  box-shadow: 0 14px 32px rgba(74, 103, 65, 0.06);
+}
+
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.block-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.block-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.exam-list li {
+  padding: 14px 16px;
+  background: rgba(232, 242, 227, 0.7);
+}
+
+.score-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scan-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.scan-btn:hover {
+  color: var(--color-primary-dark);
+}
+
+.summary-block {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1024px) {
+  .detail-page-grid,
+  .detail-blocks {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .detail-page-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .detail-actions {
+    justify-content: flex-start;
+  }
 }
 
 .exams-header {
@@ -301,22 +413,22 @@
 .add-class-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--color-primary);
   color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 8px 18px;
-  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 12px 20px;
+  border-radius: 18px;
   letter-spacing: 0.3px;
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 12px 28px rgba(74, 103, 65, 0.18);
 }
 
 .add-class-btn:hover {
   background: var(--color-primary-dark);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  box-shadow: 0 15px 34px rgba(74, 103, 65, 0.22);
+  transform: translateY(-2px);
 }
 
 .add-class-btn .material-icons-outlined {

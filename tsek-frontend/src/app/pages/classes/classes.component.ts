@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, OnDestroy, ChangeDetectorRef, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
@@ -49,11 +49,6 @@ interface StudentRow {
 })
 export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   http = inject(HttpClient);
-  @ViewChild('carouselTrack') carouselTrack!: ElementRef<HTMLDivElement>;
-
-  canScrollLeft = false;
-  canScrollRight = true;
-  private scrollHandler = () => this.updateScrollState();
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -61,8 +56,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   showAddClassModal = false;
   newClass = { name: '', course: '', size: null as number | null };
 
-  // ===== Class Detail Modal =====
-  showClassDetailModal = false;
+  // ===== Class Detail Page =====
   selectedClass: ClassCard | null = null;
   selectedClassExams: string[] = [];
   selectedClassStudents: StudentRow[] = [];
@@ -119,7 +113,6 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
       next: (data) => {
         this.classes = data;
         this.isLoadingClasses = false;
-        setTimeout(() => this.updateScrollState(), 100);
       },
       error: () => {
         this.isLoadingClasses = false;
@@ -127,33 +120,6 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     });
   }
 
-  ngAfterViewInit(): void {
-    const track = this.carouselTrack.nativeElement;
-    track.addEventListener('scroll', this.scrollHandler, { passive: true });
-    // Initial check after rendering
-    setTimeout(() => this.updateScrollState(), 0);
-  }
-
-  ngOnDestroy(): void {
-    const track = this.carouselTrack?.nativeElement;
-    track?.removeEventListener('scroll', this.scrollHandler);
-  }
-
-  updateScrollState(): void {
-    const track = this.carouselTrack.nativeElement;
-    this.canScrollLeft = track.scrollLeft > 2;
-    this.canScrollRight = track.scrollLeft < track.scrollWidth - track.clientWidth - 2;
-    this.cdr.detectChanges();
-  }
-
-  scrollCarousel(direction: 'left' | 'right'): void {
-    const track = this.carouselTrack.nativeElement;
-    const scrollAmount = 300;
-    track.scrollBy({
-      left: direction === 'right' ? scrollAmount : -scrollAmount,
-      behavior: 'smooth'
-    });
-  }
 
   // ===== Add Class Modal Methods =====
   openAddClassModal(): void {
@@ -201,7 +167,6 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         this.currentPage = 1;
         this.totalPages = Math.max(1, Math.ceil(this.allStudents.length / this.studentsPerPage));
         this.updatePaginatedStudents();
-        this.showClassDetailModal = true;
       },
       error: (err) => {
         console.error('Failed to load class details:', err);
@@ -210,9 +175,13 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
     });
   }
 
-  closeClassDetailModal(): void {
-    this.showClassDetailModal = false;
+  closeClassDetailPage(): void {
     this.selectedClass = null;
+    this.selectedClassExams = [];
+    this.selectedClassStudents = [];
+    this.currentPage = 1;
+    this.totalPages = 1;
+    this.allStudents = [];
   }
 
   changePage(page: number): void {
@@ -353,8 +322,7 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
         this.classes = this.classes.filter(c => c.id !== this.classToDelete.id);
         this.isDeletingClass = false;
         this.closeDeleteClassModal();
-        this.closeClassDetailModal();
-        setTimeout(() => this.updateScrollState(), 100);
+        this.closeClassDetailPage();
         this.cdr.detectChanges();
       },
       error: (err) => {

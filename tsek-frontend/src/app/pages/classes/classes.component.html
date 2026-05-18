@@ -11,67 +11,55 @@
     </div>
   </div>
 
-  <!-- Class Cards Carousel -->
-  <div class="carousel-section">
-    <div class="carousel-container" [class.can-scroll-left]="canScrollLeft" [class.can-scroll-right]="canScrollRight">
-      <div class="carousel-fade carousel-fade-left"></div>
-      <div class="carousel-fade carousel-fade-right"></div>
-      <button class="carousel-btn carousel-btn-left" [class.hidden]="!canScrollLeft" (click)="scrollCarousel('left')"
-        title="Scroll Left">
-        <span class="material-icons-outlined">chevron_left</span>
-      </button>
-      <div class="carousel-track" #carouselTrack>
-        @if (isLoadingClasses) {
-          @for (s of [1,2,3,4]; track s) {
-            <div class="class-card skeleton-card">
-              <div class="class-card-header">
-                <div class="class-card-info">
-                  <div class="skeleton skeleton-text long"></div>
-                  <div class="skeleton skeleton-text medium"></div>
-                </div>
-                <div class="skeleton skeleton-badge"></div>
-              </div>
-              <div class="class-card-footer">
-                <div class="skeleton skeleton-text short"></div>
-              </div>
-            </div>
-          }
-        } @else {
-          @for (cls of filteredClasses; track cls.id) {
-          <div class="class-card" (click)="openClassDetail(cls)">
+  <!-- Class Cards List -->
+  <div class="cards-section">
+    <div class="cards-track">
+      @if (isLoadingClasses) {
+        @for (s of [1,2,3,4]; track s) {
+          <div class="class-card skeleton-card">
             <div class="class-card-header">
               <div class="class-card-info">
-                <h3 class="class-card-subject">{{ cls.subject }}</h3>
-                <p class="class-card-section">{{ cls.section }}</p>
+                <div class="skeleton skeleton-text long"></div>
+                <div class="skeleton skeleton-text medium"></div>
               </div>
-              <span class="student-badge">{{ cls.students }} STUDENTS</span>
+              <div class="skeleton skeleton-badge"></div>
             </div>
             <div class="class-card-footer">
-              <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
-              <button class="class-card-arrow" title="View Class">
-                <span class="material-icons-outlined">arrow_forward</span>
-              </button>
+              <div class="skeleton skeleton-text short"></div>
             </div>
           </div>
-          } @empty {
-          <div class="empty-state-card">
-            <span class="material-icons-outlined">school</span>
-            <p>You haven't added any classes yet.</p>
-            <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
-          </div>
-          } @if (filteredClasses.length === 0 && classes.length > 0) {
-          <div class="empty-state-card full-width">
-            <span class="material-icons-outlined">search_off</span>
-            <p>No classes match your search.</p>
-            <button class="btn-text" (click)="searchQuery = ''">Clear Search</button>
-          </div>
-          }
         }
-      </div>
-      <button class="carousel-btn carousel-btn-right" [class.hidden]="!canScrollRight" (click)="scrollCarousel('right')"
-        title="Scroll Right">
-        <span class="material-icons-outlined">chevron_right</span>
-      </button>
+      } @else {
+        @for (cls of filteredClasses; track cls.id) {
+        <div class="class-card" (click)="openClassDetail(cls)">
+          <div class="class-card-header">
+            <div class="class-card-info">
+              <h3 class="class-card-subject">{{ cls.subject }}</h3>
+              <p class="class-card-section">{{ cls.section }}</p>
+            </div>
+            <span class="student-badge">{{ cls.students }} STUDENTS</span>
+          </div>
+          <div class="class-card-footer">
+            <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
+            <button class="class-card-arrow" title="View Class">
+              <span class="material-icons-outlined">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+        } @empty {
+        <div class="empty-state-card">
+          <span class="material-icons-outlined">school</span>
+          <p>You haven't added any classes yet.</p>
+          <button class="btn-text" (click)="openAddClassModal()">Add your first class</button>
+        </div>
+        } @if (filteredClasses.length === 0 && classes.length > 0) {
+        <div class="empty-state-card full-width">
+          <span class="material-icons-outlined">search_off</span>
+          <p>No classes match your search.</p>
+          <button class="btn-text" (click)="searchQuery = ''">Clear Search</button>
+        </div>
+        }
+      }
     </div>
   </div>
 
@@ -118,45 +106,93 @@
 </div>
 }
 
-<!-- ===== CLASS DETAIL MODAL ===== -->
-@if (showClassDetailModal && selectedClass) {
-<div class="modal-overlay" @modalFadeAnim (click)="closeClassDetailModal()">
-  <div class="modal-container class-detail-modal" @modalScaleAnim (click)="$event.stopPropagation()">
-    <div class="detail-header">
+@if (selectedClass) {
+  <div class="class-detail-page">
+    <div class="detail-page-topbar">
+      <button class="btn-back" (click)="closeClassDetailPage()">
+        <span class="material-icons-outlined">arrow_back</span>
+        Back to classes
+      </button>
       <div>
-        <h2 class="detail-title">{{ selectedClass.subject }} - {{ selectedClass.section }}</h2>
-        <p class="detail-subtitle">{{ allStudents.length }} student{{ allStudents.length !== 1 ? 's' : '' }} enrolled
-        </p>
+        <p class="detail-label">Class overview</p>
+        <h2 class="detail-title">{{ selectedClass.subject }} · {{ selectedClass.section }}</h2>
+        <p class="detail-subtitle">{{ allStudents.length }} student{{ allStudents.length !== 1 ? 's' : '' }} · Next quiz: {{ selectedClass.nextQuiz }}</p>
       </div>
-      <div class="detail-header-actions">
-        <button class="export-btn" (click)="exportClassScores()" title="Export class scores">
+      <div class="detail-actions">
+        <button class="export-btn" (click)="exportClassScores()">
           <span class="material-icons-outlined">file_download</span>
           Export Scores
         </button>
-        <button class="delete-class-btn" (click)="deleteClass(selectedClass)" title="Delete class">
+        <button class="delete-class-btn" (click)="deleteClass(selectedClass)">
           <span class="material-icons-outlined">delete_outline</span>
           Delete Class
-        </button>
-        <button class="add-student-btn" (click)="toggleAddStudentForm()">
-          <span class="material-icons-outlined">{{ showAddStudentForm ? 'close' : 'person_add' }}</span>
-          {{ showAddStudentForm ? 'Cancel' : 'Add Student' }}
-        </button>
-        <button class="detail-close-btn" (click)="closeClassDetailModal()">
-          <span class="material-icons-outlined">close</span>
         </button>
       </div>
     </div>
 
-    <div class="detail-overview">
-      <section class="overview-card">
-        <div class="overview-card-header">
-          <h3>Class List</h3>
-          <span>{{ allStudents.length }} students</span>
+    <div class="detail-page-grid">
+      <div class="detail-meta-card">
+        <span class="meta-label">Class Size</span>
+        <p class="meta-value">{{ allStudents.length }}</p>
+      </div>
+      <div class="detail-meta-card">
+        <span class="meta-label">Next Quiz</span>
+        <p class="meta-value">{{ selectedClass.nextQuiz }}</p>
+      </div>
+      <div class="detail-meta-card">
+        <span class="meta-label">Assigned Exams</span>
+        <p class="meta-value">{{ selectedClassExams.length }}</p>
+      </div>
+    </div>
+
+    <div class="detail-blocks">
+      <section class="detail-block">
+        <div class="block-header">
+          <div>
+            <h3>Class List</h3>
+            <p>{{ allStudents.length }} enrolled</p>
+          </div>
+          <button class="add-student-btn" (click)="toggleAddStudentForm()">
+            <span class="material-icons-outlined">{{ showAddStudentForm ? 'close' : 'person_add' }}</span>
+            {{ showAddStudentForm ? 'Cancel' : 'Add Student' }}
+          </button>
         </div>
+
+        @if (showAddStudentForm) {
+        <div class="add-student-section detail-add-student">
+          <div class="add-student-form">
+            <div class="student-form-field">
+              <label>Full Name</label>
+              <input type="text" class="modal-input" placeholder="e.g., Juan Dela Cruz" [(ngModel)]="newStudent.full_name">
+            </div>
+            <div class="student-form-field">
+              <label>Student ID Number</label>
+              <input type="text" class="modal-input" placeholder="e.g., 44520178"
+                [(ngModel)]="newStudent.student_id_number">
+            </div>
+            <button class="student-form-submit" (click)="addStudent()"
+              [disabled]="isAddingStudent || !newStudent.full_name || !newStudent.student_id_number">
+              @if (isAddingStudent) {
+              Adding...
+              } @else {
+              <span class="material-icons-outlined">add</span>
+              Add
+              }
+            </button>
+          </div>
+          @if (addStudentError) {
+          <p class="student-form-error">
+            <span class="material-icons-outlined">error_outline</span>
+            {{ addStudentError }}
+          </p>
+          }
+        </div>
+        }
+
         <div class="overview-card-body">
           @if (allStudents.length > 0) {
           <ul class="overview-list">
-            @for (student of allStudents.slice(0, 6); track student.number) {
+            @for (student of allStudents.slice(0, 10); track student.number) {
             <li>
               <strong>{{ student.name }}</strong>
               <span>{{ student.number }}</span>
@@ -166,121 +202,99 @@
           } @else {
           <p class="overview-empty">No students are enrolled yet.</p>
           }
-          @if (allStudents.length > 6) {
-          <p class="overview-note">+ {{ allStudents.length - 6 }} more students</p>
+          @if (allStudents.length > 10) {
+          <p class="overview-note">+ {{ allStudents.length - 10 }} more students</p>
           }
         </div>
       </section>
 
-      <section class="overview-card">
-        <div class="overview-card-header">
-          <h3>Quiz List</h3>
-          <span>{{ selectedClassExams.length }} quizzes</span>
+      <section class="detail-block">
+        <div class="block-header">
+          <div>
+            <h3>Assigned Exams</h3>
+            <p>{{ selectedClassExams.length }} exam{{ selectedClassExams.length !== 1 ? 's' : '' }}</p>
+          </div>
         </div>
         <div class="overview-card-body">
           @if (selectedClassExams.length > 0) {
-          <ul class="overview-list">
+          <ul class="overview-list exam-list">
             @for (exam of selectedClassExams; track exam) {
             <li>{{ exam }}</li>
             }
           </ul>
           } @else {
-          <p class="overview-empty">No quizzes have been created yet.</p>
+          <p class="overview-empty">No exams have been assigned to this class yet.</p>
           }
         </div>
       </section>
     </div>
 
-    <!-- Add Student Form -->
-    @if (showAddStudentForm) {
-    <div class="add-student-section">
-      <div class="add-student-form">
-        <div class="student-form-field">
-          <label>Full Name</label>
-          <input type="text" class="modal-input" placeholder="e.g., Juan Dela Cruz" [(ngModel)]="newStudent.full_name">
+    <section class="detail-block summary-block">
+      <div class="block-header">
+        <div>
+          <h3>Summary</h3>
+          <p>Student scores and scanned exams</p>
         </div>
-        <div class="student-form-field">
-          <label>Student ID Number</label>
-          <input type="text" class="modal-input" placeholder="e.g., 44520178"
-            [(ngModel)]="newStudent.student_id_number">
-        </div>
-        <button class="student-form-submit" (click)="addStudent()"
-          [disabled]="isAddingStudent || !newStudent.full_name || !newStudent.student_id_number">
-          @if (isAddingStudent) {
-          Adding...
-          } @else {
-          <span class="material-icons-outlined">add</span>
-          Add
-          }
+      </div>
+
+      <div class="detail-table-wrapper">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>STUDENT NAME</th>
+              <th>STUDENT NUMBER</th>
+              @for (exam of selectedClassExams; track exam) {
+              <th>{{ exam }}</th>
+              }
+              <th class="th-action"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of selectedClassStudents; track student.number) {
+            <tr>
+              <td class="student-name-cell">{{ student.name }}</td>
+              <td class="student-number-cell">{{ student.number }}</td>
+              @for (score of student.scores; track $index) {
+              <td class="student-score-cell">
+                <div class="score-container">
+                  <span>{{ score.value }}</span>
+                  @if (score.imageUrl) {
+                    <button class="scan-btn" (click)="viewScan(score.imageUrl)" title="View scanned answer sheet">
+                      <span class="material-icons-outlined">image</span>
+                    </button>
+                  }
+                </div>
+              </td>
+              }
+              <td class="student-action-cell">
+                <button class="student-remove-btn" (click)="removeStudent(student)" title="Remove from class">
+                  <span class="material-icons-outlined">person_remove</span>
+                </button>
+              </td>
+            </tr>
+            } @empty {
+            <tr>
+              <td [attr.colspan]="2 + selectedClassExams.length + 1" class="empty-table-cell">
+                <span class="material-icons-outlined">groups</span>
+                <p>No students enrolled yet. Click "Add Student" to get started.</p>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="detail-pagination">
+        <button class="pagination-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+          <span class="material-icons-outlined">chevron_left</span>
+        </button>
+        <span class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+          <span class="material-icons-outlined">chevron_right</span>
         </button>
       </div>
-      @if (addStudentError) {
-      <p class="student-form-error">
-        <span class="material-icons-outlined">error_outline</span>
-        {{ addStudentError }}
-      </p>
-      }
-    </div>
-    }
-
-    <div class="detail-table-wrapper">
-      <table class="detail-table">
-        <thead>
-          <tr>
-            <th>STUDENT NAME</th>
-            <th>STUDENT NUMBER</th>
-            @for (exam of selectedClassExams; track exam) {
-            <th>{{ exam }}</th>
-            }
-            <th class="th-action"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (student of selectedClassStudents; track student.number) {
-          <tr>
-            <td class="student-name-cell">{{ student.name }}</td>
-            <td class="student-number-cell">{{ student.number }}</td>
-            @for (score of student.scores; track $index) {
-            <td class="student-score-cell">
-              <div class="score-container" style="display: inline-flex; align-items: center; gap: 8px;">
-                <span>{{ score.value }}</span>
-                @if (score.imageUrl) {
-                  <button (click)="viewScan(score.imageUrl)" class="scan-btn" title="View Scanned Answer Sheet" style="background: none; border: none; padding: 0; display: inline-flex; align-items: center; color: var(--color-primary, #6366f1); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#6366f1'">
-                    <span class="material-icons-outlined" style="font-size: 18px; margin: 0; line-height: 1;">image</span>
-                  </button>
-                }
-              </div>
-            </td>
-            }
-            <td class="student-action-cell">
-              <button class="student-remove-btn" (click)="removeStudent(student)" title="Remove from class">
-                <span class="material-icons-outlined">person_remove</span>
-              </button>
-            </td>
-          </tr>
-          } @empty {
-          <tr>
-            <td [attr.colspan]="2 + selectedClassExams.length + 1" class="empty-table-cell">
-              <span class="material-icons-outlined">groups</span>
-              <p>No students enrolled yet. Click "Add Student" to get started.</p>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="detail-pagination">
-      <button class="pagination-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-        <span class="material-icons-outlined">chevron_left</span>
-      </button>
-      <span class="pagination-info">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button class="pagination-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-        <span class="material-icons-outlined">chevron_right</span>
-      </button>
-    </div>
+    </section>
   </div>
-</div>
 }
 
 <!-- ===== DELETE CLASS CONFIRMATION MODAL ===== -->
