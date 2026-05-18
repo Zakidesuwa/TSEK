@@ -47,7 +47,7 @@ interface StudentRow {
     ])
   ]
 })
-export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
+export class ClassesComponent implements OnInit {
   http = inject(HttpClient);
 
   constructor(private cdr: ChangeDetectorRef) {}
@@ -266,6 +266,10 @@ export class ClassesComponent implements AfterViewInit, OnDestroy, OnInit {
   closeRemoveStudentModal(): void {
     this.showRemoveStudentModal = false;
     this.studentToRemove = null;
+  }
+
+  private updateScrollState(): void {
+    // Placeholder for future logic if the horizontal class list needs scroll state updates.
   }
 
   private refreshClassStudents(): void {
