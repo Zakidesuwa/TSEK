@@ -56,6 +56,18 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Keep-alive endpoint for external cron jobs (e.g., cron-job.org)
+// Hits the database with a lightweight query to prevent Neon DB from sleeping
+app.get('/api/keep-alive', async (req, res) => {
+  try {
+    await db.query('SELECT 1');
+    res.status(200).json({ status: 'active', message: 'DB kept alive' });
+  } catch (err) {
+    console.error('Keep-alive error:', err);
+    res.status(500).json({ status: 'error', message: 'Failed to keep DB alive' });
+  }
+});
+
 // Mount routes
 app.use(authRoutes);
 app.use(dashboardRoutes);

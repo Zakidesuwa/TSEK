@@ -81,7 +81,7 @@
                     @for (student of students; track student.number) {
                       <tr>
                         <td>
-                          <div class="student-name">{{ student.name }}</div>
+                          <div class="student-name" style="text-transform: uppercase;">{{ student.name }}</div>
                           <div class="student-number">{{ student.number }}</div>
                         </td>
                         @for (score of student.scores; track $index) {
@@ -147,7 +147,7 @@
                 @for (student of students; track student.number) {
                   <li style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-radius: 12px; background: #fff; border: 1px solid #eef2ed; box-shadow: 0 2px 6px rgba(0,0,0,0.01); transition: all 0.2s;">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                      <strong style="color: #1f3f24; font-size: 15px;">{{ student.name }}</strong>
+                      <strong style="color: #1f3f24; font-size: 15px; text-transform: uppercase;">{{ student.name }}</strong>
                       <span style="color: #556b55; font-size: 12px; font-family: monospace; font-weight: 500;">{{ student.number }}</span>
                     </div>
                     <button type="button" class="btn-remove-student" (click)="removeStudent(student.number)" style="background: none; border: none; cursor: pointer; color: #a94442; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; box-shadow: 0 0 0 0px rgba(169, 68, 66, 0);" onmouseover="this.style.color='#fff'; this.style.background='#a94442'; this.style.boxShadow='0 4px 10px rgba(169, 68, 66, 0.2)'" onmouseout="this.style.color='#a94442'; this.style.background='none'; this.style.boxShadow='none'">

@@ -237,7 +237,15 @@ exports.gradeExam = async (req, res) => {
     const parsedConfig = typeof config === 'string' ? JSON.parse(config) : config;
     const parsedAnswerKey = typeof answer_key === 'string' ? JSON.parse(answer_key) : answer_key;
 
+    let enumerationStart = null;
+    let enumerationSection = null;
+
     parsedConfig.filter(s => s.enabled).forEach(section => {
+      if (section.key === 'enumeration') {
+        enumerationStart = currentGlobalNum;
+        enumerationSection = section;
+      }
+      
       for (let i = 1; i <= section.selected; i++) {
         itemMapping[currentGlobalNum] = {
           sectionKey: section.key,
@@ -248,15 +256,54 @@ exports.gradeExam = async (req, res) => {
       }
     });
 
+    let enumGroups = [];
+    if (enumerationSection && enumerationStart !== null) {
+      const defaultPoints = enumerationSection.defaultPoints || 1;
+      
+      if (enumerationSection.groups && Array.isArray(enumerationSection.groups) && enumerationSection.groups.length > 0) {
+        let currentSubgroupStart = enumerationStart;
+        enumerationSection.groups.forEach((group, idx) => {
+          const size = group.size || 1;
+          const end = currentSubgroupStart + size - 1;
+          enumGroups.push({
+            index: idx,
+            start: currentSubgroupStart,
+            end: end,
+            strictOrder: group.strictOrder !== false, // default to true if not specified
+            points: defaultPoints
+          });
+          currentSubgroupStart += size;
+        });
+      } else {
+        // Backward compatibility fallback: single group of size `enumerationSection.selected`
+        const strict = enumerationSection.strictOrder !== false;
+        enumGroups.push({
+          index: 0,
+          start: enumerationStart,
+          end: enumerationStart + enumerationSection.selected - 1,
+          strictOrder: strict,
+          points: defaultPoints
+        });
+      }
+    }
+
     // 3. Grade Answers
     let totalScore = 0;
     let totalPossible = 0;
     const gradedItems = {};
 
+    const getNonStrictSubgroup = (gNum) => {
+      return enumGroups.find(g => !g.strictOrder && gNum >= g.start && gNum <= g.end);
+    };
+
+    // Grade normal items
     for (const [globalNumStr, studentAnswer] of Object.entries(answers)) {
       const globalNum = parseInt(globalNumStr, 10);
-      const mapping = itemMapping[globalNum];
+      
+      // Skip if it's part of a non-strict enumeration subgroup (graded separately below)
+      if (getNonStrictSubgroup(globalNum)) continue;
 
+      const mapping = itemMapping[globalNum];
       if (!mapping) continue;
 
       const { sectionKey, sectionLocalNum, points } = mapping;
@@ -273,7 +320,7 @@ exports.gradeExam = async (req, res) => {
           isCorrect = true;
         }
       } else if (typeof correctAnswer === 'string') {
-        // Identification / Enumeration
+        // Identification / Enumeration (Strict)
         if (studentAnswer.toUpperCase().trim() === correctAnswer.toUpperCase().trim()) {
           isCorrect = true;
         }
@@ -292,6 +339,64 @@ exports.gradeExam = async (req, res) => {
         maxPoints: points
       };
     }
+
+    // Grade non-strict subgroups if applicable
+    enumGroups.filter(g => !g.strictOrder).forEach(group => {
+      const start = group.start;
+      const end = group.end;
+      const points = group.points;
+
+      // Extract all expected answers for this subgroup's local range
+      const correctAnswers = [];
+      const sectionAnswers = parsedAnswerKey['enumeration'] || {};
+      
+      const sectionLocalStart = start - enumerationStart + 1;
+      const sectionLocalEnd = end - enumerationStart + 1;
+
+      for (let localNum = sectionLocalStart; localNum <= sectionLocalEnd; localNum++) {
+        if (sectionAnswers[localNum] !== undefined) {
+          correctAnswers.push({
+            localNum: localNum,
+            value: String(sectionAnswers[localNum]).toUpperCase().trim(),
+            matched: false
+          });
+        }
+      }
+
+      // Process each global item in this subgroup
+      for (let globalNum = start; globalNum <= end; globalNum++) {
+        const studentAnswer = answers[globalNum];
+        let isCorrect = false;
+        let matchedLocalNum = null;
+
+        if (studentAnswer) {
+          const cleanStudentAns = String(studentAnswer).toUpperCase().trim();
+          
+          // Match with an unmatched expected answer within this subgroup's correct list
+          for (const correct of correctAnswers) {
+            if (!correct.matched && cleanStudentAns === correct.value) {
+              correct.matched = true;
+              isCorrect = true;
+              matchedLocalNum = correct.localNum;
+              break;
+            }
+          }
+        }
+
+        if (isCorrect) {
+          totalScore += points;
+        }
+        totalPossible += points;
+
+        gradedItems[globalNum] = {
+          studentAnswer: studentAnswer || '',
+          correctAnswer: matchedLocalNum ? sectionAnswers[matchedLocalNum] : (sectionAnswers[globalNum - start + sectionLocalStart] || ''),
+          isCorrect,
+          pointsAwarded: isCorrect ? points : 0,
+          maxPoints: points
+        };
+      }
+    });
 
     // 4. Look up Student and Class enrollment
     let studentDbId = null;

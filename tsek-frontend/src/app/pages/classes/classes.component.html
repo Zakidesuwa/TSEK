@@ -41,9 +41,14 @@
           </div>
           <div class="class-card-footer">
             <span class="next-quiz">Next quiz: {{ cls.nextQuiz }}</span>
-            <button class="class-card-arrow" title="View Class">
-              <span class="material-icons-outlined">arrow_forward</span>
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="class-card-delete" title="Delete Class" (click)="deleteClass(cls); $event.stopPropagation();">
+                <span class="material-icons-outlined">delete</span>
+              </button>
+              <button class="class-card-arrow" title="View Class">
+                <span class="material-icons-outlined">arrow_forward</span>
+              </button>
+            </div>
           </div>
         </div>
         } @empty {

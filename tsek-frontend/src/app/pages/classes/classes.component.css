@@ -164,6 +164,30 @@
   font-size: 20px;
 }
 
+.class-card-delete {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  border: 1px solid rgba(200, 80, 80, 0.12);
+  background: transparent;
+  cursor: pointer;
+}
+
+.class-card-delete:hover {
+  background-color: rgba(200, 80, 80, 0.1);
+  color: #b85454;
+  border-color: rgba(200, 80, 80, 0.25);
+}
+
+.class-card-delete .material-icons-outlined {
+  font-size: 20px;
+}
+
 /* Carousel Navigation Buttons */
 
 /* ===== Created Exams Section ===== */

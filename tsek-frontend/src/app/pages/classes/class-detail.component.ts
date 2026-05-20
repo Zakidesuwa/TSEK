@@ -157,19 +157,26 @@ export class ClassDetailComponent implements OnInit {
 
     // Header row
     const headers = ['Student Name', 'Student ID', ...this.examNames];
+    const escapedHeaders = headers.map(h => {
+      const strVal = h ? h.toString() : '';
+      if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+        return `"${strVal.replace(/"/g, '""')}"`;
+      }
+      return strVal;
+    });
     
-    // Data rows
     // Data rows
     const rows = this.students.map(student => {
       const rowData = [
         student.name,
         // Wrap Student ID in an Excel text formula to force text formatting and prevent scientific notation conversion
         `="${student.number}"`,
-        ...student.scores.map(s => s.value)
+        // Wrap scores in an Excel text formula to prevent Excel from converting fraction scores (like 4/50) into dates (like Apr-50)
+        ...student.scores.map(s => `="${s.value}"`)
       ];
-      // Escape commas and double quotes in fields
-      return rowData.map((val, idx) => {
-        if (idx === 1) return val; // Skip escaping for the formatted Excel ID formula
+
+      // Standard CSV escaping for all fields (including the Excel formula fields)
+      return rowData.map(val => {
         const strVal = val ? val.toString() : '';
         if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
           return `"${strVal.replace(/"/g, '""')}"`;
@@ -178,7 +185,7 @@ export class ClassDetailComponent implements OnInit {
       });
     });
 
-    const csvContent = '\ufeff' + [headers, ...rows].map(e => e.join(',')).join('\n');
+    const csvContent = '\ufeff' + [escapedHeaders, ...rows].map(e => e.join(',')).join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

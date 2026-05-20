@@ -177,6 +177,69 @@
                   </select>
                 </div>
               }
+              @if (section.key === 'enumeration' && section.enabled && section.groups) {
+                <div class="subgroups-container" style="margin-top: 14px; padding: 12px; background: #f3f8f1; border-radius: 8px; border: 1px solid #d4e2d0;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #2c4a21;">ENUMERATION GROUPS</span>
+                    <button
+                      class="btn-outline mini-btn"
+                      style="padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid #4a6741; color: #4a6741; cursor: pointer; background: transparent; font-weight: 600;"
+                      (click)="addEnumerationGroup()"
+                      [disabled]="section.groups.length >= section.selected"
+                    >
+                      + Add Group
+                    </button>
+                  </div>
+
+                  @for (group of section.groups; track $index; let idx = $index) {
+                    <div class="subgroup-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4e2d0;">
+                      <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 12px; font-weight: 600; color: #3d5a2f;">Group {{ idx + 1 }}</span>
+                        <span style="font-size: 11px; color: #667560;">{{ getGroupRangeText(idx) }}</span>
+                      </div>
+
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <!-- Size Adjuster -->
+                        <div style="display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #c2d6be; border-radius: 6px; padding: 2px 6px;">
+                          <button 
+                            style="border: none; background: none; font-size: 14px; font-weight: 700; color: #4a6741; cursor: pointer; padding: 0 4px;"
+                            (click)="adjustGroupSize(idx, -1)"
+                            [disabled]="group.size <= 1"
+                          >-</button>
+                          <span style="font-size: 12px; font-weight: 700; color: #2c4a21; min-width: 16px; text-align: center;">{{ group.size }}</span>
+                          <button 
+                            style="border: none; background: none; font-size: 14px; font-weight: 700; color: #4a6741; cursor: pointer; padding: 0 4px;"
+                            (click)="adjustGroupSize(idx, 1)"
+                            [disabled]="section.groups.length <= 1 || group.size >= section.selected"
+                          >+</button>
+                        </div>
+
+                        <!-- Strict Toggle -->
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                          <span style="font-size: 10px; font-weight: 600; color: #667560;">Strict:</span>
+                          <button
+                            class="toggle-btn"
+                            [class.active]="group.strictOrder"
+                            (click)="toggleSubgroupStrictOrder(group)"
+                            style="transform: scale(0.75); margin: 0;"
+                          >
+                            <span class="toggle-knob"></span>
+                          </button>
+                        </div>
+
+                        <!-- Delete Button -->
+                        <button 
+                          style="border: none; background: none; color: #d32f2f; cursor: pointer; padding: 2px; display: flex; align-items: center;"
+                          (click)="removeEnumerationGroup(idx)"
+                          [disabled]="section.groups.length <= 1"
+                        >
+                          <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
 
               <div class="option-pills">
                 @for (opt of section.options; track opt) {

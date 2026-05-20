@@ -8,6 +8,11 @@ import { environment } from '../../../environments/environment';
 
 type QuestionType = 'multipleChoice' | 'identification' | 'enumeration' | 'trueOrFalse';
 
+export interface EnumerationGroup {
+  size: number;
+  strictOrder: boolean;
+}
+
 interface ExamSection {
   label: string;
   key: string;
@@ -16,6 +21,8 @@ interface ExamSection {
   selected: number;
   pointName: string;
   defaultPoints: number;
+  strictOrder?: boolean;
+  groups?: EnumerationGroup[];
 }
 
 interface PointSection {
@@ -88,7 +95,7 @@ export class GenerateExamComponent implements OnInit {
       this.sections = [
         { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
         { label: 'IDENTIFICATION ITEMS', key: 'identification', enabled: true, options: [10, 15, 20], selected: 10, pointName: 'Identification', defaultPoints: 2.0 },
-        { label: 'ENUMERATION ITEMS', key: 'enumeration', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'Enumeration', defaultPoints: 1.0 },
+        { label: 'ENUMERATION ITEMS', key: 'enumeration', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'Enumeration', defaultPoints: 1.0, strictOrder: false, groups: [{ size: 5, strictOrder: false }] },
         { label: 'TRUE OR FALSE ITEMS', key: 'trueOrFalse', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'True or False', defaultPoints: 1.0 }
       ];
 
@@ -124,7 +131,7 @@ export class GenerateExamComponent implements OnInit {
   sections: ExamSection[] = [
     { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
     { label: 'IDENTIFICATION ITEMS', key: 'identification', enabled: true, options: [10, 15, 20], selected: 10, pointName: 'Identification', defaultPoints: 2.0 },
-    { label: 'ENUMERATION ITEMS', key: 'enumeration', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'Enumeration', defaultPoints: 1.0 },
+    { label: 'ENUMERATION ITEMS', key: 'enumeration', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'Enumeration', defaultPoints: 1.0, strictOrder: false, groups: [{ size: 5, strictOrder: false }] },
     { label: 'TRUE OR FALSE ITEMS', key: 'trueOrFalse', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'True or False', defaultPoints: 1.0 }
   ];
 
@@ -183,7 +190,9 @@ export class GenerateExamComponent implements OnInit {
           options: c.options || (c.key === 'multipleChoice' ? [20,30,50,100] : [5,10,15]),
           selected: c.selected || 0,
           pointName: c.pointName || c.label || c.key,
-          defaultPoints: c.defaultPoints ?? 1
+          defaultPoints: c.defaultPoints ?? 1,
+          strictOrder: c.key === 'enumeration' ? (c.strictOrder ?? false) : undefined,
+          groups: c.key === 'enumeration' ? (c.groups || [{ size: c.selected || 5, strictOrder: false }]) : undefined
         }));
 
         // Restore saved points
@@ -275,10 +284,108 @@ export class GenerateExamComponent implements OnInit {
     section.enabled = !section.enabled;
   }
 
+  toggleStrictOrder(section: ExamSection) {
+    if (section.enabled) {
+      section.strictOrder = !section.strictOrder;
+    }
+  }
+
   selectOption(section: ExamSection, option: number) {
     if (section.enabled) {
       section.selected = option;
+      if (section.key === 'enumeration') {
+        section.groups = [{ size: option, strictOrder: false }];
+      }
     }
+  }
+
+  toggleSubgroupStrictOrder(group: EnumerationGroup) {
+    group.strictOrder = !group.strictOrder;
+  }
+
+  adjustGroupSize(index: number, change: number) {
+    const section = this.sections.find(s => s.key === 'enumeration');
+    if (!section || !section.groups || section.groups.length === 0) return;
+
+    const group = section.groups[index];
+    const newSize = group.size + change;
+
+    // Check bounds: size must be at least 1 and cannot exceed total selected
+    if (newSize < 1 || newSize > section.selected) return;
+
+    // Find another group to adjust in the opposite direction
+    // We prefer the next group, or the previous if next doesn't exist
+    let targetIndex = index + 1;
+    if (targetIndex >= section.groups.length) {
+      targetIndex = index - 1;
+    }
+
+    if (targetIndex >= 0 && targetIndex < section.groups.length) {
+      const targetGroup = section.groups[targetIndex];
+      const newTargetSize = targetGroup.size - change;
+
+      // Ensure target group size doesn't drop below 1
+      if (newTargetSize >= 1) {
+        group.size = newSize;
+        targetGroup.size = newTargetSize;
+      }
+    } else {
+      // Only one group exists, so size change must be locked to total selected
+      group.size = section.selected;
+    }
+  }
+
+  addEnumerationGroup() {
+    const section = this.sections.find(s => s.key === 'enumeration');
+    if (!section || !section.groups) return;
+
+    // Find the largest group to split
+    let largestGroupIndex = 0;
+    let largestSize = 0;
+    section.groups.forEach((g, idx) => {
+      if (g.size > largestSize) {
+        largestSize = g.size;
+        largestGroupIndex = idx;
+      }
+    });
+
+    // We can only split if the largest group has size >= 2
+    if (largestSize >= 2) {
+      const largestGroup = section.groups[largestGroupIndex];
+      const half = Math.floor(largestGroup.size / 2);
+      const remainder = largestGroup.size - half;
+
+      largestGroup.size = remainder;
+      // Insert new group right after the split group
+      section.groups.splice(largestGroupIndex + 1, 0, {
+        size: half,
+        strictOrder: false
+      });
+    }
+  }
+
+  removeEnumerationGroup(index: number) {
+    const section = this.sections.find(s => s.key === 'enumeration');
+    if (!section || !section.groups || section.groups.length <= 1) return;
+
+    const removedGroup = section.groups[index];
+    section.groups.splice(index, 1);
+
+    // Merge the deleted size back into the neighboring group
+    const mergeIndex = index > 0 ? index - 1 : 0;
+    section.groups[mergeIndex].size += removedGroup.size;
+  }
+
+  getGroupRangeText(index: number): string {
+    const section = this.sections.find(s => s.key === 'enumeration');
+    if (!section || !section.groups || index >= section.groups.length) return '';
+
+    let start = 1;
+    for (let i = 0; i < index; i++) {
+      start += section.groups[i].size;
+    }
+    const end = start + section.groups[index].size - 1;
+    return `Items ${start} - ${end}`;
   }
 
   onPointsChange(pt: PointSection) {

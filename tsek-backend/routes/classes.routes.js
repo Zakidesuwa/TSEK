@@ -86,12 +86,12 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
     const studentsRes = await db.query(`
       SELECT 
         s.id,
-        s.full_name as name,
+        UPPER(s.full_name) as name,
         s.student_id_number as number
       FROM students s
       JOIN class_enrollments ce ON s.id = ce.student_id
       WHERE ce.class_id = $1
-      ORDER BY s.full_name ASC
+      ORDER BY UPPER(s.full_name) ASC
     `, [classId]);
     
     // For each student, find their scores for the respective exams
@@ -158,7 +158,7 @@ router.post('/api/classes/:id/students', authMiddleware, async (req, res) => {
       // Create the student
       const insertResult = await db.query(
         'INSERT INTO students (full_name, student_id_number) VALUES ($1, $2) RETURNING id',
-        [full_name.trim(), student_id_number.toString().trim()]
+        [full_name.toUpperCase().trim(), student_id_number.toString().trim()]
       );
       studentId = insertResult.rows[0].id;
     }
