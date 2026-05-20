@@ -58,6 +58,7 @@ export class DashboardComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load notifications', err);
         this.isLoadingNotifications = false;
+        this.cdr.detectChanges();
       }
     });
 

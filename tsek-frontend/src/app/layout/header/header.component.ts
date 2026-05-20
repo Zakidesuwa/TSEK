@@ -2,6 +2,7 @@ import { Component, OnInit, Output, EventEmitter, inject, HostListener } from '@
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
+import { ChangeDetectorRef } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
 
@@ -35,6 +36,7 @@ export class HeaderComponent implements OnInit {
   authService = inject(AuthService);
   router = inject(Router);
   http = inject(HttpClient);
+  cdr = inject(ChangeDetectorRef);
 
   get user() {
     const token = this.authService.getToken();
@@ -79,10 +81,12 @@ export class HeaderComponent implements OnInit {
       next: (data) => {
         this.notifications = data;
         this.isLoadingNotifications = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load notifications', err);
         this.isLoadingNotifications = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -90,6 +94,7 @@ export class HeaderComponent implements OnInit {
   dismissNotification(id: string, event: Event) {
     event.stopPropagation();
     this.notifications = this.notifications.filter(n => n.id !== id);
+    this.cdr.detectChanges();
   }
 
   logout() {
