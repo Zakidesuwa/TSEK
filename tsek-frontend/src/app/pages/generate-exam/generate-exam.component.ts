@@ -5,6 +5,9 @@ import { RouterLink } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { ScanService } from '../../core/services/scan';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 type QuestionType = 'multipleChoice' | 'identification' | 'enumeration' | 'trueOrFalse';
 
@@ -69,6 +72,7 @@ interface AnswerTabConfig {
 export class GenerateExamComponent implements OnInit {
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
+  scanService = inject(ScanService);
 
   /* ============================
      STEP MANAGEMENT & MODALS
@@ -76,6 +80,8 @@ export class GenerateExamComponent implements OnInit {
   currentStep: 'configure' | 'answerKey' = 'configure';
 
   showModal = false;
+  showPreviewModal = false;
+  isScanningMasterKey = false;
   modalTitle = '';
   modalMessage = '';
   modalType: 'success' | 'error' = 'success';
@@ -87,8 +93,7 @@ export class GenerateExamComponent implements OnInit {
       this.currentStep = 'configure';
       this.examTitle = '';
       this.paperSize = 'A4';
-      this.examDate = '';
-      this.examDeadline = '';
+      this.examDate = new Date().toISOString().substring(0, 10);
       this.numberOfChoices = 4;
       this.selectedClassIds = this.classes.length > 0 ? [this.classes[0].id] : [];
 
@@ -118,15 +123,14 @@ export class GenerateExamComponent implements OnInit {
      ============================ */
   examTitle = '';
   paperSize = 'A4';
-  examDate = '';
-  examDeadline = '';
+  examDate = new Date().toISOString().substring(0, 10);
   numberOfChoices = 4;
   isLoading = true;
   selectedClassIds: number[] = [];
   classes: any[] = [];
   
   // Validation errors
-  formErrors: { title?: string; class?: string; date?: string; deadline?: string } = {};
+  formErrors: { title?: string; class?: string; date?: string } = {};
 
   sections: ExamSection[] = [
     { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
@@ -154,12 +158,78 @@ export class GenerateExamComponent implements OnInit {
         this.cdr.detectChanges();
         // Try loading an imported exam draft (if user clicked Edit as New)
         this.loadImportedDraft();
+        
+        // Trigger the tour check
+        setTimeout(() => this.checkAndRunTour(), 400);
       },
       error: () => {
         this.isLoading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  checkAndRunTour() {
+    const tourState = localStorage.getItem('tourState');
+    if (tourState === 'generate' && this.currentStep === 'configure') {
+      const driverObj = driver({
+        showProgress: true,
+        steps: [
+          {
+            element: 'input[placeholder="e.g., Quiz #1 Physics 101"]',
+            popover: {
+              title: 'Exam Configuration 📝',
+              description: 'Give your exam a title, assign it to classes, and select the exam date and deadline.',
+              side: "bottom",
+              align: 'start'
+            }
+          },
+          {
+            element: '.left-column .card:nth-of-type(2)',
+            popover: {
+              title: 'Structure Setup ⚙️',
+              description: 'Toggle Multiple Choice, Identification, Enumeration, and True or False. Set how many items per section.',
+              side: "top",
+              align: 'start'
+            }
+          },
+          {
+            element: '.right-column',
+            popover: {
+              title: 'Points & Grading Setup ⚖️',
+              description: 'Assign points per item for each question type. See the total possible score calculate in real-time!',
+              side: "left",
+              align: 'start'
+            }
+          },
+          {
+            element: '.btn-outline.generate-btn',
+            popover: {
+              title: 'Preview Printout 📄',
+              description: 'Click here to view a mockup of the printable OMR sheet. Verify your layout before proceeding!',
+              side: "top",
+              align: 'center'
+            }
+          },
+          {
+            element: '.btn-primary.generate-btn',
+            popover: {
+              title: 'Proceed to Answer Key ➡️',
+              description: 'Once configured, click here to fill out the correct answers for the exam!',
+              side: "top",
+              align: 'center',
+              doneBtnText: 'Finish Tour 🎉'
+            }
+          }
+        ],
+        onDestroyStarted: () => {
+          localStorage.setItem('hasSeenDashboardTour', 'true');
+          localStorage.removeItem('tourState');
+          driverObj.destroy();
+        }
+      });
+      driverObj.drive();
+    }
   }
 
   toggleAssignClass(classId: number) {
@@ -425,33 +495,7 @@ export class GenerateExamComponent implements OnInit {
     return null;
   }
 
-  /** Validate deadline input */
-  validateExamDeadline(): string | null {
-    if (!this.examDeadline) {
-      return 'Please select a quiz deadline.';
-    }
 
-    const deadlineObj = new Date(this.examDeadline);
-    const today = new Date();
-
-    if (isNaN(deadlineObj.getTime())) {
-      return 'Invalid deadline format.';
-    }
-
-    if (deadlineObj < today) {
-      return 'Deadline cannot be in the past. Please select a future time.';
-    }
-
-    if (this.examDate) {
-      const examDateObj = new Date(this.examDate);
-      examDateObj.setHours(0, 0, 0, 0);
-      if (deadlineObj < examDateObj) {
-        return 'Deadline must be on or after the exam date.';
-      }
-    }
-
-    return null;
-  }
 
   /** Validate all form fields before proceeding */
   validateForm(): boolean {
@@ -473,12 +517,6 @@ export class GenerateExamComponent implements OnInit {
     const dateError = this.validateExamDate();
     if (dateError) {
       this.formErrors.date = dateError;
-    }
-
-    // Validate exam deadline
-    const deadlineError = this.validateExamDeadline();
-    if (deadlineError) {
-      this.formErrors.deadline = deadlineError;
     }
 
     return Object.keys(this.formErrors).length === 0;
@@ -790,8 +828,7 @@ export class GenerateExamComponent implements OnInit {
       total_items: this.answerTabs.reduce((sum, t) => sum + t.itemCount, 0),
       config: finalConfig,
       answer_key: answerKey,
-      exam_date: this.examDate,
-      deadline: this.examDeadline
+      exam_date: this.examDate
     };
 
     this.http.post(`${environment.apiUrl}/api/exams`, payload).subscribe({
@@ -803,14 +840,163 @@ export class GenerateExamComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Failed to finalize answer key', err);
         this.modalTitle = 'Error';
-        this.modalMessage = 'Failed to finalize answer key. Please try again.';
+        this.modalMessage = err.error?.error || 'Failed to save exam.';
         this.modalType = 'error';
         this.showModal = true;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  onCustomItemsChange(section: ExamSection) {
+    if (section.selected === null || section.selected === undefined || section.selected < 1) {
+      section.selected = 1;
+    }
+    if (section.selected > 100) {
+      section.selected = 100;
+    }
+    if (section.key === 'enumeration') {
+      section.groups = [{ size: section.selected, strictOrder: false }];
+    }
+    this.cdr.detectChanges();
+  }
+
+  importJsonKey(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        const rawData = JSON.parse(e.target.result);
+        const data = rawData.answer_key || rawData.answerKey || rawData;
+        
+        this.populateAnswersFromJSON(data);
+        
+        this.modalTitle = 'Success!';
+        this.modalMessage = 'Answer key imported successfully.';
+        this.modalType = 'success';
+        this.showModal = true;
+        this.cdr.detectChanges();
+      } catch (err) {
+        this.modalTitle = 'Error';
+        this.modalMessage = 'Invalid JSON file format.';
+        this.modalType = 'error';
+        this.showModal = true;
+        this.cdr.detectChanges();
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  populateAnswersFromJSON(jsonAnswers: any) {
+    for (const key of Object.keys(jsonAnswers)) {
+      const sectionKey = key as any;
+      const sectionAnswers = jsonAnswers[key];
+      if (this.answers[sectionKey]) {
+        for (const idxStr of Object.keys(sectionAnswers)) {
+          const idx = parseInt(idxStr, 10);
+          const val = sectionAnswers[idxStr];
+          
+          if (sectionKey === 'identification' || sectionKey === 'enumeration') {
+            this.textAnswers[sectionKey][idx] = String(val);
+            this.answers[sectionKey][idx].clear();
+            if (String(val).trim()) this.answers[sectionKey][idx].add('answered');
+          } else {
+            this.answers[sectionKey][idx].clear();
+            if (Array.isArray(val)) {
+              val.forEach(v => this.answers[sectionKey][idx].add(String(v)));
+            } else if (val) {
+              this.answers[sectionKey][idx].add(String(val));
+            }
+          }
+        }
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  scanMasterKey(event: any) {
+    const files = Array.from(event.target.files) as File[];
+    if (files.length === 0) return;
+    
+    this.isScanningMasterKey = true;
+    this.modalTitle = 'Scanning Master Key...';
+    this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
+    this.modalType = 'success';
+    this.showModal = true;
+    this.cdr.detectChanges();
+  
+    this.scanService.scanImages(files).subscribe({
+      next: (res) => {
+        this.isScanningMasterKey = false;
+        
+        const parsedAnswers = res.rawText?.answers;
+        if (parsedAnswers) {
+          this.populateAnswersFromMasterKey(parsedAnswers);
+        } else {
+          this.modalTitle = 'Scan Failed';
+          this.modalMessage = 'Could not find any answers on the master key.';
+          this.modalType = 'error';
+          this.showModal = true;
+          this.cdr.detectChanges();
+        }
+        event.target.value = '';
+      },
+      error: (err) => {
+        this.isScanningMasterKey = false;
+        this.modalTitle = 'Scan Failed';
+        this.modalMessage = err.error?.error || err.error?.message || 'Failed to process image.';
+        this.modalType = 'error';
+        this.showModal = true;
+        this.cdr.detectChanges();
+        event.target.value = '';
+      }
+    });
+  }
+  
+  populateAnswersFromMasterKey(scannedAnswers: any) {
+    let currentGlobalNum = 1;
+    const globalToLocalMap = new Map<number, {tabKey: string, localNum: number}>();
+    
+    for (const tab of this.answerTabs) {
+      for (let i = 1; i <= tab.itemCount; i++) {
+        globalToLocalMap.set(currentGlobalNum, { tabKey: tab.key, localNum: i });
+        currentGlobalNum++;
+      }
+    }
+  
+    for (const globalNumStr of Object.keys(scannedAnswers)) {
+      const globalNum = parseInt(globalNumStr, 10);
+      const scannedVal = scannedAnswers[globalNumStr];
+      
+      if (!scannedVal) continue;
+      
+      const mapping = globalToLocalMap.get(globalNum);
+      if (!mapping) continue;
+  
+      const { tabKey, localNum } = mapping;
+      
+      if (tabKey === 'identification' || tabKey === 'enumeration') {
+        this.textAnswers[tabKey][localNum] = String(scannedVal);
+        this.answers[tabKey][localNum].clear();
+        this.answers[tabKey][localNum].add('answered');
+      } else {
+        this.answers[tabKey][localNum].clear();
+        if (scannedVal !== 'INVALID_MULTIPLE') {
+          const valStr = String(scannedVal).toUpperCase().trim();
+          this.answers[tabKey][localNum].add(valStr);
+        }
+      }
+    }
+    
+    this.modalTitle = 'Scan Complete';
+    this.modalMessage = 'Master Key has been imported successfully. Please review the populated answers.';
+    this.modalType = 'success';
+    this.showModal = true;
+    this.cdr.detectChanges();
   }
 
   printExam() {

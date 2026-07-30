@@ -6,12 +6,18 @@
 
   <!-- Quick Start -->
   <div class="help-card highlight">
-    <div class="quick-start-header">
-      <span class="material-icons-outlined quick-icon">rocket_launch</span>
-      <div>
-        <h2>Quick Start Guide</h2>
-        <p>Get up and running with TSEK in 4 simple steps.</p>
+    <div class="quick-start-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="material-icons-outlined quick-icon">rocket_launch</span>
+        <div>
+          <h2>Quick Start Guide</h2>
+          <p>Get up and running with TSEK in 4 simple steps.</p>
+        </div>
       </div>
+      <button class="btn-outline" (click)="resetTour()" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; border: 1px solid #4a6741; color: #4a6741; background: transparent; transition: all 0.2s;" onmouseover="this.style.background='rgba(74, 103, 65, 0.05)'" onmouseout="this.style.background='transparent'">
+        <span class="material-icons-outlined" style="font-size: 18px;">replay</span>
+        Replay Interactive Tour
+      </button>
     </div>
     <div class="steps-grid">
       <div class="step">

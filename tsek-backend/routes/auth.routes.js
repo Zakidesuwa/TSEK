@@ -114,47 +114,84 @@ router.post('/api/login', async (req, res) => {
   }
 });
 
-// Register
+// Helper: Generate 6-digit numeric OTP code
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Register (Stage 1: Store in pending_registrations & send OTP email)
 router.post('/api/register', async (req, res) => {
-  const { prefix, full_name, email, password } = req.body;
+  const { prefix, full_name, email, password, recaptcha_token } = req.body;
   try {
-    const emailLower = email.toLowerCase();
+    if (!email || !full_name || !password) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    // Google reCAPTCHA Verification
+    if (!recaptcha_token) {
+      return res.status(400).json({ error: 'reCAPTCHA token is missing.' });
+    }
+
+    try {
+      const googleResponse = await fetch(
+        `https://www.google.com/recaptcha/api/siteverify?secret=${encodeURIComponent(process.env.RECAPTCHA_SECRET_KEY)}&response=${encodeURIComponent(recaptcha_token)}`,
+        { method: 'POST' }
+      );
+      const googleData = await googleResponse.json();
+
+      if (!googleData.success) {
+        return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
+      }
+    } catch (verifyErr) {
+      console.error('reCAPTCHA verification system error:', verifyErr.message);
+      return res.status(500).json({ error: 'Failed to verify reCAPTCHA. Please try again later.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
     if (!emailLower.endsWith('.edu') && !emailLower.endsWith('.edu.ph')) {
       return res.status(400).json({ error: 'You must use a valid school email address (.edu or .edu.ph).' });
     }
 
-    const existing = await db.query('SELECT id FROM instructors WHERE school_email = $1', [email]);
+    const existing = await db.query('SELECT id FROM instructors WHERE school_email = $1', [emailLower]);
     if (existing.rows.length > 0) {
-      return res.status(409).json({ error: 'An account with this email already exists' });
+      return res.status(409).json({ error: 'An account with this email already exists.' });
     }
 
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const otpCode = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    const result = await db.query(`
-      INSERT INTO instructors (prefix, full_name, school_email, password_hash, is_verified, verification_token)
-      VALUES ($1, $2, $3, $4, true, $5)
-      RETURNING id, prefix, full_name, school_email
-    `, [prefix, full_name, email, passwordHash, verificationToken]);
-
-    const instructor = result.rows[0];
-
-    res.status(201).json({
-      message: 'Registration successful!',
-      user: { id: instructor.id, prefix: instructor.prefix, name: instructor.full_name, email: instructor.school_email }
-    });
+    await db.query(`
+      INSERT INTO pending_registrations (email, prefix, full_name, password_hash, otp_code, otp_expires_at)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (email) DO UPDATE SET
+        prefix = EXCLUDED.prefix,
+        full_name = EXCLUDED.full_name,
+        password_hash = EXCLUDED.password_hash,
+        otp_code = EXCLUDED.otp_code,
+        otp_expires_at = EXCLUDED.otp_expires_at,
+        created_at = NOW()
+    `, [emailLower, prefix, full_name.trim(), passwordHash, otpCode, otpExpiresAt]);
 
     const transporter = getTransporter();
     if (transporter) {
       transporter.sendMail({
         from: '"TSEK App" <noreply@tsek.app>',
-        to: email,
-        subject: "Welcome to TSEK",
-        text: `Account created successfully! You can now log in.`,
-        html: `<p>Hello ${full_name},</p><p>Your account has been created and verified. You can now log in to TSEK.</p>`,
-      }).catch(err => console.log('Background email failed (Expected on Render):', err.message));
+        to: emailLower,
+        subject: "TSEK - Email Verification Code",
+        text: `Hello ${full_name},\n\nYour TSEK verification code is: ${otpCode}\n\nThis code will expire in 10 minutes.`,
+        html: `<p>Hello <strong>${full_name}</strong>,</p>
+               <p>Your verification code for TSEK is:</p>
+               <h2 style="font-size: 28px; letter-spacing: 6px; color: #2563eb; font-family: monospace;">${otpCode}</h2>
+               <p>This code will expire in 10 minutes.</p>`
+      }).catch(err => console.error('Background email failed:', err.message));
     }
+
+    res.status(200).json({
+      message: 'Verification code sent to your email address.',
+      email: emailLower
+    });
   } catch (err) {
     console.error('Register error:', err);
     if (!res.headersSent) {
@@ -163,7 +200,106 @@ router.post('/api/register', async (req, res) => {
   }
 });
 
-// Verify Email
+// Verify OTP (Stage 2: Validate OTP and create instructor account)
+router.post('/api/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+  try {
+    if (!email || !otp) {
+      return res.status(400).json({ error: 'Email and verification code are required.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+    const cleanOtp = otp.toString().trim();
+
+    const pendingResult = await db.query('SELECT * FROM pending_registrations WHERE email = $1', [emailLower]);
+    if (pendingResult.rows.length === 0) {
+      return res.status(400).json({ error: 'No pending registration found for this email. Please register again.' });
+    }
+
+    const pending = pendingResult.rows[0];
+
+    if (new Date() > new Date(pending.otp_expires_at)) {
+      return res.status(400).json({ error: 'Verification code has expired. Please click "Resend Code".' });
+    }
+
+    if (pending.otp_code !== cleanOtp) {
+      return res.status(400).json({ error: 'Invalid verification code. Please check and try again.' });
+    }
+
+    // OTP is valid! Create official instructor account
+    const insertResult = await db.query(`
+      INSERT INTO instructors (prefix, full_name, school_email, password_hash, is_verified)
+      VALUES ($1, $2, $3, $4, true)
+      RETURNING id, prefix, full_name, school_email
+    `, [pending.prefix, pending.full_name, pending.email, pending.password_hash]);
+
+    // Clean up pending registration
+    await db.query('DELETE FROM pending_registrations WHERE email = $1', [emailLower]);
+
+    const instructor = insertResult.rows[0];
+
+    res.status(201).json({
+      message: 'Email verified and account created successfully!',
+      user: { id: instructor.id, prefix: instructor.prefix, name: instructor.full_name, email: instructor.school_email }
+    });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Resend OTP
+router.post('/api/resend-otp', async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    const existing = await db.query('SELECT id FROM instructors WHERE school_email = $1', [emailLower]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'This email is already registered and verified. Please log in.' });
+    }
+
+    const pendingResult = await db.query('SELECT * FROM pending_registrations WHERE email = $1', [emailLower]);
+    if (pendingResult.rows.length === 0) {
+      return res.status(400).json({ error: 'No pending registration found for this email. Please register.' });
+    }
+
+    const pending = pendingResult.rows[0];
+    const newOtp = generateOTP();
+    const newExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await db.query('UPDATE pending_registrations SET otp_code = $1, otp_expires_at = $2 WHERE email = $3', [
+      newOtp,
+      newExpiresAt,
+      emailLower
+    ]);
+
+    const transporter = getTransporter();
+    if (transporter) {
+      transporter.sendMail({
+        from: '"TSEK App" <noreply@tsek.app>',
+        to: emailLower,
+        subject: "TSEK - New Email Verification Code",
+        text: `Hello ${pending.full_name},\n\nYour new TSEK verification code is: ${newOtp}\n\nThis code will expire in 10 minutes.`,
+        html: `<p>Hello <strong>${pending.full_name}</strong>,</p>
+               <p>Your new verification code for TSEK is:</p>
+               <h2 style="font-size: 28px; letter-spacing: 6px; color: #2563eb; font-family: monospace;">${newOtp}</h2>
+               <p>This code will expire in 10 minutes.</p>`
+      }).catch(err => console.error('Background email failed:', err.message));
+    }
+
+    res.json({ message: 'A new verification code has been sent to your email address.' });
+  } catch (err) {
+    console.error('Resend OTP error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Legacy Verify Email Link endpoint
 router.get('/api/verify-email', async (req, res) => {
   const { token } = req.query;
   try {
@@ -192,8 +328,12 @@ router.post('/api/change-password', authMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Current and new password are required.' });
   }
 
-  if (newPassword.length < 6) {
-    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'New password must be at least 8 characters long.' });
+  }
+  
+  if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    return res.status(400).json({ error: 'New password must contain at least one uppercase letter, one lowercase letter, and one number.' });
   }
 
   try {

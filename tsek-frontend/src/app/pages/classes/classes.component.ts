@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 interface ClassCard {
   id: number;
@@ -106,12 +108,76 @@ export class ClassesComponent implements OnInit {
         this.classes = data;
         this.isLoadingClasses = false;
         this.cdr.detectChanges();
+        // Run tour check once classes are loaded and rendered
+        setTimeout(() => this.checkAndRunTour(), 300);
       },
       error: () => {
         this.isLoadingClasses = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  checkAndRunTour() {
+    const tourState = localStorage.getItem('tourState');
+    if (tourState === 'classes') {
+      const driverObj = driver({
+        showProgress: true,
+        steps: [
+          {
+            element: '.classes-page',
+            popover: {
+              title: 'Your Classes 🏫',
+              description: 'This is where all your classes are listed. You can click on any class card to view its student roster and exam scores.',
+              side: "bottom",
+              align: 'start'
+            }
+          },
+          {
+            element: '.classes-search-wrapper',
+            popover: {
+              title: 'Quick Search 🔍',
+              description: 'Quickly filter your classes by subject name or section code here.',
+              side: "bottom",
+              align: 'start'
+            }
+          },
+          {
+            element: '.add-class-btn',
+            popover: {
+              title: 'Create a Class ➕',
+              description: 'Click this button to add a new class section. You can enroll students manually or they will be enrolled automatically when you scan their first exam sheet.',
+              side: "top",
+              align: 'center'
+            }
+          },
+          {
+            element: 'a[routerLink="/generate-exam"]', // Target the sidebar link or custom navigation
+            popover: {
+              title: 'Generate Answer Sheets 📝',
+              description: 'Let\'s go to the Answer Sheet Generator next to see how to create custom printable OMR sheets!',
+              side: "right",
+              align: 'center',
+              doneBtnText: 'Go to Generator ➡️'
+            }
+          }
+        ],
+        onDestroyStarted: () => {
+          if (!driverObj.hasNextStep()) {
+            localStorage.setItem('tourState', 'generate');
+            this.router.navigate(['/generate-exam']);
+            driverObj.destroy();
+          } else {
+            if (confirm("Are you sure you want to skip the tour?")) {
+              localStorage.setItem('hasSeenDashboardTour', 'true');
+              localStorage.removeItem('tourState');
+              driverObj.destroy();
+            }
+          }
+        }
+      });
+      driverObj.drive();
+    }
   }
 
 

@@ -135,18 +135,7 @@
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group" style="flex: 1;">
-              <label class="form-label">QUIZ DEADLINE</label>
-              <input type="datetime-local" class="form-input date-input" [class.input-error]="formErrors.deadline" [(ngModel)]="examDeadline">
-              @if (formErrors.deadline) {
-                <p class="form-error-message">
-                  <span class="material-icons-outlined">error_outline</span>
-                  {{ formErrors.deadline }}
-                </p>
-              }
-            </div>
-          </div>
+
         </div>
 
         <!-- Structure Setup -->
@@ -241,7 +230,7 @@
                 </div>
               }
 
-              <div class="option-pills">
+              <div class="option-pills" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                 @for (opt of section.options; track opt) {
                   <button
                     class="pill"
@@ -252,14 +241,33 @@
                     {{ opt }}
                   </button>
                 }
+                
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 11px; font-weight: 600; color: #555;">Custom:</span>
+                  <input
+                    type="number"
+                    [disabled]="!section.enabled"
+                    [(ngModel)]="section.selected"
+                    (ngModelChange)="onCustomItemsChange(section)"
+                    style="width: 70px; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: #fff;"
+                    min="1"
+                    max="100"
+                  />
+                </div>
               </div>
             </div>
           }
 
-          <button class="btn-primary generate-btn" (click)="proceedToAnswerKey()">
-            <span class="material-icons-outlined btn-icon">arrow_forward</span>
-            PROCEED TO ANSWER KEY
-          </button>
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="btn-outline generate-btn" (click)="showPreviewModal = true" style="flex: 1;">
+              <span class="material-icons-outlined btn-icon">visibility</span>
+              PREVIEW LAYOUT
+            </button>
+            <button class="btn-primary generate-btn" (click)="proceedToAnswerKey()" style="flex: 2;">
+              <span class="material-icons-outlined btn-icon">arrow_forward</span>
+              PROCEED TO ANSWER KEY
+            </button>
+          </div>
         </div>
       </div>
 
@@ -329,7 +337,7 @@
         <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
         <div class="student-info-grid">
           
-          <div class="info-left">
+          <div class="info-left" style="flex: 1.5;">
             <div class="info-field">
               <label>FULL NAME (LN, FN, MI.)</label>
               <div class="info-box"></div>
@@ -344,20 +352,20 @@
             </div>
           </div>
 
-          <div class="student-id-section">
-            <div class="student-id-label">LEARNER REFERENCE NUMBER (LRN)</div>
-            <div class="id-bubble-grid">
-              @for (col of studentIdColumnsArray; track $index) {
-                <div class="id-bubble-col">
-                  @for (digit of studentIdDigits; track digit) {
-                    <div class="bubble-group">
-                      <div class="print-bubble"></div>
-                      <span class="bubble-label">{{ digit }}</span>
-                    </div>
-                  }
-                </div>
-              }
+          <div class="student-id-section" style="flex: 1.2; display: flex; flex-direction: column;">
+            <div class="info-field" style="height: 100%; display: flex; flex-direction: column;">
+              <label>LEARNER REFERENCE NUMBER (LRN)</label>
+              <div class="id-boxes-row" style="display: flex; gap: 4px; margin-top: 6px;">
+                @for (col of studentIdColumnsArray; track col) {
+                  <div class="digit-box" style="width: 22px; height: 28px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 10px; font-weight: bold; font-family: monospace;"></div>
+                }
+              </div>
             </div>
+          </div>
+
+          <div class="print-score-box" style="width: 80px; border: 2px dashed #333; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; background: #fff; min-height: 90px; margin-left: 15px;">
+            <span style="font-size: 8pt; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 8px;">SCORE</span>
+            <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ {{ totalPossibleScore }}</div>
           </div>
 
         </div>
@@ -641,7 +649,20 @@
       </div>
 
       <!-- Finalize Button -->
-      <div class="finalize-bar">
+      <div class="finalize-bar" style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+        <input type="file" accept="image/*" #masterKeyInput class="hidden-input" (change)="scanMasterKey($event)" style="display: none;" multiple>
+        <input type="file" accept=".json" #jsonKeyInput class="hidden-input" (change)="importJsonKey($event)" style="display: none;">
+        
+        <button type="button" class="btn-outline" (click)="jsonKeyInput.click()" style="background: white;">
+          <span class="material-icons-outlined btn-icon">upload_file</span>
+          IMPORT JSON KEY
+        </button>
+        
+        <button type="button" class="btn-outline" (click)="masterKeyInput.click()" [disabled]="isScanningMasterKey" style="background: white;">
+          <span class="material-icons-outlined btn-icon">document_scanner</span>
+          {{ isScanningMasterKey ? 'SCANNING...' : 'SCAN MASTER KEY' }}
+        </button>
+        
         <button class="btn-finalize" (click)="finalizeAnswerKey()" id="btn-finalize-answer-key">
           FINALIZE ANSWER KEY
         </button>
@@ -670,6 +691,174 @@
           } @else {
             <button class="btn-modal-action" (click)="closeModal()">Got it</button>
           }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Preview Modal Overlay -->
+  @if (showPreviewModal) {
+    <div class="modal-overlay" (click)="showPreviewModal = false">
+      <div class="modal-content preview-modal" (click)="$event.stopPropagation()" style="max-width: 850px; width: 95%; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 20px;">
+          <h3 class="modal-title" style="margin: 0; font-size: 1.25rem;">Preview Layout</h3>
+          <button style="background: none; border: none; cursor: pointer;" (click)="showPreviewModal = false">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+        
+        <!-- Scaled down view of the print area -->
+        <div class="preview-container" style="transform-origin: top left; transform: scale(0.85); width: 117%;">
+          
+          <div class="print-header">
+            <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
+            <div class="student-info-grid">
+              
+              <div class="info-left" style="flex: 1.5;">
+                <div class="info-field">
+                  <label>FULL NAME (LN, FN, MI.)</label>
+                  <div class="info-box"></div>
+                </div>
+                <div class="info-field">
+                  <label>GRADE LEVEL, SECTION & STRAND</label>
+                  <div class="info-box"></div>
+                </div>
+                <div class="info-field">
+                  <label>DATE</label>
+                  <div class="info-box"></div>
+                </div>
+              </div>
+
+              <div class="student-id-section" style="flex: 1.2; display: flex; flex-direction: column;">
+                <div class="info-field" style="height: 100%; display: flex; flex-direction: column;">
+                  <label>LEARNER REFERENCE NUMBER (LRN)</label>
+                  <div class="id-boxes-row" style="display: flex; gap: 4px; margin-top: 6px;">
+                    @for (col of studentIdColumnsArray; track col) {
+                      <div class="digit-box" style="width: 22px; height: 28px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 10px; font-weight: bold; font-family: monospace;"></div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="print-score-box" style="width: 80px; border: 2px dashed #333; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; background: #fff; min-height: 90px; margin-left: 15px;">
+                <span style="font-size: 8pt; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 8px;">SCORE</span>
+                <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ {{ totalPossibleScore }}</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Multiple Choice Section -->
+          @if (mcBlocks.length > 0) {
+            <div class="print-section">
+              <h2 class="print-section-title">PART I: MULTIPLE CHOICE</h2>
+              <div class="mc-blocks-container">
+                @for (block of mcBlocks; track $index) {
+                  <div class="mc-grid">
+                    @for (col of block; track $index) {
+                      <div class="mc-column">
+                        @for (item of col; track item) {
+                          <div class="mc-item">
+                            <span class="item-num">{{ item }}.</span>
+                            <div class="bubbles">
+                              @for (letter of choiceLetters; track letter) {
+                                <div class="bubble-group">
+                                  <div class="print-bubble"></div>
+                                  <span class="bubble-label">{{ letter }}</span>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Identification Section -->
+          @if (idBlocks.length > 0) {
+            <div class="print-section pt-4">
+              <h2 class="print-section-title">PART II: IDENTIFICATION</h2>
+              <div class="id-blocks-container">
+                @for (block of idBlocks; track $index) {
+                  <div class="id-grid">
+                    @for (col of block; track $index) {
+                      <div class="id-column">
+                        @for (item of col; track item) {
+                          <div class="id-item">
+                            <span class="item-num">{{ item }}.</span>
+                            <div class="id-box"></div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Enumeration Section -->
+          @if (enumBlocks.length > 0) {
+            <div class="print-section pt-4">
+              <h2 class="print-section-title">PART III: ENUMERATION</h2>
+              <div class="id-blocks-container">
+                @for (block of enumBlocks; track $index) {
+                  <div class="id-grid">
+                    @for (col of block; track $index) {
+                      <div class="id-column">
+                        @for (item of col; track item) {
+                          <div class="id-item">
+                            <span class="item-num">{{ item }}.</span>
+                            <div class="id-box"></div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- True or False Section -->
+          @if (tfBlocks.length > 0) {
+            <div class="print-section pt-4">
+              <h2 class="print-section-title">PART IV: TRUE OR FALSE</h2>
+              <div class="mc-blocks-container">
+                @for (block of tfBlocks; track $index) {
+                  <div class="mc-grid">
+                    @for (col of block; track $index) {
+                      <div class="mc-column">
+                        @for (item of col; track item) {
+                          <div class="mc-item">
+                            <span class="item-num">{{ item }}.</span>
+                            <div class="bubbles">
+                              <div class="bubble-group">
+                                <div class="print-bubble"></div>
+                                <span class="bubble-label">T</span>
+                              </div>
+                              <div class="bubble-group">
+                                <div class="print-bubble"></div>
+                                <span class="bubble-label">F</span>
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 16px;">
+          <button class="btn-primary" (click)="showPreviewModal = false">Close Preview</button>
         </div>
       </div>
     </div>

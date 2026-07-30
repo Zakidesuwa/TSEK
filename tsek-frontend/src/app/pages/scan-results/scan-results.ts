@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -34,7 +34,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
     ])
   ]
 })
-export class ScanResults implements OnInit {
+export class ScanResults implements OnInit, OnDestroy {
   scanService = inject(ScanService);
   router = inject(Router);
   cdr = inject(ChangeDetectorRef);
@@ -56,6 +56,11 @@ export class ScanResults implements OnInit {
   selectedExamId: number | null = null;
   scannedImageUrl: string | null = null;
   gradeResult: any = null;
+  selectedPreviewIndex = 0;
+  
+  // Webcam scanner state
+  showWebcamModal = false;
+  videoStream: MediaStream | null = null;
 
   // Enrollment Prompt State
   showEnrollmentPrompt = false;
@@ -116,9 +121,9 @@ export class ScanResults implements OnInit {
     this.isStaging = false;
     this.isLoading = true;
 
-    // Copy staged data to the active scan state
     this.imagePreviewUrls = [...this.stagedPreviewUrls];
     this.pageCount = this.stagedFiles.length;
+    this.selectedPreviewIndex = 0;
 
     // Send all images in one request
     this.scanService.scanImages(this.stagedFiles).subscribe({
@@ -126,6 +131,10 @@ export class ScanResults implements OnInit {
         this.isLoading = false;
         this.rawText = response.rawText || { error: 'No data returned' };
         this.scannedImageUrl = response.imageUrl || null;
+
+        if (this.rawText && this.rawText.pagesMatchStudent === false) {
+          this.error = 'Verification Warning: Scanned pages do not appear to belong to the same student. Please verify handwriting, names, and page order.';
+        }
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -203,6 +212,13 @@ export class ScanResults implements OnInit {
       next: () => {
         this.isEnrolling = false;
         this.showEnrollmentPrompt = false;
+        
+        // Update the active scan text to the edited values
+        if (this.rawText) {
+          this.rawText.studentId = this.tempEnrollData.studentId;
+          this.rawText.studentName = this.tempEnrollData.studentName;
+        }
+
         // Re-run grading now that they are enrolled
         this.processBubbles();
       },
@@ -376,5 +392,67 @@ export class ScanResults implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  // Webcam Capture Methods
+  async openWebcamModal() {
+    this.showWebcamModal = true;
+    this.cdr.detectChanges();
+    try {
+      setTimeout(async () => {
+        const videoEl = document.getElementById('webcam-video') as HTMLVideoElement;
+        this.videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        if (videoEl && this.videoStream) {
+          videoEl.srcObject = this.videoStream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing webcam:', err);
+      alert('Could not access camera. Please ensure camera permissions are granted.');
+      this.closeWebcamModal();
+    }
+  }
+
+  closeWebcamModal() {
+    this.showWebcamModal = false;
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach(track => track.stop());
+      this.videoStream = null;
+    }
+    this.cdr.detectChanges();
+  }
+
+  captureWebcamSnapshot() {
+    const videoEl = document.getElementById('webcam-video') as HTMLVideoElement;
+    if (!videoEl) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 1280;
+    canvas.height = videoEl.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `webcam-scan-${Date.now()}.png`, { type: 'image/png' });
+          this.stagedFiles.push(file);
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.stagedPreviewUrls.push(e.target.result);
+            this.cdr.detectChanges();
+          };
+          reader.readAsDataURL(file);
+        }
+      }, 'image/png');
+    }
+    this.closeWebcamModal();
+  }
+
+  ngOnDestroy() {
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach(track => track.stop());
+    }
   }
 }

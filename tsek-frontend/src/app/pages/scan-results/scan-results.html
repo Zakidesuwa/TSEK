@@ -43,6 +43,12 @@
           <span class="material-icons-outlined add-icon">add_photo_alternate</span>
           <span class="add-label">Add Page</span>
         </button>
+
+        <!-- Webcam Capture Card -->
+        <button class="staged-file-card add-card camera-card" (click)="openWebcamModal()" style="border-color: #3b82f6; background: #eff6ff; color: #2563eb;">
+          <span class="material-icons-outlined add-icon" style="color: #2563eb;">photo_camera</span>
+          <span class="add-label">Capture via Webcam</span>
+        </button>
       </div>
 
       <div class="staging-actions">
@@ -105,30 +111,35 @@
   <div class="results-layout">
     <!-- Left: Image + Detected Data -->
     <div class="results-left">
-      @if (imagePreviewUrls.length === 1) {
+      @if (imagePreviewUrls.length > 0) {
       <div class="preview-card">
-        <div class="preview-header">
-          <span class="material-icons-outlined">photo_camera</span>
-          Captured Image
+        <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-outlined">photo_camera</span>
+            <span>Captured Page {{ selectedPreviewIndex + 1 }} of {{ imagePreviewUrls.length }}</span>
+          </div>
         </div>
-        <img [src]="imagePreviewUrls[0]" alt="Scanned document" class="document-preview" />
+        <div class="main-preview-container" style="position: relative; border-radius: 8px; overflow: hidden; background: #eaeaea; display: flex; align-items: center; justify-content: center; min-height: 350px;">
+          <img [src]="imagePreviewUrls[selectedPreviewIndex]" alt="Scanned document" class="document-preview" style="max-width: 100%; max-height: 500px; object-fit: contain;" />
+        </div>
       </div>
-      }
+      
       @if (imagePreviewUrls.length > 1) {
-      <div class="preview-card">
+      <div class="preview-card" style="margin-top: 12px;">
         <div class="preview-header">
           <span class="material-icons-outlined">photo_library</span>
-          Captured Pages ({{ imagePreviewUrls.length }})
+          All Scanned Pages (Click to switch preview)
         </div>
-        <div class="pages-thumbnail-row">
+        <div class="pages-thumbnail-row" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px 0;">
           @for (url of imagePreviewUrls; track url; let i = $index) {
-          <div class="page-thumbnail">
-            <img [src]="url" [alt]="'Page ' + (i + 1)" />
-            <span class="page-badge">{{ i + 1 }}</span>
+          <div class="page-thumbnail" [class.active]="selectedPreviewIndex === i" (click)="selectedPreviewIndex = i" style="width: 70px; height: 90px; border-radius: 6px; border: 2px solid; position: relative; overflow: hidden; cursor: pointer; transition: all 0.2s;" [style.border-color]="selectedPreviewIndex === i ? 'var(--color-primary, #4a6741)' : '#ccc'">
+            <img [src]="url" [alt]="'Page ' + (i + 1)" style="width: 100%; height: 100%; object-fit: cover;" />
+            <span class="page-badge" style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px;">{{ i + 1 }}</span>
           </div>
           }
         </div>
       </div>
+      }
       }
 
       <!-- Detected Data Summary -->
@@ -226,8 +237,45 @@
 
   <!-- Grade Result State -->
   @if (gradeResult) {
-  <div class="grade-result-layout">
-    <!-- Top: Score Overview -->
+  <div class="results-layout">
+    <!-- Left: Scanned Image Preview -->
+    <div class="results-left">
+      @if (imagePreviewUrls.length > 0) {
+      <div class="preview-card">
+        <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons-outlined">photo_camera</span>
+            <span>Captured Page {{ selectedPreviewIndex + 1 }} of {{ imagePreviewUrls.length }}</span>
+          </div>
+        </div>
+        <div class="main-preview-container" style="position: relative; border-radius: 8px; overflow: hidden; background: #eaeaea; display: flex; align-items: center; justify-content: center; min-height: 350px;">
+          <img [src]="imagePreviewUrls[selectedPreviewIndex]" alt="Scanned document" class="document-preview" style="max-width: 100%; max-height: 500px; object-fit: contain;" />
+        </div>
+      </div>
+      
+      @if (imagePreviewUrls.length > 1) {
+      <div class="preview-card" style="margin-top: 12px;">
+        <div class="preview-header">
+          <span class="material-icons-outlined">photo_library</span>
+          All Scanned Pages (Click to switch preview)
+        </div>
+        <div class="pages-thumbnail-row" style="display: flex; gap: 10px; overflow-x: auto; padding: 10px 0;">
+          @for (url of imagePreviewUrls; track url; let i = $index) {
+          <div class="page-thumbnail" [class.active]="selectedPreviewIndex === i" (click)="selectedPreviewIndex = i" style="width: 70px; height: 90px; border-radius: 6px; border: 2px solid; position: relative; overflow: hidden; cursor: pointer; transition: all 0.2s;" [style.border-color]="selectedPreviewIndex === i ? 'var(--color-primary, #4a6741)' : '#ccc'">
+            <img [src]="url" [alt]="'Page ' + (i + 1)" style="width: 100%; height: 100%; object-fit: cover;" />
+            <span class="page-badge" style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 10px;">{{ i + 1 }}</span>
+          </div>
+          }
+        </div>
+      </div>
+      }
+      }
+    </div>
+
+    <!-- Right: Grade Results -->
+    <div class="results-right" style="overflow-y: auto; max-height: calc(100vh - 120px); padding-right: 8px;">
+      <div class="grade-result-layout">
+        <!-- Top: Score Overview -->
     <div class="score-overview-card">
       <div class="score-left-section">
         <div class="score-ring-container">
@@ -382,6 +430,8 @@
         </button>
       }
     </div>
+    </div>
+    </div>
   </div>
   }
 
@@ -398,10 +448,14 @@
         but they are not currently enrolled in this class. 
       </p>
 
-      <div class="detected-info-box">
-        <div class="info-row">
-          <span class="info-label">Student Name:</span>
-          <input type="text" class="info-value-input" [(ngModel)]="tempEnrollData.studentName" placeholder="Enter student name" style="text-transform: uppercase;" />
+      <div class="detected-info-box" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #f9fbf8; border: 1px solid #c2d6be; border-radius: 8px;">
+        <div class="info-row" style="display: flex; align-items: center; gap: 8px;">
+          <span class="info-label" style="min-width: 110px; font-weight: 600; font-size: 13px; color: #4a6741;">Student Name:</span>
+          <input type="text" class="info-value-input" [(ngModel)]="tempEnrollData.studentName" placeholder="Enter student name" style="text-transform: uppercase; flex: 1; padding: 6px 10px; border: 1px solid #c2d6be; border-radius: 4px; font-size: 13px;" />
+        </div>
+        <div class="info-row" style="display: flex; align-items: center; gap: 8px;">
+          <span class="info-label" style="min-width: 110px; font-weight: 600; font-size: 13px; color: #4a6741;">Student ID/LRN:</span>
+          <input type="text" class="info-value-input" [(ngModel)]="tempEnrollData.studentId" placeholder="Enter ID number" style="flex: 1; padding: 6px 10px; border: 1px solid #c2d6be; border-radius: 4px; font-size: 13px;" />
         </div>
       </div>
 
@@ -443,6 +497,31 @@
           } @else {
             ENROLL STUDENT
           }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Webcam Capture Modal -->
+  @if (showWebcamModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeWebcamModal()">
+    <div class="modal-container" @modalScaleAnim (click)="$event.stopPropagation()" style="max-width: 640px; padding: 24px; border-radius: 16px;">
+      <div class="modal-icon-wrapper" style="background: #eff6ff; color: #2563eb;">
+        <span class="material-icons-outlined" style="color: #2563eb;">photo_camera</span>
+      </div>
+      <h2 class="modal-title" style="margin-bottom: 8px;">Capture Answer Sheet</h2>
+      <p class="modal-text" style="margin-bottom: 16px; color: #666; font-size: 13px;">Align the exam page inside the camera frame and click "Take Snapshot".</p>
+      
+      <div class="webcam-viewport-wrapper" style="position: relative; border-radius: 12px; overflow: hidden; background: #000; width: 100%; aspect-ratio: 4/3; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; border: 2px solid #ddd;">
+        <video id="webcam-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 0;">
+        <button class="btn-modal-secondary" (click)="closeWebcamModal()">CANCEL</button>
+        <button class="btn-modal-primary" (click)="captureWebcamSnapshot()" style="background: #2563eb; color: #fff;">
+          <span class="material-icons-outlined" style="font-size: 18px; margin-right: 6px;">camera</span>
+          TAKE SNAPSHOT
         </button>
       </div>
     </div>

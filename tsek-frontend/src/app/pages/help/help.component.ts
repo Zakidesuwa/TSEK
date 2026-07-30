@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-help',
@@ -9,6 +10,14 @@ import { CommonModule } from '@angular/common';
   styleUrl: './help.component.css'
 })
 export class HelpComponent {
+  router = inject(Router);
+
+  resetTour() {
+    localStorage.removeItem('hasSeenDashboardTour');
+    localStorage.removeItem('tourState');
+    this.router.navigate(['/dashboard']);
+  }
+
   faqs = [
     {
       question: 'How do I create an exam?',

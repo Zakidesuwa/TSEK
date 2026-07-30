@@ -80,29 +80,31 @@ exports.scanImage = async (req, res) => {
 
     const prompt = isMultiPage
       ? `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
-You are given ${files.length} images. These are ${files.length} PAGES of the SAME student's exam answer sheet. The items continue across pages with sequential numbering (e.g., page 1 has items 1-50, page 2 has items 51-100, etc.).
+You are given ${files.length} images. These are ${files.length} PAGES of a student's exam answer sheet.
 
-1. Identify the Learner Reference Number (LRN) / Student ID encoded in the grid bubbles. The LRN grid is on PAGE 1 ONLY.
-   - There are exactly 12 columns in the LRN / Student ID grid.
-   - The grid has exactly 10 rows of bubbles. The top-most row is ALWAYS 0, the second row down is 1, the third row down is 2, and so on until the bottom row which is 9.
-   - Look at each column individually from left to right.
-   - For each column, count how many rows down the shaded bubble is to determine the correct number (0-9). Pay extreme attention to horizontal alignment.
-   - Combine these 12 numbers to form the final LRN / Student ID.
-   - IMPORTANT: If the grid is completely blank or no bubbles are shaded, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
+CRITICAL SECURITY CHECK:
+1. Verify if all uploaded pages belong to the SAME student. 
+   - Check the handwriting style, ink color, pen stroke thickness, name details, or LRN details across all pages.
+   - If you detect that the pages belong to different students (e.g., mismatching names, completely different handwriting/pen style, or mismatching student details), set "pagesMatchStudent" to false. Otherwise, set it to true.
 
-2. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
-3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+2. Identify the Learner Reference Number (LRN) / Student ID. This will be hand-written in a box/line on PAGE 1 ONLY. Read the numbers clearly.
+   - IMPORTANT: If the field is blank or illegible, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
+
+3. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
+4. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
    - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
-4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+   - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), you MUST return the value as "INVALID_MULTIPLE" to ensure it is marked wrong.
+5. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
-5. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
-6. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
+6. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
+7. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
-  "studentIdReasoning": "Briefly list the shaded number found in each of the 12 columns from left to right (e.g., 'Col 1: 2, Col 2: 0...') to ensure accuracy.",
+  "studentIdReasoning": "Briefly state where you found the LRN and what it says to ensure accuracy.",
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
+  "pagesMatchStudent": true,
   "answers": {
     "1": "A",
     "2": "C",
@@ -114,24 +116,20 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
       : `You are a highly accurate grading system capable of reading both Optical Mark Recognition (OMR) bubbles and handwriting.
 Look carefully at the provided student answer sheet image. 
 
-1. Identify the Learner Reference Number (LRN) / Student ID encoded in the grid bubbles. 
-   - There are exactly 12 columns in the LRN / Student ID grid.
-   - The grid has exactly 10 rows of bubbles. The top-most row is ALWAYS 0, the second row down is 1, the third row down is 2, and so on until the bottom row which is 9.
-   - Look at each column individually from left to right.
-   - For each column, count how many rows down the shaded bubble is to determine the correct number (0-9). Pay extreme attention to horizontal alignment.
-   - Combine these 12 numbers to form the final LRN / Student ID.
-   - IMPORTANT: If the grid is completely blank or no bubbles are shaded, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
+1. Identify the Learner Reference Number (LRN) / Student ID. This will be hand-written in a box/line. Read the numbers clearly.
+   - IMPORTANT: If the field is blank or illegible, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
 
 2. If there is a name field (handwritten or printed), identify the student's full name. If it is blank, return null or "".
 3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
    - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
+   - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), you MUST return the value as "INVALID_MULTIPLE" to ensure it is marked wrong.
 4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
 5. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
-  "studentIdReasoning": "Briefly list the shaded number found in each of the 12 columns from left to right (e.g., 'Col 1: 2, Col 2: 0...') to ensure accuracy.",
+  "studentIdReasoning": "Briefly state where you found the LRN and what it says to ensure accuracy.",
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
   "answers": {

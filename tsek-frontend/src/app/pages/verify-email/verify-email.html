@@ -1,14 +1,15 @@
 <div class="verify-page">
   <div class="verify-card">
     <div class="brand-header">
-      <span class="nav-brand">TSEK</span>
+      <span class="nav-brand" routerLink="/landing" style="cursor: pointer;">TSEK</span>
     </div>
 
     @if (status === 'LOADING') {
       <div class="status-icon loading">
         <span class="material-icons-outlined spin">hourglass_empty</span>
       </div>
-      <h2 class="status-title">Verifying Email</h2>
+      <h2 class="status-title">Verifying</h2>
+      <p class="status-message">{{ message }}</p>
     }
     
     @if (status === 'SUCCESS') {
@@ -16,19 +17,52 @@
         <span class="material-icons-outlined">check_circle</span>
       </div>
       <h2 class="status-title">Verification Complete!</h2>
+      <p class="status-message">{{ message }}</p>
+      <button class="btn-primary" routerLink="/login">PROCEED TO LOGIN</button>
     }
 
-    @if (status === 'ERROR') {
-      <div class="status-icon error">
-        <span class="material-icons-outlined">error</span>
+    @if (status === 'IDLE' || status === 'ERROR') {
+      <div class="status-icon info">
+        <span class="material-icons-outlined">mark_email_read</span>
       </div>
-      <h2 class="status-title">Verification Failed</h2>
-    }
+      <h2 class="status-title">Verify Email OTP</h2>
 
-    <p class="status-message">{{ message }}</p>
+      @if (message) {
+        <p class="status-message error-text">{{ message }}</p>
+      }
 
-    @if (status !== 'LOADING') {
-      <button class="btn-primary" routerLink="/login">RETURN TO LOGIN</button>
+      <form class="verify-form" (ngSubmit)="verifyOtp()">
+        <div class="form-group">
+          <label>SCHOOL EMAIL</label>
+          <input
+            type="email"
+            class="form-control"
+            placeholder="instructor@school.edu.ph"
+            name="email"
+            [(ngModel)]="email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>6-DIGIT VERIFICATION CODE</label>
+          <input
+            type="text"
+            class="form-control otp-input"
+            placeholder="123456"
+            name="otp"
+            [(ngModel)]="otp"
+            maxlength="6"
+          />
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'VERIFYING...' : 'VERIFY CODE' }}
+        </button>
+      </form>
+
+      <div class="footer-links">
+        <a routerLink="/register">Back to Register</a> • <a routerLink="/login">Sign In</a>
+      </div>
     }
   </div>
 </div>

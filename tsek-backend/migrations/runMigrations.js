@@ -67,6 +67,23 @@ async function runMigrations() {
   await pool.query('UPDATE instructors SET is_verified = true WHERE is_verified = false;');
 
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS pending_registrations (
+        email VARCHAR(255) PRIMARY KEY,
+        prefix VARCHAR(20),
+        full_name VARCHAR(255) NOT NULL,
+        password_hash TEXT NOT NULL,
+        otp_code VARCHAR(10) NOT NULL,
+        otp_expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('Migration: Ensured pending_registrations table exists');
+  } catch (err) {
+    console.error('Migration error (pending_registrations):', err);
+  }
+
+  try {
     await pool.query('ALTER TABLE exams ADD COLUMN answer_key JSONB;');
     console.log('Migration: Added answer_key column to exams');
   } catch (err) {
