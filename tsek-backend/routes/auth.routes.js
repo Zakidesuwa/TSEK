@@ -176,16 +176,22 @@ router.post('/api/register', async (req, res) => {
 
     const transporter = getTransporter();
     if (transporter) {
-      transporter.sendMail({
-        from: `"TSEK App" <${process.env.SMTP_USER}>`,
-        to: emailLower,
-        subject: "TSEK - Email Verification Code",
-        text: `Hello ${full_name},\n\nYour TSEK verification code is: ${otpCode}\n\nThis code will expire in 10 minutes.`,
-        html: `<p>Hello <strong>${full_name}</strong>,</p>
-               <p>Your verification code for TSEK is:</p>
-               <h2 style="font-size: 28px; letter-spacing: 6px; color: #2563eb; font-family: monospace;">${otpCode}</h2>
-               <p>This code will expire in 10 minutes.</p>`
-      }).catch(err => console.error('Background email failed:', err.message));
+      try {
+        await transporter.sendMail({
+          from: `"TSEK App" <${process.env.SMTP_USER}>`,
+          to: emailLower,
+          subject: "TSEK - Email Verification Code",
+          text: `Hello ${full_name},\n\nYour TSEK verification code is: ${otpCode}\n\nThis code will expire in 10 minutes.`,
+          html: `<p>Hello <strong>${full_name}</strong>,</p>
+                 <p>Your verification code for TSEK is:</p>
+                 <h2 style="font-size: 28px; letter-spacing: 6px; color: #2563eb; font-family: monospace;">${otpCode}</h2>
+                 <p>This code will expire in 10 minutes.</p>`
+        });
+        console.log(`Verification email sent to ${emailLower}`);
+      } catch (emailErr) {
+        console.error('Email failed to send:', emailErr);
+        return res.status(500).json({ error: 'Failed to send verification email. Please check your email configuration.' });
+      }
     }
 
     res.status(200).json({
@@ -280,16 +286,22 @@ router.post('/api/resend-otp', async (req, res) => {
 
     const transporter = getTransporter();
     if (transporter) {
-      transporter.sendMail({
-        from: `"TSEK App" <${process.env.SMTP_USER}>`,
-        to: emailLower,
-        subject: "TSEK - New Email Verification Code",
-        text: `Hello ${pending.full_name},\n\nYour new TSEK verification code is: ${newOtp}\n\nThis code will expire in 10 minutes.`,
-        html: `<p>Hello <strong>${pending.full_name}</strong>,</p>
-               <p>Your new verification code for TSEK is:</p>
-               <h2 style="font-size: 28px; letter-spacing: 6px; color: #2563eb; font-family: monospace;">${newOtp}</h2>
-               <p>This code will expire in 10 minutes.</p>`
-      }).catch(err => console.error('Background email failed:', err.message));
+      try {
+        await transporter.sendMail({
+          from: `"TSEK App" <${process.env.SMTP_USER}>`,
+          to: emailLower,
+          subject: "TSEK - New Email Verification Code",
+          text: `Hello ${pending.full_name},\n\nYour new TSEK verification code is: ${newOtp}\n\nThis code will expire in 10 minutes.`,
+          html: `<p>Hello <strong>${pending.full_name}</strong>,</p>
+                 <p>Your new verification code for TSEK is:</p>
+                 <h2 style="font-size: 28px; letter-spacing: 6px; color: #2563eb; font-family: monospace;">${newOtp}</h2>
+                 <p>This code will expire in 10 minutes.</p>`
+        });
+        console.log(`New verification email sent to ${emailLower}`);
+      } catch (emailErr) {
+        console.error('Email failed to send:', emailErr);
+        return res.status(500).json({ error: 'Failed to send verification email. Please check your email configuration.' });
+      }
     }
 
     res.json({ message: 'A new verification code has been sent to your email address.' });
