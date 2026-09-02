@@ -357,4 +357,17 @@ router.post('/api/change-password', authMiddleware, async (req, res) => {
   }
 });
 
+// Debug mailer
+router.get('/api/debug-mailer', (req, res) => {
+  const { getTransporter } = require('../config/mailer');
+  res.json({
+    transporterExists: !!getTransporter(),
+    smtpUserExists: !!process.env.SMTP_USER,
+    smtpUserLength: process.env.SMTP_USER ? process.env.SMTP_USER.length : 0,
+    smtpPassExists: !!process.env.SMTP_PASS,
+    smtpPassLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
+    smtpUserValue: process.env.SMTP_USER,
+  });
+});
+
 module.exports = router;
