@@ -9,7 +9,10 @@ async function initMailer() {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-      }
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000
     });
     console.log('Real SMTP configured successfully.');
   } else {
