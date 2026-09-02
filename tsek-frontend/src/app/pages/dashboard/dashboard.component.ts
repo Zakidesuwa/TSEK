@@ -92,7 +92,6 @@ export class DashboardComponent implements OnInit {
           showProgress: true,
           steps: [
             {
-              element: '.dashboard',
               popover: {
                 title: 'Welcome to TSEK! 🎓',
                 description: 'TSEK makes grading exams effortless using AI. Let\'s show you around!',
