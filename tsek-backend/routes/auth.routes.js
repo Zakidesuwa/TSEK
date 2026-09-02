@@ -177,7 +177,7 @@ router.post('/api/register', async (req, res) => {
     const transporter = getTransporter();
     if (transporter) {
       transporter.sendMail({
-        from: '"TSEK App" <noreply@tsek.app>',
+        from: `"TSEK App" <${process.env.SMTP_USER}>`,
         to: emailLower,
         subject: "TSEK - Email Verification Code",
         text: `Hello ${full_name},\n\nYour TSEK verification code is: ${otpCode}\n\nThis code will expire in 10 minutes.`,
@@ -281,7 +281,7 @@ router.post('/api/resend-otp', async (req, res) => {
     const transporter = getTransporter();
     if (transporter) {
       transporter.sendMail({
-        from: '"TSEK App" <noreply@tsek.app>',
+        from: `"TSEK App" <${process.env.SMTP_USER}>`,
         to: emailLower,
         subject: "TSEK - New Email Verification Code",
         text: `Hello ${pending.full_name},\n\nYour new TSEK verification code is: ${newOtp}\n\nThis code will expire in 10 minutes.`,
