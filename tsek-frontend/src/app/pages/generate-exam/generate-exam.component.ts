@@ -7,7 +7,6 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ScanService } from '../../core/services/scan';
 import { driver } from 'driver.js';
-import 'driver.js/dist/driver.css';
 
 type QuestionType = 'multipleChoice' | 'identification' | 'enumeration' | 'trueOrFalse';
 

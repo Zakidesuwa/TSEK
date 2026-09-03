@@ -51,6 +51,7 @@
               }
             ],
             "styles": [
+              "node_modules/driver.js/dist/driver.css",
               "src/styles.css"
             ]
           },

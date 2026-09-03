@@ -4,7 +4,6 @@ import { RouterLink, Router } from '@angular/router';
 import { ScanService } from '../../core/services/scan';
 import { environment } from '../../../environments/environment';
 import { driver } from 'driver.js';
-import 'driver.js/dist/driver.css';
 
 interface StatCard {
   title: string;

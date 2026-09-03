@@ -6,7 +6,6 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { driver } from 'driver.js';
-import 'driver.js/dist/driver.css';
 
 interface ClassCard {
   id: number;
