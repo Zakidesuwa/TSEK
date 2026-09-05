@@ -212,7 +212,7 @@ export class Exams implements OnInit {
     this.selectedExamName = examName;
     this.isLoadingFormat = true;
     this.selectedExamFormat = null;
-    this.http.get<{ examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; }>; }>(`${environment.apiUrl}/api/exams/${examId}/format`).subscribe({
+    this.http.get<{ examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; numberOfChoices?: number; }>; }>(`${environment.apiUrl}/api/exams/${examId}/format`).subscribe({
       next: (data) => {
         this.selectedExamFormat = data;
         this.showFormatModal = true;
