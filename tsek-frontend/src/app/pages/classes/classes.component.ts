@@ -79,7 +79,12 @@ export class ClassesComponent implements OnInit {
       return;
     }
 
-    const fetchUrl = url.startsWith('/') ? `${environment.apiUrl}${url}` : url;
+    let fetchUrl = url;
+    if (url.startsWith('/')) {
+      fetchUrl = `${environment.apiUrl}${url}`;
+    } else if (url.startsWith('http://tsek-backend.onrender.com') || url.startsWith('http://tsek.onrender.com')) {
+      fetchUrl = url.replace('http://', 'https://');
+    }
 
     // Fetch securely to include auth headers
     this.http.get(fetchUrl, { responseType: 'blob' }).subscribe({
