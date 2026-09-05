@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ScanService } from '../../core/services/scan';
 import { driver } from 'driver.js';
+import { Subscription } from 'rxjs';
 
 type QuestionType = 'multipleChoice' | 'identification' | 'enumeration' | 'trueOrFalse';
 
