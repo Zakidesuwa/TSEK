@@ -868,4 +868,30 @@
       </div>
     </div>
   }
+
+  <!-- Floating Scan Widget -->
+  @if (isScanningMasterKey) {
+    <div class="scan-floating-widget" (click)="scanReady ? applyScannedAnswers() : null" [class.ready]="scanReady">
+      @if (!scanReady) {
+        <div class="widget-icon">
+          <span class="material-icons-outlined spin-animation" style="color: var(--primary-color);">autorenew</span>
+        </div>
+        <div class="widget-content">
+          <span class="widget-title">Scanning Master Key...</span>
+          <span class="widget-subtitle">You can continue editing.</span>
+        </div>
+      } @else {
+        <div class="widget-icon ready-icon">
+          <span class="material-icons-outlined">check_circle</span>
+        </div>
+        <div class="widget-content">
+          <span class="widget-title" style="color: #fff;">Scan Complete!</span>
+          <span class="widget-subtitle" style="color: rgba(255,255,255,0.8);">Click to populate answers</span>
+        </div>
+        <button class="widget-close" (click)="dismissScan($event)">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      }
+    </div>
+  }
 </div>

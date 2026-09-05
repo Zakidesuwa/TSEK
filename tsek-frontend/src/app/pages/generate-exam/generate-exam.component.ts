@@ -81,6 +81,9 @@ export class GenerateExamComponent implements OnInit {
   showModal = false;
   showPreviewModal = false;
   isScanningMasterKey = false;
+  scanReady = false;
+  parsedScanAnswers: any = null;
+
   modalTitle = '';
   modalMessage = '';
   modalType: 'success' | 'error' | 'loading' = 'success';
@@ -88,7 +91,7 @@ export class GenerateExamComponent implements OnInit {
 
   closeModal() {
     this.showModal = false;
-    if (this.modalType === 'success') {
+    if (this.modalType === 'success' && this.modalMessage.includes('finalized')) {
       // Full reset of the form and state
       this.currentStep = 'configure';
       this.examTitle = '';
@@ -1010,23 +1013,19 @@ export class GenerateExamComponent implements OnInit {
     if (files.length === 0) return;
     
     this.isScanningMasterKey = true;
-    this.modalTitle = 'Scanning Master Key...';
-    this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
-    this.modalType = 'loading';
-    this.showGeneratePdf = false;
-    this.showModal = true;
+    this.scanReady = false;
+    this.parsedScanAnswers = null;
     this.cdr.detectChanges();
   
     this.scanService.scanImages(files).subscribe({
       next: (res) => {
-        this.isScanningMasterKey = false;
-        
         const parsedAnswers = res.rawText?.answers;
         if (parsedAnswers) {
-          this.autoconfigureFromMasterKey(parsedAnswers);
-          this.proceedToAnswerKey();
-          this.populateAnswersFromMasterKey(parsedAnswers);
+          this.scanReady = true;
+          this.parsedScanAnswers = parsedAnswers;
+          this.cdr.detectChanges();
         } else {
+          this.isScanningMasterKey = false;
           this.modalTitle = 'Scan Failed';
           this.modalMessage = 'Could not find any answers on the master key.';
           this.modalType = 'error';
@@ -1047,6 +1046,25 @@ export class GenerateExamComponent implements OnInit {
         event.target.value = '';
       }
     });
+  }
+
+  applyScannedAnswers() {
+    if (this.parsedScanAnswers) {
+      this.autoconfigureFromMasterKey(this.parsedScanAnswers);
+      this.proceedToAnswerKey();
+      this.populateAnswersFromMasterKey(this.parsedScanAnswers);
+      
+      this.isScanningMasterKey = false;
+      this.scanReady = false;
+      this.parsedScanAnswers = null;
+    }
+  }
+
+  dismissScan(event: Event) {
+    event.stopPropagation();
+    this.isScanningMasterKey = false;
+    this.scanReady = false;
+    this.parsedScanAnswers = null;
   }
   
   populateAnswersFromMasterKey(scannedAnswers: any) {
