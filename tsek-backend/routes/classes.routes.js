@@ -109,7 +109,7 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
           const hasImage = resultRes.rows[0].has_image;
           scores.push({
             value: `${resultRes.rows[0].score}/${maxScore}`,
-            imageUrl: hasImage ? `${req.protocol}://${req.get('host')}/api/exams/${exam.id}/students/${student.id}/image` : null
+            imageUrl: hasImage ? `/api/exams/${exam.id}/students/${student.id}/image` : null
           });
         } else {
           scores.push({

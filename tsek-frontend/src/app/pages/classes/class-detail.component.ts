@@ -149,8 +149,10 @@ export class ClassDetailComponent implements OnInit {
       return;
     }
 
+    const fetchUrl = url.startsWith('/') ? `${environment.apiUrl}${url}` : url;
+
     // Fetch securely to include auth headers
-    this.http.get(url, { responseType: 'blob' }).subscribe({
+    this.http.get(fetchUrl, { responseType: 'blob' }).subscribe({
       next: (blob) => {
         this.selectedScanUrl = URL.createObjectURL(blob);
         this.showScanModal = true;
