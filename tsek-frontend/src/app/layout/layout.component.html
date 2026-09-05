@@ -56,7 +56,7 @@
 
 <!-- Global Floating Scan Widget -->
 @if (scanService.showGlobalWidget | async) {
-  <div class="scan-floating-widget" (click)="(scanService.scanReady | async) ? onGlobalWidgetClick() : null" [class.ready]="scanService.scanReady | async">
+  <div class="scan-floating-widget" (click)="onGlobalWidgetClick()" [class.ready]="scanService.scanReady | async">
     @if (!(scanService.scanReady | async)) {
       <div class="widget-icon">
         <span class="material-icons-outlined spin-animation" style="color: var(--primary-color);">autorenew</span>
