@@ -259,6 +259,20 @@
           }
 
           <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <input type="file" accept="image/*" #masterKeyInput class="hidden-input" (change)="scanMasterKey($event)" style="display: none;" multiple>
+            <input type="file" accept=".json" #jsonKeyInput class="hidden-input" (change)="importJsonKey($event)" style="display: none;">
+
+            <button type="button" class="btn-outline generate-btn" (click)="jsonKeyInput.click()" style="flex: 1; background: white;">
+              <span class="material-icons-outlined btn-icon">upload_file</span>
+              IMPORT JSON KEY
+            </button>
+            <button type="button" class="btn-outline generate-btn" (click)="masterKeyInput.click()" [disabled]="isScanningMasterKey" style="flex: 1; background: white;">
+              <span class="material-icons-outlined btn-icon">document_scanner</span>
+              {{ isScanningMasterKey ? 'SCANNING...' : 'SCAN MASTER KEY' }}
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
             <button class="btn-outline generate-btn" (click)="showPreviewModal = true" style="flex: 1;">
               <span class="material-icons-outlined btn-icon">visibility</span>
               PREVIEW LAYOUT
@@ -650,19 +664,6 @@
 
       <!-- Finalize Button -->
       <div class="finalize-bar" style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
-        <input type="file" accept="image/*" #masterKeyInput class="hidden-input" (change)="scanMasterKey($event)" style="display: none;" multiple>
-        <input type="file" accept=".json" #jsonKeyInput class="hidden-input" (change)="importJsonKey($event)" style="display: none;">
-        
-        <button type="button" class="btn-outline" (click)="jsonKeyInput.click()" style="background: white;">
-          <span class="material-icons-outlined btn-icon">upload_file</span>
-          IMPORT JSON KEY
-        </button>
-        
-        <button type="button" class="btn-outline" (click)="masterKeyInput.click()" [disabled]="isScanningMasterKey" style="background: white;">
-          <span class="material-icons-outlined btn-icon">document_scanner</span>
-          {{ isScanningMasterKey ? 'SCANNING...' : 'SCAN MASTER KEY' }}
-        </button>
-        
         <button class="btn-finalize" (click)="finalizeAnswerKey()" id="btn-finalize-answer-key">
           FINALIZE ANSWER KEY
         </button>

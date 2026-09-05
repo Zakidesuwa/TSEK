@@ -862,6 +862,16 @@ export class GenerateExamComponent implements OnInit {
   }
 
   importJsonKey(event: any) {
+    if (!this.validateForm()) {
+      const errorMessages = Object.values(this.formErrors).filter(err => err);
+      this.modalTitle = 'Validation Error';
+      this.modalMessage = 'Please configure your exam details (Title, Class, etc.) first.\n\n' + errorMessages.join('\n');
+      this.modalType = 'error';
+      this.showModal = true;
+      event.target.value = '';
+      return;
+    }
+
     const file = event.target.files[0];
     if (!file) return;
 
@@ -871,6 +881,21 @@ export class GenerateExamComponent implements OnInit {
         const rawData = JSON.parse(e.target.result);
         const data = rawData.answer_key || rawData.answerKey || rawData;
         
+        for (const section of this.sections) {
+           if (data[section.key]) {
+              const keys = Object.keys(data[section.key]);
+              if (keys.length > 0) {
+                 section.enabled = true;
+                 section.selected = keys.length;
+              } else {
+                 section.enabled = false;
+              }
+           } else {
+              section.enabled = false;
+           }
+        }
+
+        this.proceedToAnswerKey();
         this.populateAnswersFromJSON(data);
         
         this.modalTitle = 'Success!';
@@ -917,7 +942,65 @@ export class GenerateExamComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  autoconfigureFromMasterKey(parsedAnswers: any) {
+    let mcCount = 0;
+    let tfCount = 0;
+    let textCount = 0;
+
+    for (const key of Object.keys(parsedAnswers)) {
+      const val = String(parsedAnswers[key]).trim().toUpperCase();
+      if (!val || val === 'NULL' || val === 'UNDEFINED') continue;
+      
+      if (['A', 'B', 'C', 'D', 'E', 'INVALID_MULTIPLE'].includes(val)) {
+        mcCount++;
+      } else if (['T', 'F'].includes(val)) {
+        tfCount++;
+      } else {
+        textCount++;
+      }
+    }
+
+    const mcSection = this.sections.find(s => s.key === 'multipleChoice');
+    const idSection = this.sections.find(s => s.key === 'identification');
+    const enumSection = this.sections.find(s => s.key === 'enumeration');
+    const tfSection = this.sections.find(s => s.key === 'trueOrFalse');
+
+    if (mcSection) { 
+       mcSection.enabled = mcCount > 0; 
+       mcSection.selected = mcCount > 0 ? mcCount : 10; 
+    }
+    if (idSection) { 
+       idSection.enabled = textCount > 0; 
+       idSection.selected = textCount > 0 ? textCount : 10; 
+    }
+    if (enumSection) { 
+       enumSection.enabled = false; 
+    }
+    if (tfSection) { 
+       tfSection.enabled = tfCount > 0; 
+       tfSection.selected = tfCount > 0 ? tfCount : 10; 
+    }
+    
+    if (!mcSection?.enabled && !idSection?.enabled && !enumSection?.enabled && !tfSection?.enabled) {
+       if (mcSection) {
+         mcSection.enabled = true;
+         mcSection.selected = 10;
+       }
+    }
+    this.cdr.detectChanges();
+  }
+
   scanMasterKey(event: any) {
+    if (!this.validateForm()) {
+      const errorMessages = Object.values(this.formErrors).filter(err => err);
+      this.modalTitle = 'Validation Error';
+      this.modalMessage = 'Please configure your exam details (Title, Class, etc.) first.\n\n' + errorMessages.join('\n');
+      this.modalType = 'error';
+      this.showModal = true;
+      event.target.value = '';
+      return;
+    }
+
     const files = Array.from(event.target.files) as File[];
     if (files.length === 0) return;
     
@@ -934,6 +1017,8 @@ export class GenerateExamComponent implements OnInit {
         
         const parsedAnswers = res.rawText?.answers;
         if (parsedAnswers) {
+          this.autoconfigureFromMasterKey(parsedAnswers);
+          this.proceedToAnswerKey();
           this.populateAnswersFromMasterKey(parsedAnswers);
         } else {
           this.modalTitle = 'Scan Failed';
@@ -981,12 +1066,16 @@ export class GenerateExamComponent implements OnInit {
       if (tabKey === 'identification' || tabKey === 'enumeration') {
         this.textAnswers[tabKey][localNum] = String(scannedVal);
         this.answers[tabKey][localNum].clear();
-        this.answers[tabKey][localNum].add('answered');
+        if (String(scannedVal).trim()) {
+          this.answers[tabKey][localNum].add('answered');
+        }
       } else {
         this.answers[tabKey][localNum].clear();
         if (scannedVal !== 'INVALID_MULTIPLE') {
           const valStr = String(scannedVal).toUpperCase().trim();
-          this.answers[tabKey][localNum].add(valStr);
+          if (valStr) {
+            this.answers[tabKey][localNum].add(valStr);
+          }
         }
       }
     }
