@@ -687,7 +687,12 @@
         <h3 class="modal-title">{{ modalTitle }}</h3>
         <p class="modal-message">{{ modalMessage }}</p>
         <div class="modal-actions">
-          @if (modalType !== 'loading') {
+          @if (modalType === 'loading') {
+            <button class="btn-modal-action btn-outline" (click)="minimizeScan()">
+              <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">minimize</span>
+              Minimize
+            </button>
+          } @else {
             @if (showGeneratePdf) {
               <button class="btn-modal-action btn-outline" (click)="printExam()">
                 <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">print</span>
@@ -870,7 +875,7 @@
   }
 
   <!-- Floating Scan Widget -->
-  @if (isScanningMasterKey) {
+  @if (isScanningMasterKey && !showModal) {
     <div class="scan-floating-widget" (click)="scanReady ? applyScannedAnswers() : null" [class.ready]="scanReady">
       @if (!scanReady) {
         <div class="widget-icon">

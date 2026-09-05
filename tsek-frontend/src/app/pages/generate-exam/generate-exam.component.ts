@@ -1015,6 +1015,11 @@ export class GenerateExamComponent implements OnInit {
     this.isScanningMasterKey = true;
     this.scanReady = false;
     this.parsedScanAnswers = null;
+    this.modalTitle = 'Scanning Master Key...';
+    this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
+    this.modalType = 'loading';
+    this.showGeneratePdf = false;
+    this.showModal = true;
     this.cdr.detectChanges();
   
     this.scanService.scanImages(files).subscribe({
@@ -1023,7 +1028,12 @@ export class GenerateExamComponent implements OnInit {
         if (parsedAnswers) {
           this.scanReady = true;
           this.parsedScanAnswers = parsedAnswers;
-          this.cdr.detectChanges();
+          
+          if (this.showModal && this.modalType === 'loading') {
+            this.applyScannedAnswers();
+          } else {
+            this.cdr.detectChanges();
+          }
         } else {
           this.isScanningMasterKey = false;
           this.modalTitle = 'Scan Failed';
@@ -1058,6 +1068,10 @@ export class GenerateExamComponent implements OnInit {
       this.scanReady = false;
       this.parsedScanAnswers = null;
     }
+  }
+
+  minimizeScan() {
+    this.showModal = false;
   }
 
   dismissScan(event: Event) {
