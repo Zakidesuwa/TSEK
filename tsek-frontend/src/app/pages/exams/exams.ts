@@ -78,7 +78,7 @@ export class Exams implements OnInit {
 
   // Exam Format Modal
   showFormatModal = false;
-  selectedExamFormat: { examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; }>; } | null = null;
+  selectedExamFormat: { examTitle: string; totalItems: number; config: Array<{ label: string; key: string; enabled: boolean; selected: number; pointName: string; defaultPoints: number; numberOfChoices?: number; }>; } | null = null;
   isLoadingFormat = false;
   
   // Answer Sheet Modal (full answer key preview)
