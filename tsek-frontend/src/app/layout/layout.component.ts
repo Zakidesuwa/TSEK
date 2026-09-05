@@ -4,8 +4,10 @@ import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { AuthService } from '../core/auth/auth.service';
+import { ScanService } from '../core/services/scan';
 import { inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-layout',
@@ -36,6 +38,9 @@ import { CommonModule } from '@angular/common';
 })
 export class LayoutComponent {
   authService = inject(AuthService);
+  scanService = inject(ScanService);
+  router = inject(Router);
+  
   sidebarOpen = false;
   showLogoutModal = false;
 
@@ -58,5 +63,16 @@ export class LayoutComponent {
 
   cancelLogout() {
     this.showLogoutModal = false;
+  }
+
+  onGlobalWidgetClick() {
+    if (this.scanService.scanReady.value) {
+      this.router.navigate(['/generate-exam']);
+    }
+  }
+
+  dismissGlobalWidget(event: Event) {
+    event.stopPropagation();
+    this.scanService.clearGlobalScanState();
   }
 }

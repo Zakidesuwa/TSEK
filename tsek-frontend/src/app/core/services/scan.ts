@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
@@ -12,6 +12,45 @@ export class ScanService {
   
   // Store files temporarily when selected from the dashboard
   private pendingScanFiles: File[] = [];
+
+  // Global scan state
+  public isScanningMasterKey = new BehaviorSubject<boolean>(false);
+  public scanReady = new BehaviorSubject<boolean>(false);
+  public parsedScanAnswers = new BehaviorSubject<any>(null);
+  public scanError = new BehaviorSubject<string | null>(null);
+  public showGlobalWidget = new BehaviorSubject<boolean>(false);
+
+  startGlobalScan(files: File[]) {
+    this.isScanningMasterKey.next(true);
+    this.scanReady.next(false);
+    this.parsedScanAnswers.next(null);
+    this.scanError.next(null);
+
+    this.scanImages(files).subscribe({
+      next: (res) => {
+        const parsedAnswers = res.rawText?.answers;
+        if (parsedAnswers) {
+          this.scanReady.next(true);
+          this.parsedScanAnswers.next(parsedAnswers);
+        } else {
+          this.isScanningMasterKey.next(false);
+          this.scanError.next('Could not find any answers on the master key.');
+        }
+      },
+      error: (err) => {
+        this.isScanningMasterKey.next(false);
+        this.scanError.next(err.error?.error || err.error?.message || 'Failed to process image.');
+      }
+    });
+  }
+
+  clearGlobalScanState() {
+    this.isScanningMasterKey.next(false);
+    this.scanReady.next(false);
+    this.parsedScanAnswers.next(null);
+    this.scanError.next(null);
+    this.showGlobalWidget.next(false);
+  }
 
   setPendingFiles(files: File[]) {
     this.pendingScanFiles = files;

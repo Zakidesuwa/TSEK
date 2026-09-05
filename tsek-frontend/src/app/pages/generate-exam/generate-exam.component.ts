@@ -68,10 +68,12 @@ interface AnswerTabConfig {
     ])
   ]
 })
-export class GenerateExamComponent implements OnInit {
+export class GenerateExamComponent implements OnInit, OnDestroy {
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
   scanService = inject(ScanService);
+
+  private scanSub: Subscription = new Subscription();
 
   /* ============================
      STEP MANAGEMENT & MODALS
@@ -165,11 +167,52 @@ export class GenerateExamComponent implements OnInit {
         // Trigger the tour check
         setTimeout(() => this.checkAndRunTour(), 400);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Failed to load classes', err);
         this.isLoading = false;
-        this.cdr.detectChanges();
       }
     });
+
+    // Subscribe to global scan state
+    this.scanSub.add(this.scanService.isScanningMasterKey.subscribe(val => {
+      this.isScanningMasterKey = val;
+      this.cdr.detectChanges();
+    }));
+
+    this.scanSub.add(this.scanService.scanReady.subscribe(val => {
+      this.scanReady = val;
+      if (val) {
+        this.parsedScanAnswers = this.scanService.parsedScanAnswers.value;
+        if (this.showModal && this.modalType === 'loading') {
+          this.applyScannedAnswers();
+        }
+        this.cdr.detectChanges();
+      }
+    }));
+
+    this.scanSub.add(this.scanService.scanError.subscribe(err => {
+      if (err && this.showModal && this.modalType === 'loading') {
+        this.modalTitle = 'Scan Failed';
+        this.modalMessage = err;
+        this.modalType = 'error';
+        this.showGeneratePdf = false;
+        this.cdr.detectChanges();
+      }
+    }));
+
+    // If we land here and scan is already ready from a global click:
+    if (this.scanService.scanReady.value && this.scanService.showGlobalWidget.value && this.currentStep === 'configure') {
+       this.parsedScanAnswers = this.scanService.parsedScanAnswers.value;
+       this.applyScannedAnswers();
+    }
+  }
+
+  ngOnDestroy() {
+    this.scanSub.unsubscribe();
+    // If scanning is still ongoing when leaving this page, show the global widget
+    if (this.scanService.isScanningMasterKey.value || this.scanService.scanReady.value) {
+      this.scanService.showGlobalWidget.next(true);
+    }
   }
 
   checkAndRunTour() {
@@ -1012,50 +1055,16 @@ export class GenerateExamComponent implements OnInit {
     const files = Array.from(event.target.files) as File[];
     if (files.length === 0) return;
     
-    this.isScanningMasterKey = true;
-    this.scanReady = false;
-    this.parsedScanAnswers = null;
     this.modalTitle = 'Scanning Master Key...';
     this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
     this.modalType = 'loading';
     this.showGeneratePdf = false;
     this.showModal = true;
-    this.cdr.detectChanges();
-  
-    this.scanService.scanImages(files).subscribe({
-      next: (res) => {
-        const parsedAnswers = res.rawText?.answers;
-        if (parsedAnswers) {
-          this.scanReady = true;
-          this.parsedScanAnswers = parsedAnswers;
-          
-          if (this.showModal && this.modalType === 'loading') {
-            this.applyScannedAnswers();
-          } else {
-            this.cdr.detectChanges();
-          }
-        } else {
-          this.isScanningMasterKey = false;
-          this.modalTitle = 'Scan Failed';
-          this.modalMessage = 'Could not find any answers on the master key.';
-          this.modalType = 'error';
-          this.showGeneratePdf = false;
-          this.showModal = true;
-          this.cdr.detectChanges();
-        }
-        event.target.value = '';
-      },
-      error: (err) => {
-        this.isScanningMasterKey = false;
-        this.modalTitle = 'Scan Failed';
-        this.modalMessage = err.error?.error || err.error?.message || 'Failed to process image.';
-        this.modalType = 'error';
-        this.showGeneratePdf = false;
-        this.showModal = true;
-        this.cdr.detectChanges();
-        event.target.value = '';
-      }
-    });
+    
+    this.scanService.showGlobalWidget.next(false); // hide global widget while modal is open
+    this.scanService.startGlobalScan(files);
+    
+    event.target.value = '';
   }
 
   applyScannedAnswers() {
@@ -1064,21 +1073,19 @@ export class GenerateExamComponent implements OnInit {
       this.proceedToAnswerKey();
       this.populateAnswersFromMasterKey(this.parsedScanAnswers);
       
-      this.isScanningMasterKey = false;
-      this.scanReady = false;
-      this.parsedScanAnswers = null;
+      this.scanService.clearGlobalScanState();
+      this.showModal = false;
     }
   }
 
   minimizeScan() {
     this.showModal = false;
+    this.scanService.showGlobalWidget.next(true);
   }
 
   dismissScan(event: Event) {
     event.stopPropagation();
-    this.isScanningMasterKey = false;
-    this.scanReady = false;
-    this.parsedScanAnswers = null;
+    this.scanService.clearGlobalScanState();
   }
   
   populateAnswersFromMasterKey(scannedAnswers: any) {
