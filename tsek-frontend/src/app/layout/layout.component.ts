@@ -66,7 +66,7 @@ export class LayoutComponent {
   }
 
   onGlobalWidgetClick() {
-    if (this.scanService.scanReady.value) {
+    if (this.scanService.scanReady.value || this.scanService.scanError.value) {
       this.router.navigate(['/generate-exam']);
     }
   }

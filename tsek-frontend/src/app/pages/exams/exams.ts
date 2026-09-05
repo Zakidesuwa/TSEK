@@ -233,67 +233,216 @@ export class Exams implements OnInit {
     this.selectedExamFormat = null;
   }
 
+  getGridBlocks(count: number, type: 'mc' | 'id') {
+    const itemsPerColumn = type === 'mc' ? 10 : 15;
+    const columnsPerBlock = type === 'mc' ? 3 : 2;
+
+    const blocks: number[][][] = [];
+    let currentItem = 1;
+
+    while (currentItem <= count) {
+      const block: number[][] = [];
+      for (let c = 0; c < columnsPerBlock; c++) {
+        const column: number[] = [];
+        for (let r = 0; r < itemsPerColumn; r++) {
+          if (currentItem <= count) {
+            column.push(currentItem);
+            currentItem++;
+          }
+        }
+        if (column.length > 0) block.push(column);
+      }
+      blocks.push(block);
+    }
+    return blocks;
+  }
+
   exportFormatPdf(): void {
     if (!this.selectedExamFormat) return;
 
-    const title = `${this.selectedExamFormat.examTitle} Format`;
-    const rows = this.selectedExamFormat.config
-      .filter(section => section.enabled)
-      .map(section => `
-        <tr>
-          <td>${section.label}</td>
-          <td>${section.selected}</td>
-          <td>${section.pointName}</td>
-          <td>${section.defaultPoints}</td>
-          <td>${section.selected * section.defaultPoints}</td>
-        </tr>
-      `)
-      .join('');
+    const title = this.selectedExamFormat.examTitle || 'Untitled Exam';
+    const totalPoints = this.selectedExamFormat.config.reduce((acc, curr) => curr.enabled ? acc + (curr.selected * curr.defaultPoints) : acc, 0);
 
-    const body = `
+    const mcSection = this.selectedExamFormat.config.find(s => s.key === 'multipleChoice');
+    const idSection = this.selectedExamFormat.config.find(s => s.key === 'identification');
+    const enumSection = this.selectedExamFormat.config.find(s => s.key === 'enumeration');
+    const tfSection = this.selectedExamFormat.config.find(s => s.key === 'trueOrFalse');
+
+    const mcBlocks = mcSection && mcSection.enabled ? this.getGridBlocks(mcSection.selected, 'mc') : [];
+    const idBlocks = idSection && idSection.enabled ? this.getGridBlocks(idSection.selected, 'id') : [];
+    const enumBlocks = enumSection && enumSection.enabled ? this.getGridBlocks(enumSection.selected, 'id') : [];
+    const tfBlocks = tfSection && tfSection.enabled ? this.getGridBlocks(tfSection.selected, 'mc') : [];
+
+    let bodyHtml = '';
+
+    if (mcBlocks.length > 0) {
+      bodyHtml += `<div class="print-section"><h2 class="print-section-title">PART I: MULTIPLE CHOICE</h2><div class="mc-blocks-container">`;
+      mcBlocks.forEach(block => {
+        bodyHtml += `<div class="mc-grid">`;
+        block.forEach(col => {
+          bodyHtml += `<div class="mc-column">`;
+          col.forEach(item => {
+            bodyHtml += `<div class="mc-item"><span class="item-num">${item}.</span><div class="bubbles">`;
+            const numChoices = mcSection?.numberOfChoices || 4;
+            const choiceLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, numChoices);
+            choiceLetters.forEach(letter => {
+              bodyHtml += `<div class="bubble-group"><div class="print-bubble"></div><span class="bubble-label">${letter}</span></div>`;
+            });
+            bodyHtml += `</div></div>`;
+          });
+          bodyHtml += `</div>`;
+        });
+        bodyHtml += `</div>`;
+      });
+      bodyHtml += `</div></div>`;
+    }
+
+    if (idBlocks.length > 0) {
+      bodyHtml += `<div class="print-section pt-4"><h2 class="print-section-title">PART II: IDENTIFICATION</h2><div class="id-blocks-container">`;
+      idBlocks.forEach(block => {
+        bodyHtml += `<div class="id-grid">`;
+        block.forEach(col => {
+          bodyHtml += `<div class="id-column">`;
+          col.forEach(item => {
+            bodyHtml += `<div class="id-item"><span class="item-num">${item}.</span><div class="id-box"></div></div>`;
+          });
+          bodyHtml += `</div>`;
+        });
+        bodyHtml += `</div>`;
+      });
+      bodyHtml += `</div></div>`;
+    }
+
+    if (enumBlocks.length > 0) {
+      bodyHtml += `<div class="print-section pt-4"><h2 class="print-section-title">PART III: ENUMERATION</h2><div class="id-blocks-container">`;
+      enumBlocks.forEach(block => {
+        bodyHtml += `<div class="id-grid">`;
+        block.forEach(col => {
+          bodyHtml += `<div class="id-column">`;
+          col.forEach(item => {
+            bodyHtml += `<div class="id-item"><span class="item-num">${item}.</span><div class="id-box"></div></div>`;
+          });
+          bodyHtml += `</div>`;
+        });
+        bodyHtml += `</div>`;
+      });
+      bodyHtml += `</div></div>`;
+    }
+
+    if (tfBlocks.length > 0) {
+      bodyHtml += `<div class="print-section pt-4"><h2 class="print-section-title">PART IV: TRUE OR FALSE</h2><div class="mc-blocks-container">`;
+      tfBlocks.forEach(block => {
+        bodyHtml += `<div class="mc-grid">`;
+        block.forEach(col => {
+          bodyHtml += `<div class="mc-column">`;
+          col.forEach(item => {
+            bodyHtml += `<div class="mc-item"><span class="item-num">${item}.</span><div class="bubbles">`;
+            ['T','F'].forEach(letter => {
+              bodyHtml += `<div class="bubble-group"><div class="print-bubble"></div><span class="bubble-label">${letter}</span></div>`;
+            });
+            bodyHtml += `</div></div>`;
+          });
+          bodyHtml += `</div>`;
+        });
+        bodyHtml += `</div>`;
+      });
+      bodyHtml += `</div></div>`;
+    }
+
+    const htmlContent = `
       <html>
       <head>
         <title>${title}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 24px; color: #1a1a1a; }
-          h1 { font-size: 24px; margin-bottom: 8px; }
-          p { margin: 4px 0 16px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 18px; }
-          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-          th { background: #f4f5f7; font-weight: 700; }
+          body { font-family: Arial, Helvetica, sans-serif; margin: 10mm; color: #000; }
+          .print-header { margin-bottom: 20px; }
+          .print-title { font-size: 20pt; font-weight: bold; margin-bottom: 15px; margin-top: 0; margin-left: 35px; }
+          .student-info-grid { display: flex; justify-content: space-between; gap: 20px; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 15px 0; margin-bottom: 20px; }
+          .info-left { flex: 1.5; display: flex; flex-direction: column; gap: 15px; }
+          .info-field { display: flex; flex-direction: column; gap: 4px; }
+          .info-field label { font-size: 8pt; font-weight: bold; color: #333; }
+          .info-box { height: 28px; border: 1px solid #333; background: transparent; }
+          .student-id-section { flex: 1.2; display: flex; flex-direction: column; }
+          .id-boxes-row { display: flex; gap: 4px; margin-top: 6px; }
+          .digit-box { width: 22px; height: 28px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; font-family: monospace; }
+          .print-score-box { width: 80px; border: 2px dashed #333; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; background: #fff; min-height: 90px; margin-left: 15px; }
+          .print-section { margin-top: 5mm; }
+          .pt-4 { padding-top: 15px; }
+          .print-section-title { font-size: 9pt; color: #666; border-bottom: 1.5px solid #333; padding-bottom: 4px; margin-bottom: 15px; margin-left: 5px; text-transform: uppercase; break-after: avoid; }
+          .mc-blocks-container, .id-blocks-container { display: block; }
+          .mc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; break-inside: avoid; margin-bottom: 30px; }
+          .mc-item { display: flex; align-items: center; margin-bottom: 14px; break-inside: avoid; }
+          .item-num { width: 25px; font-size: 10pt; font-weight: bold; text-align: right; margin-right: 12px; }
+          .bubbles { display: flex; gap: 8px; }
+          .bubble-group { display: flex; justify-content: center; align-items: center; position: relative; width: 18px; height: 18px; }
+          .print-bubble { position: absolute; top: 0; left: 0; width: 18px; height: 18px; border: 2px solid black; border-radius: 50%; box-sizing: border-box; }
+          .bubble-label { position: relative; font-size: 8pt; font-weight: bold; color: #333; z-index: 1; }
+          .id-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px 40px; break-inside: avoid; margin-bottom: 30px; }
+          .id-item { display: flex; align-items: center; margin-bottom: 4px; break-inside: avoid; }
+          .id-box { flex: 1; height: 25px; border: 1px solid #555; }
         </style>
       </head>
       <body>
-        <h1>${title}</h1>
-        <p>Total Items: ${this.selectedExamFormat.totalItems}</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Section</th>
-              <th>Item Count</th>
-              <th>Item Type</th>
-              <th>Points Each</th>
-              <th>Total Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
+        <div class="print-header">
+          <h1 class="print-title">${title}</h1>
+          <div class="student-info-grid">
+            <div class="info-left">
+              <div class="info-field"><label>FULL NAME (LN, FN, MI.)</label><div class="info-box"></div></div>
+              <div class="info-field"><label>GRADE LEVEL, SECTION & STRAND</label><div class="info-box"></div></div>
+              <div class="info-field"><label>DATE</label><div class="info-box"></div></div>
+            </div>
+            <div class="student-id-section">
+              <div class="info-field" style="height: 100%; display: flex; flex-direction: column;">
+                <label>LEARNER REFERENCE NUMBER (LRN)</label>
+                <div class="id-boxes-row">
+                  ${Array(12).fill(0).map(() => '<div class="digit-box"></div>').join('')}
+                </div>
+              </div>
+            </div>
+            <div class="print-score-box">
+              <span style="font-size: 8pt; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 8px;">SCORE</span>
+              <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ ${totalPoints}</div>
+            </div>
+          </div>
+          ${bodyHtml}
       </body>
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Unable to open a new window for PDF export. Please allow pop-ups and try again.');
+    this.printViaIframe(htmlContent);
+  }
+
+  printViaIframe(htmlContent: string) {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      alert('Unable to generate PDF. Please try again.');
+      document.body.removeChild(iframe);
       return;
     }
 
-    printWindow.document.write(body);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+
+    // Slight delay to allow CSS rendering before calling print
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      
+      // Cleanup iframe after printing
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
+    }, 250);
   }
 
   openAnswerSheetModal(examId: number, examName: string): void {
@@ -458,16 +607,7 @@ export class Exams implements OnInit {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Unable to open a new window for export. Please allow pop-ups and try again.');
-      return;
-    }
-
-    printWindow.document.write(body);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    this.printViaIframe(body);
   }
 
   getStatusColor(status: string): string {

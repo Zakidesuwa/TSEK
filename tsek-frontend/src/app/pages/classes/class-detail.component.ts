@@ -142,13 +142,32 @@ export class ClassDetailComponent implements OnInit {
   }
 
   viewScan(url: string) {
-    this.selectedScanUrl = url;
-    this.showScanModal = true;
-    this.cdr.detectChanges();
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
+      this.selectedScanUrl = url;
+      this.showScanModal = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // Fetch securely to include auth headers
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: (blob) => {
+        this.selectedScanUrl = URL.createObjectURL(blob);
+        this.showScanModal = true;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load scanned image:', err);
+        alert('Failed to load the scanned image.');
+      }
+    });
   }
 
   closeScanModal() {
     this.showScanModal = false;
+    if (this.selectedScanUrl && this.selectedScanUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.selectedScanUrl);
+    }
     this.selectedScanUrl = null;
     this.cdr.detectChanges();
   }

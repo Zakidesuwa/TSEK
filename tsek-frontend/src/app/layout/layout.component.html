@@ -56,8 +56,22 @@
 
 <!-- Global Floating Scan Widget -->
 @if (scanService.showGlobalWidget | async) {
-  <div class="scan-floating-widget" (click)="onGlobalWidgetClick()" [class.ready]="scanService.scanReady | async">
-    @if (!(scanService.scanReady | async)) {
+  <div class="scan-floating-widget" (click)="onGlobalWidgetClick()" 
+       [class.ready]="scanService.scanReady | async"
+       [class.error]="scanService.scanError | async">
+    
+    @if (scanService.scanError | async; as errorMsg) {
+      <div class="widget-icon error-icon">
+        <span class="material-icons-outlined" style="color: #dc3545;">error_outline</span>
+      </div>
+      <div class="widget-content">
+        <span class="widget-title" style="color: #dc3545;">Scan Failed</span>
+        <span class="widget-subtitle" style="color: rgba(220, 53, 69, 0.8);">Click to view details</span>
+      </div>
+      <button class="widget-close error-close" (click)="dismissGlobalWidget($event)">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    } @else if (!(scanService.scanReady | async)) {
       <div class="widget-icon">
         <span class="material-icons-outlined spin-animation" style="color: var(--primary-color);">autorenew</span>
       </div>

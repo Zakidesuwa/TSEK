@@ -19,6 +19,7 @@ export class ScanService {
   public parsedScanAnswers = new BehaviorSubject<any>(null);
   public scanError = new BehaviorSubject<string | null>(null);
   public showGlobalWidget = new BehaviorSubject<boolean>(false);
+  public examConfigCache: any = null;
 
   startGlobalScan(files: File[]) {
     this.isScanningMasterKey.next(true);
@@ -50,6 +51,7 @@ export class ScanService {
     this.parsedScanAnswers.next(null);
     this.scanError.next(null);
     this.showGlobalWidget.next(false);
+    this.examConfigCache = null;
   }
 
   setPendingFiles(files: File[]) {

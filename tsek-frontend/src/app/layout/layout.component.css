@@ -224,6 +224,18 @@
   box-shadow: 0 6px 20px rgba(74, 103, 65, 0.4);
 }
 
+.scan-floating-widget.error {
+  background: #f8d7da;
+  border-color: #f5c6cb;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.2);
+}
+
+.scan-floating-widget.error:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+}
+
 .widget-icon {
   display: flex;
   align-items: center;
@@ -264,5 +276,14 @@
 .widget-close:hover {
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
+}
+
+.widget-close.error-close {
+  color: rgba(220, 53, 69, 0.8);
+}
+
+.widget-close.error-close:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
 }
 

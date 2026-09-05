@@ -1043,21 +1043,6 @@
     font-family: Arial, Helvetica, sans-serif;
   }
 
-  .marker {
-    position: fixed;
-    width: 7mm;
-    height: 7mm;
-    border: 3.5mm solid black;
-    box-sizing: border-box;
-    z-index: 9999;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  .marker-tl { top: 10mm; left: 10mm; }
-  .marker-tr { top: 10mm; right: 10mm; }
-  .marker-bl { bottom: 10mm; left: 10mm; }
-  .marker-br { bottom: 10mm; right: 10mm; }
-
   /* Print Table Layout to reserve space for fixed markers */
   .print-table {
     width: 100%;

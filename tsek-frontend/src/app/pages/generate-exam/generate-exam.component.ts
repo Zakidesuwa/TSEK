@@ -201,10 +201,34 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       }
     }));
 
+    // Restore config if active scan
+    if (this.scanService.isScanningMasterKey.value || this.scanService.scanReady.value) {
+      if (this.scanService.examConfigCache) {
+        const cache = this.scanService.examConfigCache;
+        this.examTitle = cache.examTitle;
+        this.paperSize = cache.paperSize;
+        this.examDate = cache.examDate;
+        this.numberOfChoices = cache.numberOfChoices;
+        this.selectedClassIds = cache.selectedClassIds;
+        this.sections = cache.sections;
+        this.savedPoints = cache.savedPoints;
+      }
+    }
+
     // If we land here and scan is already ready from a global click:
     if (this.scanService.scanReady.value && this.scanService.showGlobalWidget.value && this.currentStep === 'configure') {
        this.parsedScanAnswers = this.scanService.parsedScanAnswers.value;
        this.applyScannedAnswers();
+    }
+    
+    // If we land here and scan failed from a global click:
+    if (this.scanService.scanError.value && this.scanService.showGlobalWidget.value && this.currentStep === 'configure') {
+       this.modalTitle = 'Scan Failed';
+       this.modalMessage = this.scanService.scanError.value;
+       this.modalType = 'error';
+       this.showGeneratePdf = false;
+       this.showModal = true;
+       this.scanService.showGlobalWidget.next(false);
     }
   }
 
@@ -312,9 +336,17 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
           groups: c.key === 'enumeration' ? (c.groups || [{ size: c.selected || 5, strictOrder: false }]) : undefined
         }));
 
-        // Restore saved points
+        // Restore saved points and config specifics
         this.savedPoints = {};
-        this.sections.forEach(s => this.savedPoints[s.key] = s.defaultPoints);
+        this.sections.forEach(s => {
+          this.savedPoints[s.key] = s.defaultPoints;
+          if (s.key === 'multipleChoice') {
+            const mcDraft = draft.config.find((c: any) => c.key === 'multipleChoice');
+            if (mcDraft && mcDraft.numberOfChoices) {
+              this.numberOfChoices = mcDraft.numberOfChoices;
+            }
+          }
+        });
       }
 
       // Restore answer key into internal structures
@@ -518,7 +550,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   }
 
   get choiceLetters(): string[] {
-    return ['A', 'B', 'C', 'D', 'E'].slice(0, this.numberOfChoices);
+    return ['A', 'B', 'C', 'D', 'E'].slice(0, Number(this.numberOfChoices));
   }
 
   /** Validate date input */
@@ -726,7 +758,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   };
 
   private getOptionsForKey(key: string): string[] {
-    if (key === 'multipleChoice') return ['A', 'B', 'C', 'D', 'E'].slice(0, this.numberOfChoices);
+    if (key === 'multipleChoice') return ['A', 'B', 'C', 'D', 'E'].slice(0, Number(this.numberOfChoices));
     if (key === 'trueOrFalse') return ['T', 'F'];
     return []; // identification / enumeration use text input
   }
@@ -863,10 +895,16 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     }
 
     // Update sections with saved points before sending
-    const finalConfig = this.sections.map(s => ({
-      ...s,
-      defaultPoints: this.savedPoints[s.key] ?? s.defaultPoints
-    }));
+    const finalConfig = this.sections.map(s => {
+      const configItem: any = {
+        ...s,
+        defaultPoints: this.savedPoints[s.key] ?? s.defaultPoints
+      };
+      if (s.key === 'multipleChoice') {
+        configItem.numberOfChoices = Number(this.numberOfChoices);
+      }
+      return configItem;
+    });
 
     const payload = {
       class_id: this.selectedClassIds[0], // backward compatibility
@@ -1055,6 +1093,17 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
     const files = Array.from(event.target.files) as File[];
     if (files.length === 0) return;
+
+    // Cache the form state globally so we can restore it if the user navigates away and comes back
+    this.scanService.examConfigCache = {
+      examTitle: this.examTitle,
+      paperSize: this.paperSize,
+      examDate: this.examDate,
+      numberOfChoices: this.numberOfChoices,
+      selectedClassIds: [...this.selectedClassIds],
+      sections: JSON.parse(JSON.stringify(this.sections)),
+      savedPoints: JSON.parse(JSON.stringify(this.savedPoints))
+    };
     
     this.modalTitle = 'Scanning Master Key...';
     this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
