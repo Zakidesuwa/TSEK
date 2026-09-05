@@ -673,24 +673,28 @@
 
   <!-- Modal Overlay -->
   @if (showModal) {
-    <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-overlay" (click)="modalType !== 'loading' ? closeModal() : null">
       <div class="modal-content" (click)="$event.stopPropagation()" [class.modal-error]="modalType === 'error'">
         <div class="modal-icon">
-          <span class="material-icons-outlined">
-            {{ modalType === 'success' ? 'check_circle' : 'error_outline' }}
-          </span>
+          @if (modalType === 'loading') {
+            <span class="material-icons-outlined spin-animation" style="color: var(--primary-color);">autorenew</span>
+          } @else {
+            <span class="material-icons-outlined">
+              {{ modalType === 'success' ? 'check_circle' : 'error_outline' }}
+            </span>
+          }
         </div>
         <h3 class="modal-title">{{ modalTitle }}</h3>
         <p class="modal-message">{{ modalMessage }}</p>
         <div class="modal-actions">
-          @if (modalType === 'success') {
-            <button class="btn-modal-action btn-outline" (click)="printExam()">
-              <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">print</span>
-              Generate PDF
-            </button>
-            <button class="btn-modal-action" (click)="closeModal()">Done</button>
-          } @else {
-            <button class="btn-modal-action" (click)="closeModal()">Got it</button>
+          @if (modalType !== 'loading') {
+            @if (showGeneratePdf) {
+              <button class="btn-modal-action btn-outline" (click)="printExam()">
+                <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">print</span>
+                Generate PDF
+              </button>
+            }
+            <button class="btn-modal-action" (click)="closeModal()">{{ modalType === 'success' ? 'Done' : 'Got it' }}</button>
           }
         </div>
       </div>

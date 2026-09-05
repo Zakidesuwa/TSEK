@@ -83,7 +83,8 @@ export class GenerateExamComponent implements OnInit {
   isScanningMasterKey = false;
   modalTitle = '';
   modalMessage = '';
-  modalType: 'success' | 'error' = 'success';
+  modalType: 'success' | 'error' | 'loading' = 'success';
+  showGeneratePdf = false;
 
   closeModal() {
     this.showModal = false;
@@ -835,6 +836,7 @@ export class GenerateExamComponent implements OnInit {
         this.modalTitle = 'Success!';
         this.modalMessage = 'Answer key finalized and saved successfully.';
         this.modalType = 'success';
+        this.showGeneratePdf = true;
         this.showModal = true;
         this.cdr.detectChanges();
       },
@@ -842,6 +844,7 @@ export class GenerateExamComponent implements OnInit {
         this.modalTitle = 'Error';
         this.modalMessage = err.error?.error || 'Failed to save exam.';
         this.modalType = 'error';
+        this.showGeneratePdf = false;
         this.showModal = true;
         this.cdr.detectChanges();
       }
@@ -901,12 +904,14 @@ export class GenerateExamComponent implements OnInit {
         this.modalTitle = 'Success!';
         this.modalMessage = 'Answer key imported successfully.';
         this.modalType = 'success';
+        this.showGeneratePdf = false;
         this.showModal = true;
         this.cdr.detectChanges();
       } catch (err) {
         this.modalTitle = 'Error';
         this.modalMessage = 'Invalid JSON file format.';
         this.modalType = 'error';
+        this.showGeneratePdf = false;
         this.showModal = true;
         this.cdr.detectChanges();
       }
@@ -1007,7 +1012,8 @@ export class GenerateExamComponent implements OnInit {
     this.isScanningMasterKey = true;
     this.modalTitle = 'Scanning Master Key...';
     this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
-    this.modalType = 'success';
+    this.modalType = 'loading';
+    this.showGeneratePdf = false;
     this.showModal = true;
     this.cdr.detectChanges();
   
@@ -1024,6 +1030,7 @@ export class GenerateExamComponent implements OnInit {
           this.modalTitle = 'Scan Failed';
           this.modalMessage = 'Could not find any answers on the master key.';
           this.modalType = 'error';
+          this.showGeneratePdf = false;
           this.showModal = true;
           this.cdr.detectChanges();
         }
@@ -1034,6 +1041,7 @@ export class GenerateExamComponent implements OnInit {
         this.modalTitle = 'Scan Failed';
         this.modalMessage = err.error?.error || err.error?.message || 'Failed to process image.';
         this.modalType = 'error';
+        this.showGeneratePdf = false;
         this.showModal = true;
         this.cdr.detectChanges();
         event.target.value = '';
@@ -1083,6 +1091,7 @@ export class GenerateExamComponent implements OnInit {
     this.modalTitle = 'Scan Complete';
     this.modalMessage = 'Master Key has been imported successfully. Please review the populated answers.';
     this.modalType = 'success';
+    this.showGeneratePdf = false;
     this.showModal = true;
     this.cdr.detectChanges();
   }
