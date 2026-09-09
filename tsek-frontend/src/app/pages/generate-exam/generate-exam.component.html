@@ -338,48 +338,48 @@
 
       <table class="print-table">
         <thead>
-          <tr><td><div class="print-header-space"></div></td></tr>
+          <tr>
+            <td>
+              <div class="print-header">
+                <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
+                <div class="student-info-grid">
+                  <div class="info-left" style="flex: 1.5;">
+                    <div class="info-field">
+                      <label>FULL NAME (LN, FN, MI.)</label>
+                      <div class="info-box"></div>
+                    </div>
+                    <div class="info-field">
+                      <label>GRADE LEVEL, SECTION & STRAND</label>
+                      <div class="info-box"></div>
+                    </div>
+                    <div class="info-field">
+                      <label>DATE</label>
+                      <div class="info-box"></div>
+                    </div>
+                  </div>
+
+                  <div class="student-id-section" style="flex: 1.2; display: flex; flex-direction: column;">
+                    <div class="info-field" style="height: 100%; display: flex; flex-direction: column;">
+                      <label>LEARNER REFERENCE NUMBER (LRN) / STUDENT ID</label>
+                      <div class="id-boxes-row" style="display: flex; gap: 4px; margin-top: 6px;">
+                        @for (col of studentIdColumnsArray; track col) {
+                          <div class="digit-box" style="width: 22px; height: 28px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 10px; font-weight: bold; font-family: monospace;"></div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="print-score-box" style="width: 80px; border: 2px dashed #333; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; background: #fff; min-height: 90px; margin-left: 15px;">
+                    <span style="font-size: 8pt; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 8px;">SCORE</span>
+                    <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ {{ totalPossibleScore }}</div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
         </thead>
         <tbody>
           <tr><td class="print-body-cell">
-
-      <div class="print-header">
-        <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
-        <div class="student-info-grid">
-          
-          <div class="info-left" style="flex: 1.5;">
-            <div class="info-field">
-              <label>FULL NAME (LN, FN, MI.)</label>
-              <div class="info-box"></div>
-            </div>
-            <div class="info-field">
-              <label>GRADE LEVEL, SECTION & STRAND</label>
-              <div class="info-box"></div>
-            </div>
-            <div class="info-field">
-              <label>DATE</label>
-              <div class="info-box"></div>
-            </div>
-          </div>
-
-          <div class="student-id-section" style="flex: 1.2; display: flex; flex-direction: column;">
-            <div class="info-field" style="height: 100%; display: flex; flex-direction: column;">
-              <label>LEARNER REFERENCE NUMBER (LRN)</label>
-              <div class="id-boxes-row" style="display: flex; gap: 4px; margin-top: 6px;">
-                @for (col of studentIdColumnsArray; track col) {
-                  <div class="digit-box" style="width: 22px; height: 28px; border: 1px solid #333; display: flex; align-items: center; justify-content: center; background: #fff; font-size: 10px; font-weight: bold; font-family: monospace;"></div>
-                }
-              </div>
-            </div>
-          </div>
-
-          <div class="print-score-box" style="width: 80px; border: 2px dashed #333; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; background: #fff; min-height: 90px; margin-left: 15px;">
-            <span style="font-size: 8pt; font-weight: bold; color: #555; text-transform: uppercase; margin-bottom: 8px;">SCORE</span>
-            <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ {{ totalPossibleScore }}</div>
-          </div>
-
-        </div>
-      </div>
 
       <!-- Multiple Choice Section -->
       @if (mcBlocks.length > 0) {

@@ -87,8 +87,9 @@ CRITICAL SECURITY CHECK:
    - Check the handwriting style, ink color, pen stroke thickness, name details, or LRN details across all pages.
    - If you detect that the pages belong to different students (e.g., mismatching names, completely different handwriting/pen style, or mismatching student details), set "pagesMatchStudent" to false. Otherwise, set it to true.
 
-2. Identify the Learner Reference Number (LRN) / Student ID. This will be hand-written in a box/line on PAGE 1 ONLY. Read the numbers clearly.
-   - IMPORTANT: If the field is blank or illegible, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
+2. Identify the Learner Reference Number (LRN) / Student ID. Every printed page has a repeated field for this number. Read it on each page and compare the values.
+  - IMPORTANT: If a page's field is blank or illegible, do not guess or hallucinate digits.
+  - Use the clearly readable value shared by the pages for studentId. If repeated page values conflict, set "pagesMatchStudent" to false and studentId to null.
 
 3. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
 4. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
@@ -101,7 +102,7 @@ CRITICAL SECURITY CHECK:
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
-  "studentIdReasoning": "Briefly state where you found the LRN and what it says to ensure accuracy.",
+  "studentIdReasoning": "Briefly state the LRN/Student ID found on each page and whether the repeated values match.",
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
   "pagesMatchStudent": true,

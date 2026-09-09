@@ -1048,6 +1048,14 @@
     width: 100%;
     border-collapse: collapse;
   }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  .print-table thead td {
+    padding: 0;
+  }
   
   .print-header-space, .print-footer-space {
     height: 20mm; /* Reduced space */
