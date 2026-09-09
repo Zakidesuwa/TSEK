@@ -81,6 +81,22 @@
   </div>
 </div>
 
+@if (showTourSkipModal) {
+  <div class="tour-modal-overlay" (click)="continueTour()">
+    <div class="tour-modal" role="dialog" aria-modal="true" aria-labelledby="classes-tour-skip-title" (click)="$event.stopPropagation()">
+      <div class="tour-modal-icon">
+        <span class="material-icons-outlined">explore</span>
+      </div>
+      <h2 id="classes-tour-skip-title">Skip the tutorial?</h2>
+      <p>You can explore TSEK on your own and restart the tutorial anytime from Help.</p>
+      <div class="tour-modal-actions">
+        <button class="tour-modal-secondary" (click)="continueTour()">CONTINUE TOUR</button>
+        <button class="tour-modal-primary" (click)="skipTour()">SKIP TUTORIAL</button>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- ===== ADD CLASS MODAL ===== -->
 @if (showAddClassModal) {
 <div class="modal-overlay" @modalFadeAnim (click)="closeAddClassModal()">

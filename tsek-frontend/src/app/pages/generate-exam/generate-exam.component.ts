@@ -6,7 +6,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { ScanService } from '../../core/services/scan';
-import { driver } from 'driver.js';
+import { driver, Driver } from 'driver.js';
 import { Subscription } from 'rxjs';
 
 type QuestionType = 'multipleChoice' | 'identification' | 'enumeration' | 'trueOrFalse';
@@ -91,6 +91,9 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   modalMessage = '';
   modalType: 'success' | 'error' | 'loading' = 'success';
   showGeneratePdf = false;
+  showTourSkipModal = false;
+  private activeTour: Driver | null = null;
+  private completingTour = false;
 
   closeModal() {
     this.showModal = false;
@@ -245,6 +248,11 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     if (tourState === 'generate' && this.currentStep === 'configure') {
       const driverObj = driver({
         showProgress: true,
+        popoverClass: 'tsek-tour-popover',
+        showButtons: ['previous', 'next', 'close'],
+        onPopoverRender: (popover) => {
+          popover.closeButton.textContent = 'Skip tutorial';
+        },
         steps: [
           {
             element: 'input[placeholder="e.g., Quiz #1 Physics 101"]',
@@ -294,13 +302,32 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
           }
         ],
         onDestroyStarted: () => {
-          localStorage.setItem('hasSeenDashboardTour', 'true');
-          localStorage.removeItem('tourState');
-          driverObj.destroy();
+          if (this.completingTour) {
+            driverObj.destroy();
+            return;
+          }
+          this.activeTour = driverObj;
+          this.showTourSkipModal = true;
         }
       });
+      this.activeTour = driverObj;
       driverObj.drive();
     }
+  }
+
+  continueTour(): void {
+    this.showTourSkipModal = false;
+    this.activeTour?.drive();
+  }
+
+  skipTour(): void {
+    this.completingTour = true;
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    localStorage.removeItem('tourState');
+    this.showTourSkipModal = false;
+    this.activeTour?.destroy();
+    this.activeTour = null;
+    this.completingTour = false;
   }
 
   toggleAssignClass(classId: number) {

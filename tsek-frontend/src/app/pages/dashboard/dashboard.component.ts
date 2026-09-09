@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink, Router } from '@angular/router';
 import { ScanService } from '../../core/services/scan';
 import { environment } from '../../../environments/environment';
-import { driver } from 'driver.js';
+import { driver, Driver } from 'driver.js';
 
 interface StatCard {
   title: string;
@@ -47,6 +47,9 @@ export class DashboardComponent implements OnInit {
   isLoadingExams = true;
   isLoadingClasses = true;
   isLoadingNotifications = true;
+  showTourSkipModal = false;
+  private activeTour: Driver | null = null;
+  private completingTour = false;
 
   ngOnInit() {
     this.isLoadingNotifications = false;
@@ -89,6 +92,11 @@ export class DashboardComponent implements OnInit {
       setTimeout(() => {
         const driverObj = driver({
           showProgress: true,
+          popoverClass: 'tsek-tour-popover',
+          showButtons: ['previous', 'next', 'close'],
+          onPopoverRender: (popover) => {
+            popover.closeButton.textContent = 'Skip tutorial';
+          },
           steps: [
             {
               popover: {
@@ -137,22 +145,39 @@ export class DashboardComponent implements OnInit {
             }
           ],
           onDestroyStarted: () => {
+            if (this.completingTour) {
+              driverObj.destroy();
+              return;
+            }
             if (!driverObj.hasNextStep()) {
               localStorage.setItem('tourState', 'classes');
               this.router.navigate(['/classes']);
               driverObj.destroy();
             } else {
-              if (confirm("Are you sure you want to skip the tour?")) {
-                localStorage.setItem('hasSeenDashboardTour', 'true');
-                localStorage.removeItem('tourState');
-                driverObj.destroy();
-              }
+              this.activeTour = driverObj;
+              this.showTourSkipModal = true;
             }
           }
         });
+        this.activeTour = driverObj;
         driverObj.drive();
       }, 500); // Wait for animations
     }
+  }
+
+  continueTour(): void {
+    this.showTourSkipModal = false;
+    this.activeTour?.drive();
+  }
+
+  skipTour(): void {
+    this.completingTour = true;
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    localStorage.removeItem('tourState');
+    this.showTourSkipModal = false;
+    this.activeTour?.destroy();
+    this.activeTour = null;
+    this.completingTour = false;
   }
 
   dismissNotification(id: string) {

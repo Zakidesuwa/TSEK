@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { driver } from 'driver.js';
+import { driver, Driver } from 'driver.js';
 
 interface ClassCard {
   id: number;
@@ -111,6 +111,9 @@ export class ClassesComponent implements OnInit {
 
   isLoadingClasses = true;
   isRemovingStudent = false;
+  showTourSkipModal = false;
+  private activeTour: Driver | null = null;
+  private completingTour = false;
 
   classes: any[] = [];
   searchQuery = '';
@@ -148,6 +151,11 @@ export class ClassesComponent implements OnInit {
     if (tourState === 'classes') {
       const driverObj = driver({
         showProgress: true,
+        popoverClass: 'tsek-tour-popover',
+        showButtons: ['previous', 'next', 'close'],
+        onPopoverRender: (popover) => {
+          popover.closeButton.textContent = 'Skip tutorial';
+        },
         steps: [
           {
             element: '.classes-page',
@@ -188,21 +196,38 @@ export class ClassesComponent implements OnInit {
           }
         ],
         onDestroyStarted: () => {
+          if (this.completingTour) {
+            driverObj.destroy();
+            return;
+          }
           if (!driverObj.hasNextStep()) {
             localStorage.setItem('tourState', 'generate');
             this.router.navigate(['/generate-exam']);
             driverObj.destroy();
           } else {
-            if (confirm("Are you sure you want to skip the tour?")) {
-              localStorage.setItem('hasSeenDashboardTour', 'true');
-              localStorage.removeItem('tourState');
-              driverObj.destroy();
-            }
+            this.activeTour = driverObj;
+            this.showTourSkipModal = true;
           }
         }
       });
+      this.activeTour = driverObj;
       driverObj.drive();
     }
+  }
+
+  continueTour(): void {
+    this.showTourSkipModal = false;
+    this.activeTour?.drive();
+  }
+
+  skipTour(): void {
+    this.completingTour = true;
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    localStorage.removeItem('tourState');
+    this.showTourSkipModal = false;
+    this.activeTour?.destroy();
+    this.activeTour = null;
+    this.completingTour = false;
   }
 
 
