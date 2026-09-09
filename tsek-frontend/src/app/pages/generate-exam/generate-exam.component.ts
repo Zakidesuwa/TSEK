@@ -322,12 +322,17 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
   skipTour(): void {
     this.completingTour = true;
-    localStorage.setItem('hasSeenDashboardTour', 'true');
-    localStorage.removeItem('tourState');
+    this.completeOnboarding();
     this.showTourSkipModal = false;
+    this.activeTour?.setConfig({ onDestroyStarted: () => undefined });
     this.activeTour?.destroy();
     this.activeTour = null;
     this.completingTour = false;
+  }
+
+  private completeOnboarding() {
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    localStorage.removeItem('tourState');
   }
 
   toggleAssignClass(classId: number) {
@@ -945,6 +950,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
     this.http.post(`${environment.apiUrl}/api/exams`, payload).subscribe({
       next: () => {
+        this.completeOnboarding();
         this.modalTitle = 'Success!';
         this.modalMessage = 'Answer key finalized and saved successfully.';
         this.modalType = 'success';

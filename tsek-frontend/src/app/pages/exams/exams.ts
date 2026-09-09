@@ -106,6 +106,10 @@ export class Exams implements OnInit {
       next: (data) => {
         this.createdExams = data;
         this.isLoadingExams = false;
+        if (data.length > 0) {
+          localStorage.setItem('hasSeenDashboardTour', 'true');
+          localStorage.removeItem('tourState');
+        }
         try {
           this.cdr.detectChanges();
         } catch (e) {

@@ -50,6 +50,7 @@ export class DashboardComponent implements OnInit {
   showTourSkipModal = false;
   private activeTour: Driver | null = null;
   private completingTour = false;
+  private dashboardListsLoaded = 0;
 
   ngOnInit() {
     this.isLoadingNotifications = false;
@@ -71,6 +72,7 @@ export class DashboardComponent implements OnInit {
       this.recentExams = data.slice(0, 5);
       this.isLoadingExams = false;
       this.cdr.detectChanges();
+      this.checkAndRunTourWhenReady();
     });
 
     // Fetch classes list for the right sidebar
@@ -78,14 +80,26 @@ export class DashboardComponent implements OnInit {
       this.classBlocks = data;
       this.isLoadingClasses = false;
       this.cdr.detectChanges();
+      this.checkAndRunTourWhenReady();
     });
   }
 
   ngAfterViewInit() {
-    this.checkAndRunTour();
+    // Wait for existing classes and exams before deciding whether onboarding is needed.
+  }
+
+  private checkAndRunTourWhenReady() {
+    this.dashboardListsLoaded++;
+    if (this.dashboardListsLoaded >= 2) {
+      this.checkAndRunTour();
+    }
   }
 
   checkAndRunTour() {
+    if (this.classBlocks.length > 0 || this.recentExams.length > 0) {
+      this.completeOnboarding();
+      return;
+    }
     const hasSeenTour = localStorage.getItem('hasSeenDashboardTour');
     const tourState = localStorage.getItem('tourState');
     if (!hasSeenTour && (!tourState || tourState === 'dashboard')) {
@@ -172,12 +186,17 @@ export class DashboardComponent implements OnInit {
 
   skipTour(): void {
     this.completingTour = true;
-    localStorage.setItem('hasSeenDashboardTour', 'true');
-    localStorage.removeItem('tourState');
+    this.completeOnboarding();
     this.showTourSkipModal = false;
+    this.activeTour?.setConfig({ onDestroyStarted: () => undefined });
     this.activeTour?.destroy();
     this.activeTour = null;
     this.completingTour = false;
+  }
+
+  private completeOnboarding() {
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    localStorage.removeItem('tourState');
   }
 
   dismissNotification(id: string) {

@@ -136,6 +136,10 @@ export class ClassesComponent implements OnInit {
         this.classes = data;
         this.isLoadingClasses = false;
         this.cdr.detectChanges();
+        if (this.classes.length > 0) {
+          this.completeOnboarding();
+          return;
+        }
         // Run tour check once classes are loaded and rendered
         setTimeout(() => this.checkAndRunTour(), 300);
       },
@@ -222,12 +226,17 @@ export class ClassesComponent implements OnInit {
 
   skipTour(): void {
     this.completingTour = true;
-    localStorage.setItem('hasSeenDashboardTour', 'true');
-    localStorage.removeItem('tourState');
+    this.completeOnboarding();
     this.showTourSkipModal = false;
+    this.activeTour?.setConfig({ onDestroyStarted: () => undefined });
     this.activeTour?.destroy();
     this.activeTour = null;
     this.completingTour = false;
+  }
+
+  private completeOnboarding() {
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    localStorage.removeItem('tourState');
   }
 
 
@@ -255,6 +264,7 @@ export class ClassesComponent implements OnInit {
             students: 0,
             nextQuiz: 'TBD'
           });
+          this.completeOnboarding();
           this.closeAddClassModal();
           this.cdr.detectChanges();
           setTimeout(() => this.updateScrollState(), 100);
