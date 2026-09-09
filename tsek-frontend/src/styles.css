@@ -142,7 +142,12 @@ button {
   justify-content: center;
   padding: 20px;
   position: fixed;
-  z-index: 10001;
+  pointer-events: auto !important;
+  z-index: 1000000001;
+}
+
+.tour-modal-overlay * {
+  pointer-events: auto !important;
 }
 
 .tour-modal {
