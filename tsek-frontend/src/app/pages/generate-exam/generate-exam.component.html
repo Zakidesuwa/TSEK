@@ -336,11 +336,7 @@
   <div class="print-area">
       <!-- Alignment markers removed -->
 
-      <table class="print-table">
-        <thead>
-          <tr>
-            <td>
-              <div class="print-header">
+      <div class="print-header">
                 <h1 class="print-title">{{ examTitle || 'Untitled Exam' }}</h1>
                 <div class="student-info-grid">
                   <div class="info-left" style="flex: 1.5;">
@@ -374,10 +370,9 @@
                     <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ {{ totalPossibleScore }}</div>
                   </div>
                 </div>
-              </div>
-            </td>
-          </tr>
-        </thead>
+      </div>
+
+      <table class="print-table">
         <tbody>
           <tr><td class="print-body-cell">
 

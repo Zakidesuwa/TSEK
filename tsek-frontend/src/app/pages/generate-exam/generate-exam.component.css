@@ -1049,14 +1049,6 @@
     border-collapse: collapse;
   }
 
-  .print-table thead {
-    display: table-header-group;
-  }
-
-  .print-table thead td {
-    padding: 0;
-  }
-  
   .print-header-space, .print-footer-space {
     height: 20mm; /* Reduced space */
   }
@@ -1067,8 +1059,18 @@
 
   /* Print Header */
   .print-header {
-    margin-top: 2px;
-    margin-bottom: 20px;
+    position: fixed;
+    top: 15mm;
+    left: 20mm;
+    right: 20mm;
+    height: 48mm;
+    margin: 0;
+    background: white;
+    z-index: 2;
+  }
+
+  .print-table {
+    margin-top: 58mm;
   }
 
   .print-title {
