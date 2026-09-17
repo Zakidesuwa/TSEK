@@ -387,8 +387,12 @@ export class Exams implements OnInit {
         </style>
       </head>
       <body>
-        <div class="print-header">
-          <h1 class="print-title">${title}</h1>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <td>
+                <div class="print-header">
+                  <h1 class="print-title">${title}</h1>
           <div class="student-info-grid">
             <div class="info-left">
               <div class="info-field"><label>FULL NAME (LN, FN, MI.)</label><div class="info-box"></div></div>
@@ -408,7 +412,17 @@ export class Exams implements OnInit {
               <div style="font-size: 16pt; font-weight: 800; color: #ccc; border-top: 1px solid #ddd; width: 100%; text-align: center; padding-top: 6px; margin-top: auto;">/ ${totalPoints}</div>
             </div>
           </div>
-          ${bodyHtml}
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                ${bodyHtml}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </body>
       </html>
     `;

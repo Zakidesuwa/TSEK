@@ -212,7 +212,7 @@
 }
 
 .section-block.disabled {
-  opacity: 0.5;
+  opacity: 0.75;
 }
 
 .section-header {
@@ -280,7 +280,10 @@
 
 .pill:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 1;
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
 }
 
 /* Generate Button */
@@ -1036,12 +1039,17 @@
     position: relative;
     width: 210mm;
     min-height: 297mm;
-    padding: 15mm 20mm;
+    padding: 0 20mm;
     box-sizing: border-box;
     background: white;
     color: black;
     font-family: Arial, Helvetica, sans-serif;
   }
+
+  @page {
+    margin: 15mm 0;
+  }
+
 
   /* Print Table Layout to reserve space for fixed markers */
   .print-table {
@@ -1059,18 +1067,15 @@
 
   /* Print Header */
   .print-header {
-    position: fixed;
-    top: 15mm;
-    left: 20mm;
-    right: 20mm;
     height: 48mm;
     margin: 0;
+    margin-bottom: 15px;
     background: white;
-    z-index: 2;
   }
 
   .print-table {
-    margin-top: 58mm;
+    width: 100%;
+    border-collapse: collapse;
   }
 
   .print-title {
@@ -1178,12 +1183,24 @@
   }
 
   .mc-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    display: block;
     margin-bottom: 30px;
+  }
+
+  .mc-grid::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .mc-column {
+    float: left;
+    width: 31.33%;
+    margin-right: 3%;
+  }
+
+  .mc-column:last-child {
+    margin-right: 0;
   }
 
   .mc-item {
@@ -1240,12 +1257,24 @@
   }
 
   .id-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px 40px;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    display: block;
     margin-bottom: 30px;
+  }
+
+  .id-grid::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .id-column {
+    float: left;
+    width: 47%;
+    margin-right: 6%;
+  }
+
+  .id-column:last-child {
+    margin-right: 0;
   }
 
   .id-item {
@@ -1363,18 +1392,56 @@
 }
 
 /* Mirror print styles for preview container on screen */
+.modal-content.preview-modal {
+  background: #f4f6f8;
+  padding: 0;
+  overflow: hidden;
+}
+
+.preview-modal .modal-header {
+  padding: 20px 24px 16px;
+  background: white;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.preview-modal .preview-wrapper {
+  padding: 24px 0;
+  max-height: calc(90vh - 140px);
+  overflow-y: auto;
+}
+
 .preview-container {
   background: white;
   color: black;
   font-family: Arial, Helvetica, sans-serif;
-  padding: 20px 40px;
+  padding: 15mm 20mm;
   box-sizing: border-box;
   text-align: left;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.preview-wrapper {
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  zoom: 0.8; /* Scales layout nicely in most modern browsers */
 }
 
 .preview-container .print-header {
-  margin-top: 2px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+}
+
+.preview-container .print-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-container thead {
+  background: white;
 }
 
 .preview-container .print-title {
