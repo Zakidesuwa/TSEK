@@ -1,15 +1,46 @@
 <div class="generate-exam">
   <!-- Page Header -->
-  <div class="page-header">
-    <h1 class="page-title">Generate Answer Sheet</h1>
-    <p class="page-subtitle">
-      @if (currentStep === 'configure') {
-        Configure your exam layout.
-      } @else {
-        Set the correct answers for each section.
-      }
-    </p>
+  <div class="page-header-row">
+    <div class="page-header">
+      <h1 class="page-title">Generate Answer Sheet</h1>
+      <p class="page-subtitle">
+        @if (currentStep === 'configure') {
+          Configure your exam layout.
+        } @else {
+          Set the correct answers for each section.
+        }
+      </p>
+    </div>
+    @if (hasDraft && draftStatusText) {
+      <div class="header-draft-info">
+        <span class="draft-pill" [class.saving]="isDraftSaving">
+          <span class="material-icons-outlined draft-pill-icon">{{ isDraftSaving ? 'sync' : 'cloud_done' }}</span>
+          {{ draftStatusText }}
+        </span>
+        <button type="button" class="btn-clear-draft" (click)="discardDraft()" title="Reset all fields and discard draft">
+          <span class="material-icons-outlined">restart_alt</span>
+          Reset Draft
+        </button>
+      </div>
+    }
   </div>
+
+  <!-- Draft Restored Banner -->
+  @if (hasRestoredDraft) {
+    <div class="draft-banner">
+      <div class="draft-banner-content">
+        <span class="material-icons-outlined draft-banner-icon">restore</span>
+        <div class="draft-banner-text">
+          <strong>Auto-saved draft restored</strong>
+          <span>Your previous work was automatically loaded. Changes continue to save automatically.</span>
+        </div>
+      </div>
+      <div class="draft-banner-actions">
+        <button type="button" class="btn-banner-continue" (click)="dismissDraftBanner()">Continue Working</button>
+        <button type="button" class="btn-banner-discard" (click)="discardDraft()">Discard Draft</button>
+      </div>
+    </div>
+  }
 
   <!-- ============================
        STEP 1 — Configuration
@@ -74,6 +105,7 @@
                 [class.input-error]="formErrors.title"
                 placeholder="e.g., Quiz #1 Physics 101"
                 [(ngModel)]="examTitle"
+                (ngModelChange)="onConfigChange()"
               >
               @if (formErrors.title) {
                 <p class="form-error-message">
@@ -117,7 +149,7 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">PAPER SIZE</label>
-              <select class="form-select" [(ngModel)]="paperSize">
+              <select class="form-select" [(ngModel)]="paperSize" (ngModelChange)="onConfigChange()">
                 <option value="A4">A4</option>
                 <option value="Letter">Letter</option>
                 <option value="Legal">Legal</option>
@@ -125,7 +157,7 @@
             </div>
             <div class="form-group">
               <label class="form-label">DATE</label>
-              <input type="date" class="form-input date-input" [class.input-error]="formErrors.date" [(ngModel)]="examDate">
+              <input type="date" class="form-input date-input" [class.input-error]="formErrors.date" [(ngModel)]="examDate" (ngModelChange)="onConfigChange()">
               @if (formErrors.date) {
                 <p class="form-error-message">
                   <span class="material-icons-outlined">error_outline</span>
@@ -158,7 +190,7 @@
               @if (section.key === 'multipleChoice') {
                 <div class="choices-row">
                   <span class="form-label">NO. OF CHOICES:</span>
-                  <select class="form-select mini-select" [(ngModel)]="numberOfChoices">
+                  <select class="form-select mini-select" [(ngModel)]="numberOfChoices" (ngModelChange)="onConfigChange()">
                     <option [value]="2">2</option>
                     <option [value]="3">3</option>
                     <option [value]="4">4</option>
@@ -544,21 +576,29 @@
                 <!-- Left Column -->
                 <div class="bubble-column">
                   @for (num of leftColumnItems; track num) {
-                    <div class="bubble-row">
+                    <div class="bubble-row" [class.has-multi]="isMultiSelected(num)">
                       <span class="item-number">{{ num }}.</span>
                       <div class="bubble-options">
                         @for (opt of currentAnswerTab.options; track opt) {
                           <button
+                            type="button"
                             class="answer-bubble"
                             [class.selected]="isAnswerSelected(num, opt)"
-                            (click)="selectAnswer(num, opt)"
-                            (dblclick)="toggleMultiAnswer(num, opt, $event)"
+                            [class.multi-selected]="isAnswerSelected(num, opt) && isMultiSelected(num)"
+                            (click)="onBubbleClick(num, opt, $event)"
+                            (dblclick)="$event.preventDefault()"
                             [id]="'bubble-' + activeAnswerTab + '-' + num + '-' + opt"
+                            [title]="getBubbleTooltip(num, opt)"
                           >
                             {{ opt }}
                           </button>
                         }
                       </div>
+                      @if (isMultiSelected(num)) {
+                        <span class="multi-indicator" title="Multiple correct answers accepted for this item">
+                          Multi ({{ getSelectedAnswersCount(num) }})
+                        </span>
+                      }
                     </div>
                   }
                 </div>
@@ -566,21 +606,29 @@
                 <!-- Right Column -->
                 <div class="bubble-column">
                   @for (num of rightColumnItems; track num) {
-                    <div class="bubble-row">
+                    <div class="bubble-row" [class.has-multi]="isMultiSelected(num)">
                       <span class="item-number">{{ num }}.</span>
                       <div class="bubble-options">
                         @for (opt of currentAnswerTab.options; track opt) {
                           <button
+                            type="button"
                             class="answer-bubble"
                             [class.selected]="isAnswerSelected(num, opt)"
-                            (click)="selectAnswer(num, opt)"
-                            (dblclick)="toggleMultiAnswer(num, opt, $event)"
+                            [class.multi-selected]="isAnswerSelected(num, opt) && isMultiSelected(num)"
+                            (click)="onBubbleClick(num, opt, $event)"
+                            (dblclick)="$event.preventDefault()"
                             [id]="'bubble-' + activeAnswerTab + '-' + num + '-' + opt"
+                            [title]="getBubbleTooltip(num, opt)"
                           >
                             {{ opt }}
                           </button>
                         }
                       </div>
+                      @if (isMultiSelected(num)) {
+                        <span class="multi-indicator" title="Multiple correct answers accepted for this item">
+                          Multi ({{ getSelectedAnswersCount(num) }})
+                        </span>
+                      }
                     </div>
                   }
                 </div>
@@ -646,15 +694,36 @@
 
           <!-- Quick Guide -->
           <div class="info-card guide-card">
-            <h3 class="guide-title">
-              <span class="guide-dot"></span>
-              Quick Guide
-            </h3>
+            <div class="guide-header-row">
+              <h3 class="guide-title">
+                <span class="guide-dot"></span>
+                Quick Guide
+              </h3>
+              @if (draftStatusText) {
+                <span class="guide-draft-pill" [class.saving]="isDraftSaving">
+                  <span class="material-icons-outlined guide-draft-icon">{{ isDraftSaving ? 'sync' : 'cloud_done' }}</span>
+                  {{ draftStatusText }}
+                </span>
+              }
+            </div>
             <ul class="guide-list">
               <li>Click an option bubble once to select the correct answer.</li>
               <li>Double-click for multiple valid answers (multi-select).</li>
-              <li>Changes are saved automatically as a draft.</li>
+              <li>
+                Changes are saved automatically as a draft.
+                @if (lastDraftSavedAt) {
+                  <span class="guide-draft-hint">Auto-saved to your browser.</span>
+                }
+              </li>
             </ul>
+            @if (hasDraft) {
+              <div class="guide-actions">
+                <button type="button" class="btn-guide-reset" (click)="discardDraft()" title="Reset all answers and clear draft">
+                  <span class="material-icons-outlined">restart_alt</span>
+                  Reset Draft
+                </button>
+              </div>
+            }
           </div>
         </div>
       </div>

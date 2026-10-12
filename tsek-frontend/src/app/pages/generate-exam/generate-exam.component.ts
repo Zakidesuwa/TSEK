@@ -44,6 +44,8 @@ interface AnswerTabConfig {
   options: string[];
 }
 
+const DRAFT_STORAGE_KEY = 'tsek_generate_exam_draft';
+
 @Component({
   selector: 'app-generate-exam',
   standalone: true,
@@ -97,9 +99,28 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   private activeTour: Driver | null = null;
   private completingTour = false;
 
+  // Auto-Save Draft State
+  hasDraft = false;
+  hasRestoredDraft = false;
+  isDraftSaving = false;
+  draftStatusText = '';
+  lastDraftSavedAt: Date | null = null;
+  private draftSaveTimeout: any = null;
+
+  // Single-Click vs Double-Click Bubble State
+  private bubbleClickTimer: any = null;
+  private pendingBubbleClick: { itemNum: number; option: string } | null = null;
+
   closeModal() {
     this.showModal = false;
     if (this.modalType === 'success' && this.modalMessage.includes('finalized')) {
+      // Clear auto-saved draft since exam has been finalized
+      this.clearDraftStorage();
+      this.hasDraft = false;
+      this.hasRestoredDraft = false;
+      this.lastDraftSavedAt = null;
+      this.draftStatusText = '';
+
       // Full reset of the form and state
       this.currentStep = 'configure';
       this.examTitle = '';
@@ -162,13 +183,16 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     this.http.get<any[]>(`${environment.apiUrl}/api/classes`).subscribe({
       next: data => {
         this.classes = data;
-        if (this.classes.length > 0) {
+        if (this.classes.length > 0 && this.selectedClassIds.length === 0) {
           this.selectedClassIds = [this.classes[0].id];
         }
         this.isLoading = false;
         this.cdr.detectChanges();
-        // Try loading an imported exam draft (if user clicked Edit as New)
-        this.loadImportedDraft();
+        // Try loading an imported exam draft (if user clicked Edit as New) or auto-saved draft
+        const importedLoaded = this.loadImportedDraft();
+        if (!importedLoaded) {
+          this.loadAutoSavedDraft();
+        }
         
         // Trigger the tour check
         setTimeout(() => this.checkAndRunTour(), 400);
@@ -176,6 +200,10 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Failed to load classes', err);
         this.isLoading = false;
+        const importedLoaded = this.loadImportedDraft();
+        if (!importedLoaded) {
+          this.loadAutoSavedDraft();
+        }
       }
     });
 
@@ -239,6 +267,12 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.scanSub.unsubscribe();
+    this.cancelPendingBubbleClick();
+    if (this.draftSaveTimeout) {
+      clearTimeout(this.draftSaveTimeout);
+      this.draftSaveTimeout = null;
+      this.executeSaveDraft();
+    }
     // If scanning is still ongoing when leaving this page, show the global widget
     if (this.scanService.isScanningMasterKey.value || this.scanService.scanReady.value) {
       this.scanService.showGlobalWidget.next(true);
@@ -344,13 +378,212 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     } else {
       this.selectedClassIds.push(classId);
     }
+    this.onConfigChange();
+  }
+
+  get draftSavedTimeFormatted(): string {
+    if (!this.lastDraftSavedAt) return '';
+    return this.lastDraftSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  onConfigChange(): void {
+    this.autoSaveDraft();
+  }
+
+  autoSaveDraft(immediate: boolean = false): void {
+    if (immediate) {
+      if (this.draftSaveTimeout) {
+        clearTimeout(this.draftSaveTimeout);
+        this.draftSaveTimeout = null;
+      }
+      this.executeSaveDraft();
+      return;
+    }
+
+    this.isDraftSaving = true;
+    this.draftStatusText = 'Saving draft...';
+    if (this.draftSaveTimeout) {
+      clearTimeout(this.draftSaveTimeout);
+    }
+    this.draftSaveTimeout = setTimeout(() => {
+      this.executeSaveDraft();
+      this.draftSaveTimeout = null;
+    }, 400);
+  }
+
+  private executeSaveDraft(): void {
+    try {
+      // Serialize answers sets to arrays
+      const serializedAnswers: Record<string, Record<number, string[]>> = {};
+      for (const secKey of Object.keys(this.answers || {})) {
+        serializedAnswers[secKey] = {};
+        for (const itemNumStr of Object.keys(this.answers[secKey] || {})) {
+          const num = Number(itemNumStr);
+          serializedAnswers[secKey][num] = Array.from(this.answers[secKey][num] || []);
+        }
+      }
+
+      const draftData = {
+        version: 1,
+        timestamp: Date.now(),
+        currentStep: this.currentStep,
+        activeAnswerTab: this.activeAnswerTab,
+        examTitle: this.examTitle,
+        paperSize: this.paperSize,
+        examDate: this.examDate,
+        numberOfChoices: Number(this.numberOfChoices),
+        selectedClassIds: this.selectedClassIds,
+        sections: this.sections,
+        savedPoints: this.savedPoints,
+        answers: serializedAnswers,
+        textAnswers: this.textAnswers
+      };
+
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+      this.lastDraftSavedAt = new Date();
+      this.isDraftSaving = false;
+      this.hasDraft = true;
+      this.draftStatusText = `Saved ${this.draftSavedTimeFormatted}`;
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Failed to save draft to localStorage', err);
+      this.isDraftSaving = false;
+    }
+  }
+
+  loadAutoSavedDraft(): boolean {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return false;
+      const draft = JSON.parse(raw);
+      if (!draft) return false;
+
+      if (draft.examTitle !== undefined) this.examTitle = draft.examTitle;
+      if (draft.paperSize) this.paperSize = draft.paperSize;
+      if (draft.examDate) this.examDate = draft.examDate;
+      if (draft.numberOfChoices) this.numberOfChoices = draft.numberOfChoices;
+      if (Array.isArray(draft.selectedClassIds) && draft.selectedClassIds.length > 0) {
+        this.selectedClassIds = draft.selectedClassIds;
+      }
+
+      if (Array.isArray(draft.sections) && draft.sections.length > 0) {
+        this.sections = draft.sections;
+      }
+
+      if (draft.savedPoints) {
+        this.savedPoints = draft.savedPoints;
+      }
+
+      if (draft.textAnswers) {
+        this.textAnswers = draft.textAnswers;
+      }
+
+      this.answers = {};
+      if (draft.answers) {
+        for (const secKey of Object.keys(draft.answers)) {
+          this.answers[secKey] = {};
+          for (const itemNumStr of Object.keys(draft.answers[secKey])) {
+            const num = Number(itemNumStr);
+            const arr = draft.answers[secKey][num];
+            this.answers[secKey][num] = new Set<string>(Array.isArray(arr) ? arr.map(String) : []);
+          }
+        }
+      }
+
+      if (draft.currentStep === 'answerKey') {
+        this.answerTabs = this.sections
+          .filter(s => s.enabled)
+          .map(s => ({
+            key: s.key as QuestionType,
+            label: s.pointName,
+            icon: this.tabIconMap[s.key] || 'quiz',
+            itemCount: s.selected,
+            pointsPerItem: this.savedPoints[s.key] ?? s.defaultPoints,
+            options: this.getOptionsForKey(s.key)
+          }));
+
+        for (const tab of this.answerTabs) {
+          if (!this.answers[tab.key]) this.answers[tab.key] = {};
+          if (!this.textAnswers[tab.key]) this.textAnswers[tab.key] = {};
+          for (let i = 1; i <= tab.itemCount; i++) {
+            if (!this.answers[tab.key][i]) this.answers[tab.key][i] = new Set<string>();
+            if (this.textAnswers[tab.key][i] === undefined) this.textAnswers[tab.key][i] = '';
+          }
+        }
+
+        this.currentStep = 'answerKey';
+        if (draft.activeAnswerTab && this.answerTabs.some(t => t.key === draft.activeAnswerTab)) {
+          this.activeAnswerTab = draft.activeAnswerTab;
+        } else {
+          this.activeAnswerTab = this.answerTabs[0]?.key ?? 'multipleChoice';
+        }
+      } else {
+        this.currentStep = 'configure';
+      }
+
+      if (draft.timestamp) {
+        this.lastDraftSavedAt = new Date(draft.timestamp);
+        this.draftStatusText = `Saved ${this.draftSavedTimeFormatted}`;
+      }
+      this.hasDraft = true;
+      this.hasRestoredDraft = true;
+      this.cdr.detectChanges();
+      return true;
+    } catch (err) {
+      console.error('Failed to load auto-saved draft', err);
+      return false;
+    }
+  }
+
+  dismissDraftBanner(): void {
+    this.hasRestoredDraft = false;
+  }
+
+  discardDraft(): void {
+    this.clearDraftStorage();
+    this.hasDraft = false;
+    this.hasRestoredDraft = false;
+    this.lastDraftSavedAt = null;
+    this.draftStatusText = '';
+
+    // Full reset of the form and state
+    this.currentStep = 'configure';
+    this.examTitle = '';
+    this.paperSize = 'A4';
+    this.examDate = new Date().toISOString().substring(0, 10);
+    this.numberOfChoices = 4;
+    this.selectedClassIds = this.classes.length > 0 ? [this.classes[0].id] : [];
+
+    this.sections = [
+      { label: 'MULTIPLE CHOICE ITEMS', key: 'multipleChoice', enabled: true, options: [20, 30, 50, 100], selected: 30, pointName: 'Multiple Choice', defaultPoints: 1.0 },
+      { label: 'IDENTIFICATION ITEMS', key: 'identification', enabled: true, options: [10, 15, 20], selected: 10, pointName: 'Identification', defaultPoints: 2.0 },
+      { label: 'ENUMERATION ITEMS', key: 'enumeration', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'Enumeration', defaultPoints: 1.0, strictOrder: false, groups: [{ size: 5, strictOrder: false }] },
+      { label: 'TRUE OR FALSE ITEMS', key: 'trueOrFalse', enabled: false, options: [5, 10, 15, 20], selected: 5, pointName: 'True or False', defaultPoints: 1.0 }
+    ];
+
+    this.savedPoints = {
+      multipleChoice: 1.0,
+      identification: 2.0,
+      enumeration: 1.0,
+      trueOrFalse: 1.0
+    };
+
+    this.answers = {};
+    this.textAnswers = {};
+    this.answerTabs = [];
+    this.formErrors = {};
+    this.cdr.detectChanges();
+  }
+
+  clearDraftStorage(): void {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
   }
 
   /** Load an imported exam draft saved in localStorage by the exams page */
-  loadImportedDraft() {
+  loadImportedDraft(): boolean {
     try {
       const raw = localStorage.getItem('importedExamDraft');
-      if (!raw) return;
+      if (!raw) return false;
       const draft = JSON.parse(raw);
 
       // Apply basic fields
@@ -435,9 +668,12 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
       // Remove the imported draft to avoid accidental reuse
       localStorage.removeItem('importedExamDraft');
+      this.autoSaveDraft(true);
       this.cdr.detectChanges();
+      return true;
     } catch (e) {
       console.error('Failed to load imported exam draft', e);
+      return false;
     }
   }
 
@@ -465,11 +701,13 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
   toggleSection(section: ExamSection) {
     section.enabled = !section.enabled;
+    this.onConfigChange();
   }
 
   toggleStrictOrder(section: ExamSection) {
     if (section.enabled) {
       section.strictOrder = !section.strictOrder;
+      this.onConfigChange();
     }
   }
 
@@ -479,11 +717,13 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       if (section.key === 'enumeration') {
         section.groups = [{ size: option, strictOrder: false }];
       }
+      this.onConfigChange();
     }
   }
 
   toggleSubgroupStrictOrder(group: EnumerationGroup) {
     group.strictOrder = !group.strictOrder;
+    this.onConfigChange();
   }
 
   adjustGroupSize(index: number, change: number) {
@@ -511,10 +751,12 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       if (newTargetSize >= 1) {
         group.size = newSize;
         targetGroup.size = newTargetSize;
+        this.onConfigChange();
       }
     } else {
       // Only one group exists, so size change must be locked to total selected
       group.size = section.selected;
+      this.onConfigChange();
     }
   }
 
@@ -544,6 +786,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
         size: half,
         strictOrder: false
       });
+      this.onConfigChange();
     }
   }
 
@@ -557,6 +800,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     // Merge the deleted size back into the neighboring group
     const mergeIndex = index > 0 ? index - 1 : 0;
     section.groups[mergeIndex].size += removedGroup.size;
+    this.onConfigChange();
   }
 
   getGroupRangeText(index: number): string {
@@ -573,14 +817,17 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
   onPointsChange(pt: PointSection) {
     this.savedPoints[pt.key] = pt.pointsPerItem;
+    this.onConfigChange();
   }
 
   clearValues() {
     Object.keys(this.savedPoints).forEach(key => this.savedPoints[key] = 0);
+    this.onConfigChange();
   }
 
   saveWeights() {
     console.log('Weights saved:', this.pointSections);
+    this.autoSaveDraft(true);
   }
 
   get choiceLetters(): string[] {
@@ -782,6 +1029,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
     this.activeAnswerTab = this.answerTabs[0]?.key ?? 'multipleChoice';
     this.currentStep = 'answerKey';
+    this.autoSaveDraft(true);
   }
 
   private tabIconMap: Record<string, string> = {
@@ -800,6 +1048,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   /** Go back to Step 1 */
   goBackToConfig() {
     this.currentStep = 'configure';
+    this.autoSaveDraft(true);
   }
 
   /* ============================
@@ -860,19 +1109,110 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     return this.answers[this.activeAnswerTab]?.[itemNum]?.has(option) ?? false;
   }
 
-  selectAnswer(itemNum: number, option: string) {
+  isMultiSelected(itemNum: number): boolean {
+    return (this.answers[this.activeAnswerTab]?.[itemNum]?.size ?? 0) > 1;
+  }
+
+  getSelectedAnswersCount(itemNum: number): number {
+    return this.answers[this.activeAnswerTab]?.[itemNum]?.size ?? 0;
+  }
+
+  getBubbleTooltip(itemNum: number, option: string): string {
+    const isSelected = this.isAnswerSelected(itemNum, option);
+    const isMulti = this.isMultiSelected(itemNum);
+    if (isSelected) {
+      if (isMulti) {
+        return `Option ${option} is selected. Double-click to remove from valid answers, or single-click to make it the only answer.`;
+      }
+      return `Option ${option} is selected. Single-click to unselect, or double-click another bubble to multi-select.`;
+    }
+    return `Single-click to select ${option} as correct answer. Double-click for multiple valid answers.`;
+  }
+
+  onBubbleClick(itemNum: number, option: string, event: MouseEvent): void {
+    event.preventDefault();
+
+    // Keyboard shortcut / modifier key support (Ctrl / Cmd / Shift) for instant multi-select toggle
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      this.cancelPendingBubbleClick();
+      this.toggleMultiAnswer(itemNum, option);
+      this.autoSaveDraft();
+      return;
+    }
+
+    // Double-click detection: if a click is already pending on the EXACT same bubble
+    if (
+      this.bubbleClickTimer &&
+      this.pendingBubbleClick?.itemNum === itemNum &&
+      this.pendingBubbleClick?.option === option
+    ) {
+      this.cancelPendingBubbleClick();
+      this.toggleMultiAnswer(itemNum, option);
+      this.autoSaveDraft();
+      return;
+    }
+
+    // If there was a pending click on a DIFFERENT bubble, commit it immediately without waiting
+    if (this.bubbleClickTimer && this.pendingBubbleClick) {
+      const prev = this.pendingBubbleClick;
+      this.cancelPendingBubbleClick();
+      this.applySingleSelect(prev.itemNum, prev.option);
+    }
+
+    // Schedule single-click with brief debounce delay to detect double-click
+    this.pendingBubbleClick = { itemNum, option };
+    this.bubbleClickTimer = setTimeout(() => {
+      this.applySingleSelect(itemNum, option);
+      this.cancelPendingBubbleClick();
+      this.autoSaveDraft();
+      this.cdr.detectChanges();
+    }, 220);
+  }
+
+  private cancelPendingBubbleClick(): void {
+    if (this.bubbleClickTimer) {
+      clearTimeout(this.bubbleClickTimer);
+      this.bubbleClickTimer = null;
+    }
+    this.pendingBubbleClick = null;
+  }
+
+  applySingleSelect(itemNum: number, option: string): void {
+    if (!this.answers[this.activeAnswerTab]) {
+      this.answers[this.activeAnswerTab] = {};
+    }
+    if (!this.answers[this.activeAnswerTab][itemNum]) {
+      this.answers[this.activeAnswerTab][itemNum] = new Set<string>();
+    }
     const set = this.answers[this.activeAnswerTab][itemNum];
-    if (set.has(option)) {
-      set.delete(option);
+
+    // If already the only selected answer, single click unselects it
+    if (set.size === 1 && set.has(option)) {
+      set.clear();
     } else {
+      // Otherwise, set it as the single correct answer
       set.clear();
       set.add(option);
     }
   }
 
-  toggleMultiAnswer(itemNum: number, option: string, event: MouseEvent) {
-    event.preventDefault();
+  selectAnswer(itemNum: number, option: string): void {
+    this.applySingleSelect(itemNum, option);
+    this.autoSaveDraft();
+  }
+
+  toggleMultiAnswer(itemNum: number, option: string, event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault();
+    }
+    if (!this.answers[this.activeAnswerTab]) {
+      this.answers[this.activeAnswerTab] = {};
+    }
+    if (!this.answers[this.activeAnswerTab][itemNum]) {
+      this.answers[this.activeAnswerTab][itemNum] = new Set<string>();
+    }
     const set = this.answers[this.activeAnswerTab][itemNum];
+
     if (set.has(option)) {
       set.delete(option);
     } else {
@@ -889,10 +1229,12 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     } else {
       set.clear();
     }
+    this.autoSaveDraft();
   }
 
   switchAnswerTab(key: QuestionType) {
     this.activeAnswerTab = key;
+    this.autoSaveDraft(true);
   }
 
   finalizeAnswerKey() {
@@ -953,6 +1295,9 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     this.http.post(`${environment.apiUrl}/api/exams`, payload).subscribe({
       next: () => {
         this.completeOnboarding();
+        this.clearDraftStorage();
+        this.hasDraft = false;
+        this.hasRestoredDraft = false;
         this.modalTitle = 'Success!';
         this.modalMessage = 'Answer key finalized and saved successfully.';
         this.modalType = 'success';
@@ -981,6 +1326,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     if (section.key === 'enumeration') {
       section.groups = [{ size: section.selected, strictOrder: false }];
     }
+    this.onConfigChange();
     this.cdr.detectChanges();
   }
 
