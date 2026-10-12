@@ -373,7 +373,12 @@
             @for (item of sortedDetails; track item.key) {
             <tr [class.correct]="isEffectivelyCorrect(item)" [class.incorrect]="!isEffectivelyCorrect(item)" [class.overridden]="isOverridden(item.key)">
               <td class="col-item">{{ item.key }}</td>
-              <td class="answer-cell">{{ item.value.studentAnswer || '—' }}</td>
+              <td class="answer-cell">
+                {{ item.value.studentAnswer || '—' }}
+                @if (item.value.isDoubleShade) {
+                  <span class="double-shade-tag" title="Multiple answers shaded on a single-answer question">Double Answer</span>
+                }
+              </td>
               <td class="answer-cell">
                 {{ item.value.correctAnswer?.join ? item.value.correctAnswer.join(', ') : item.value.correctAnswer }}
               </td>

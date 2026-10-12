@@ -94,7 +94,7 @@ CRITICAL SECURITY CHECK:
 3. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
 4. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
    - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
-   - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), you MUST return the value as "INVALID_MULTIPLE" to ensure it is marked wrong.
+   - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), return ALL shaded letters separated by a comma in alphabetical order (e.g., "A, B" or "A, C"). Do NOT guess or hallucinate unshaded bubbles.
 5. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
 6. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
@@ -123,7 +123,7 @@ Look carefully at the provided student answer sheet image.
 2. If there is a name field (handwritten or printed), identify the student's full name. If it is blank, return null or "".
 3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
    - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
-   - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), you MUST return the value as "INVALID_MULTIPLE" to ensure it is marked wrong.
+   - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), return ALL shaded letters separated by a comma in alphabetical order (e.g., "A, B" or "A, C"). Do NOT guess or hallucinate unshaded bubbles.
 4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
 5. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
@@ -310,13 +310,52 @@ exports.gradeExam = async (req, res) => {
       const correctAnswer = sectionAnswers[sectionLocalNum];
 
       let isCorrect = false;
+      let isDoubleShade = false;
 
       if (!studentAnswer) {
         isCorrect = false;
       } else if (Array.isArray(correctAnswer)) {
-        // Multiple Choice / True False (Array of allowed answers)
-        if (correctAnswer.includes(studentAnswer.toUpperCase())) {
-          isCorrect = true;
+        // Multiple Choice / True False (Array of allowed answers configured for this item)
+        const allowedAnswers = correctAnswer.map(a => String(a).toUpperCase().trim()).filter(Boolean);
+
+        // Parse student shaded answers (can be "A", "A, B", ["A", "B"], or legacy "INVALID_MULTIPLE")
+        let studentShades = [];
+        if (Array.isArray(studentAnswer)) {
+          studentShades = studentAnswer.map(s => String(s).toUpperCase().trim()).filter(Boolean);
+        } else if (typeof studentAnswer === 'string') {
+          const rawUpper = studentAnswer.toUpperCase().trim();
+          if (rawUpper === 'INVALID_MULTIPLE') {
+            studentShades = ['INVALID_MULTIPLE'];
+          } else {
+            studentShades = rawUpper.split(',').map(s => s.trim()).filter(Boolean);
+          }
+        }
+
+        if (studentShades.length === 0) {
+          isCorrect = false;
+        } else if (studentShades.includes('INVALID_MULTIPLE')) {
+          // Unresolvable multiple shade
+          isCorrect = false;
+          isDoubleShade = true;
+        } else if (allowedAnswers.length <= 1) {
+          // Question only has 1 valid answer: automark double/multiple answers as wrong!
+          if (studentShades.length > 1) {
+            isCorrect = false;
+            isDoubleShade = true;
+          } else if (studentShades.length === 1 && allowedAnswers.includes(studentShades[0])) {
+            isCorrect = true;
+          } else {
+            isCorrect = false;
+          }
+        } else {
+          // Question has MORE THAN 1 valid answer on purpose (multi-select)
+          // Verification: It should NOT be marked wrong if the student shaded valid answers!
+          const allShadesValid = studentShades.every(s => allowedAnswers.includes(s));
+          if (allShadesValid && studentShades.length > 0) {
+            isCorrect = true;
+          } else {
+            isCorrect = false;
+          }
         }
       } else if (typeof correctAnswer === 'string') {
         // Identification / Enumeration (Strict)
@@ -331,9 +370,10 @@ exports.gradeExam = async (req, res) => {
       totalPossible += points;
 
       gradedItems[globalNum] = {
-        studentAnswer,
+        studentAnswer: Array.isArray(studentAnswer) ? studentAnswer.join(', ') : (studentAnswer || ''),
         correctAnswer,
         isCorrect,
+        isDoubleShade,
         pointsAwarded: isCorrect ? points : 0,
         maxPoints: points
       };

@@ -1422,9 +1422,13 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       const val = String(parsedAnswers[key]).trim().toUpperCase();
       if (!val || val === 'NULL' || val === 'UNDEFINED') continue;
       
-      if (['A', 'B', 'C', 'D', 'E', 'INVALID_MULTIPLE'].includes(val)) {
+      const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+      const isMc = parts.length > 0 && parts.every(p => ['A', 'B', 'C', 'D', 'E', 'INVALID_MULTIPLE'].includes(p));
+      const isTf = parts.length > 0 && parts.every(p => ['T', 'F'].includes(p));
+
+      if (isMc) {
         mcCount++;
-      } else if (['T', 'F'].includes(val)) {
+      } else if (isTf) {
         tfCount++;
       } else {
         textCount++;
@@ -1549,10 +1553,13 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
         }
       } else {
         this.answers[tabKey][localNum].clear();
-        if (scannedVal !== 'INVALID_MULTIPLE') {
-          const valStr = String(scannedVal).toUpperCase().trim();
-          if (valStr) {
-            this.answers[tabKey][localNum].add(valStr);
+        if (scannedVal && scannedVal !== 'INVALID_MULTIPLE') {
+          const parts = Array.isArray(scannedVal) ? scannedVal : String(scannedVal).split(',');
+          for (const part of parts) {
+            const valStr = String(part).toUpperCase().trim();
+            if (valStr && valStr !== 'INVALID_MULTIPLE') {
+              this.answers[tabKey][localNum].add(valStr);
+            }
           }
         }
       }
