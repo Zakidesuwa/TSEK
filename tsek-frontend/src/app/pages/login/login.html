@@ -89,9 +89,17 @@
   <!-- Loading Overlay -->
   @if (isLoading) {
     <div class="loading-overlay" @modalFadeAnim>
-      <div class="loading-container">
-        <div class="spinner"></div>
-        <p class="loading-text">Tseking your credentials...</p>
+      <div class="loading-container" role="status" aria-live="polite" aria-label="Checking your credentials">
+        <div class="security-mark" aria-hidden="true">
+          <div class="spinner"></div>
+          <span class="material-icons-outlined security-icon">verified_user</span>
+        </div>
+        <div class="loading-copy">
+          <span class="loading-eyebrow">TSEK ACCOUNT SECURITY</span>
+          <h2 class="loading-title">Tseking your credentials</h2>
+          <p class="loading-text">Securely verifying your school account...</p>
+        </div>
+        <div class="loading-progress" aria-hidden="true"><span></span></div>
       </div>
     </div>
   }
