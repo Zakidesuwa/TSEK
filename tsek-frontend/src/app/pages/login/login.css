@@ -444,7 +444,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(20, 29, 23, 0.62);
+  background: rgba(44, 44, 44, 0.62);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -462,8 +462,8 @@
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
-  background: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
   border-radius: 8px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
   text-align: center;
@@ -475,7 +475,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 4px;
-  background: linear-gradient(90deg, var(--color-primary), #e2a33a);
+  background: var(--color-primary);
 }
 
 .security-mark {
@@ -489,9 +489,9 @@
 .spinner {
   position: absolute;
   inset: 0;
-  border: 2px solid #e5ebe3;
+  border: 2px solid var(--color-border-light);
   border-top-color: var(--color-primary);
-  border-right-color: #d89b36;
+  border-right-color: var(--color-primary-light);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -517,7 +517,7 @@
 
 .loading-title {
   margin: 0;
-  color: #1f2c21;
+  color: var(--color-text-primary);
   font-size: 21px;
   line-height: 1.25;
   font-weight: 750;
@@ -536,7 +536,7 @@
   margin-top: 3px;
   overflow: hidden;
   border-radius: 2px;
-  background: #e9eee7;
+  background: var(--color-primary-bg);
 }
 
 .loading-progress span {
