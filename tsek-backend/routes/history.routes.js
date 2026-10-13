@@ -13,7 +13,6 @@ router.get('/api/history', authMiddleware, async (req, res) => {
     name: 'e.exam_title',
     subject: 'c.class_name',
     date: 'COALESCE(e.exam_date, e.created_at::date)',
-    deadline: 'e.deadline',
     total_items: 'e.total_items',
     scans: 'scans'
   };
@@ -32,7 +31,6 @@ router.get('/api/history', authMiddleware, async (req, res) => {
         e.exam_title as name,
         e.total_items,
         COALESCE(e.exam_date, e.created_at::date) as date,
-        e.deadline,
         (SELECT COUNT(*) FROM exam_results er WHERE er.exam_id = e.id) as scans
       FROM exams e
       JOIN classes c ON e.class_id = c.id

@@ -11,7 +11,6 @@ interface HistoryRecord {
   name: string;
   total_items: number;
   date: string;
-  deadline?: string;
   scans: string; // From COUNT()
 }
 
