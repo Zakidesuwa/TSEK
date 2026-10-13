@@ -661,8 +661,8 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
           }
         }
 
-        // Move to answer key step so user can edit
-        this.currentStep = 'answerKey';
+        // Keep the configuration visible so the exam title can be edited first.
+        this.currentStep = 'configure';
         this.activeAnswerTab = this.answerTabs[0]?.key ?? 'multipleChoice';
       }
 
