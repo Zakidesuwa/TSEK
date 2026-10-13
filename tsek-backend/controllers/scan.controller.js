@@ -454,7 +454,13 @@ exports.gradeExam = async (req, res) => {
         studentExists = true;
         studentDbId = studentQuery.rows[0].id;
 
-        const enrollmentQuery = await db.query('SELECT 1 FROM class_enrollments WHERE class_id = $1 AND student_id = $2', [classId, studentDbId]);
+        const enrollmentQuery = await db.query(`
+          SELECT 1
+          FROM exam_classes ec
+          JOIN class_enrollments ce ON ce.class_id = ec.class_id
+          WHERE ec.exam_id = $1 AND ce.student_id = $2
+          LIMIT 1
+        `, [exam_id, studentDbId]);
         if (enrollmentQuery.rows.length > 0) {
           isEnrolled = true;
 
