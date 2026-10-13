@@ -1239,6 +1239,122 @@
   box-shadow: var(--shadow-sm);
 }
 
+.btn-preview-answer-sheet,
+.btn-preview-print,
+.btn-preview-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-preview-answer-sheet {
+  padding: 12px 20px;
+}
+
+.btn-preview-answer-sheet:hover,
+.btn-preview-print:hover,
+.btn-preview-close:hover {
+  background: var(--color-bg-card);
+}
+
+.btn-preview-answer-sheet .material-icons-outlined,
+.btn-preview-print .material-icons-outlined,
+.btn-preview-close .material-icons-outlined {
+  font-size: 18px;
+}
+
+.answer-sheet-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(17, 24, 20, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.answer-sheet-preview-toolbar {
+  position: fixed;
+  z-index: 1002;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: min(720px, calc(100vw - 24px));
+  min-height: 48px;
+  padding: 8px 12px 8px 18px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-text-primary);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.24);
+}
+
+.answer-sheet-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-preview-print {
+  min-height: 34px;
+  padding: 6px 12px;
+}
+
+.btn-preview-close {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+@media screen {
+  .print-area.preview-visible {
+    display: block;
+    position: fixed;
+    z-index: 1001;
+    top: 68px;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(210mm, calc(100vw - 24px));
+    min-height: 0;
+    padding: 15mm 20mm;
+    overflow: auto;
+    box-sizing: border-box;
+    background: white;
+    color: black;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.32);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .print-area.preview-visible {
+    padding: 8mm 6mm;
+  }
+
+  .answer-sheet-preview-toolbar {
+    gap: 8px;
+    padding-left: 12px;
+    font-size: 12px;
+  }
+
+  .btn-preview-print {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
 /* Step 2 Responsive */
 @media (max-width: 1000px) {
   .content-layout {
@@ -1294,6 +1410,11 @@
 }
 
 @media print {
+  .answer-sheet-preview-backdrop,
+  .answer-sheet-preview-toolbar {
+    display: none !important;
+  }
+
   /* Hide local app UI */
   .page-header,
   .content-columns,

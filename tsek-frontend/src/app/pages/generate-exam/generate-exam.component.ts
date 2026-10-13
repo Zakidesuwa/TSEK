@@ -84,9 +84,19 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   currentStep: 'configure' | 'answerKey' = 'configure';
 
   showModal = false;
+  showAnswerSheetPreview = false;
   openPrintPreview() {
     window.print();
   }
+
+  openAnswerSheetPreview(): void {
+    this.showAnswerSheetPreview = true;
+  }
+
+  closeAnswerSheetPreview(): void {
+    this.showAnswerSheetPreview = false;
+  }
+
   isScanningMasterKey = false;
   scanReady = false;
   parsedScanAnswers: any = null;

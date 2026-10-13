@@ -365,7 +365,7 @@
   }
 
   <!-- Printable Area (Hidden on screen, Visible on print) -->
-  <div class="print-area">
+  <div class="print-area" [class.preview-visible]="showAnswerSheetPreview" [class.preview-container]="showAnswerSheetPreview">
     <table class="print-table" style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr>
@@ -529,6 +529,22 @@
       </tbody>
     </table>
   </div>
+
+  @if (showAnswerSheetPreview) {
+    <div class="answer-sheet-preview-backdrop" (click)="closeAnswerSheetPreview()"></div>
+    <div class="answer-sheet-preview-toolbar" role="dialog" aria-modal="true" aria-label="Answer sheet preview" (click)="$event.stopPropagation()">
+      <strong>Answer Sheet Preview</strong>
+      <div class="answer-sheet-preview-actions">
+        <button type="button" class="btn-preview-print" (click)="printExam()" title="Print answer sheet">
+          <span class="material-icons-outlined">print</span>
+          Print
+        </button>
+        <button type="button" class="btn-preview-close" (click)="closeAnswerSheetPreview()" title="Close preview" aria-label="Close preview">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+    </div>
+  }
 
   <!-- ============================
        STEP 2 — Answer Key Generator
@@ -730,6 +746,10 @@
 
       <!-- Finalize Button -->
       <div class="finalize-bar" style="display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;">
+        <button type="button" class="btn-preview-answer-sheet" (click)="openAnswerSheetPreview()">
+          <span class="material-icons-outlined">visibility</span>
+          PREVIEW ANSWER SHEET
+        </button>
         <button class="btn-finalize" (click)="finalizeAnswerKey()" id="btn-finalize-answer-key">
           FINALIZE ANSWER KEY
         </button>
