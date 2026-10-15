@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
@@ -21,6 +21,18 @@ export class ScanService {
   public showGlobalWidget = new BehaviorSubject<boolean>(false);
   public examConfigCache: any = null;
 
+  // Actions triggered from global widget or UI
+  public requestOpenScanModal = new Subject<void>();
+  public requestPopulateAnswers = new Subject<void>();
+
+  triggerOpenScanModal() {
+    this.requestOpenScanModal.next();
+  }
+
+  triggerPopulateAnswers() {
+    this.requestPopulateAnswers.next();
+  }
+
   startGlobalScan(files: File[]) {
     this.isScanningMasterKey.next(true);
     this.scanReady.next(false);
@@ -31,8 +43,9 @@ export class ScanService {
       next: (res) => {
         const parsedAnswers = res.rawText?.answers;
         if (parsedAnswers) {
-          this.scanReady.next(true);
           this.parsedScanAnswers.next(parsedAnswers);
+          this.isScanningMasterKey.next(false);
+          this.scanReady.next(true);
         } else {
           this.isScanningMasterKey.next(false);
           this.scanError.next('Could not find any answers on the master key.');

@@ -72,12 +72,16 @@
         <span class="material-icons-outlined">close</span>
       </button>
     } @else if (!(scanService.scanReady | async)) {
-      <div class="widget-icon">
-        <span class="material-icons-outlined spin-animation" style="color: var(--primary-color);">autorenew</span>
+      <div class="widget-icon radar-icon-container">
+        <span class="material-icons-outlined pulse-icon" style="color: var(--color-primary, #4A6741);">document_scanner</span>
+        <span class="radar-ping-ring"></span>
       </div>
       <div class="widget-content">
-        <span class="widget-title">Scanning Master Key...</span>
-        <span class="widget-subtitle">You can continue navigating.</span>
+        <div class="widget-status-line">
+          <span class="live-pulse-dot mini"></span>
+          <span class="widget-title">Scanning Answer Sheet</span>
+        </div>
+        <span class="widget-subtitle">AI analysis running in background</span>
       </div>
     } @else {
       <div class="widget-icon ready-icon">

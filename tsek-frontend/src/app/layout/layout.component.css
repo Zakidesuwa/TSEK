@@ -210,6 +210,12 @@
   z-index: 2000; /* above everything */
   transition: all 0.3s ease;
   min-width: 250px;
+  cursor: pointer;
+}
+
+.scan-floating-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
 
 .scan-floating-widget.ready {
@@ -242,6 +248,70 @@
   justify-content: center;
 }
 
+.radar-icon-container {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-ping-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary, #4A6741);
+  animation: radarRing 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+@keyframes radarRing {
+  0% { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.pulse-icon {
+  animation: breatheIcon 2s ease-in-out infinite;
+}
+
+@keyframes breatheIcon {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.widget-status-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2e8b57;
+  position: relative;
+  box-shadow: 0 0 0 0 rgba(46, 139, 87, 0.7);
+  animation: pulseDot 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  flex-shrink: 0;
+}
+
+@keyframes pulseDot {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(46, 139, 87, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(46, 139, 87, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(46, 139, 87, 0);
+  }
+}
+
 .widget-content {
   display: flex;
   flex-direction: column;
@@ -252,7 +322,7 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .widget-subtitle {

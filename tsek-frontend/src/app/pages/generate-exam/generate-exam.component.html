@@ -298,9 +298,15 @@
               <span class="material-icons-outlined btn-icon">upload_file</span>
               IMPORT JSON KEY
             </button>
-            <button type="button" class="btn-outline generate-btn" (click)="masterKeyInput.click()" [disabled]="isScanningMasterKey" style="flex: 1; background: white;">
-              <span class="material-icons-outlined btn-icon">document_scanner</span>
-              {{ isScanningMasterKey ? 'SCANNING...' : 'SCAN MASTER KEY' }}
+            <button type="button" class="btn-outline generate-btn" 
+                    (click)="isScanningMasterKey ? reopenScanModal() : (scanReady ? applyScannedAnswers() : masterKeyInput.click())" 
+                    style="flex: 1; background: white;"
+                    [class.scan-active-btn]="isScanningMasterKey"
+                    [class.scan-ready-btn]="scanReady">
+              <span class="material-icons-outlined btn-icon" [class.spin-animation]="isScanningMasterKey" [style.color]="scanReady ? 'var(--color-primary)' : ''">
+                {{ scanReady ? 'check_circle' : (isScanningMasterKey ? 'autorenew' : 'document_scanner') }}
+              </span>
+              {{ scanReady ? 'POPULATE ANSWERS' : (isScanningMasterKey ? 'VIEW SCANNING...' : 'SCAN MASTER KEY') }}
             </button>
           </div>
 
@@ -760,25 +766,123 @@
   <!-- Modal Overlay -->
   @if (showModal) {
     <div class="modal-overlay" (click)="modalType !== 'loading' ? closeModal() : null">
-      <div class="modal-content" (click)="$event.stopPropagation()" [class.modal-error]="modalType === 'error'">
-        <div class="modal-icon">
-          @if (modalType === 'loading') {
-            <span class="material-icons-outlined spin-animation" style="color: var(--primary-color);">autorenew</span>
-          } @else {
+      @if (modalType === 'loading') {
+        <div class="modal-content modal-scanning-alive" (click)="$event.stopPropagation()">
+          <div class="alive-scanner-container">
+            <!-- Top Status Bar -->
+            <div class="scanner-top-bar">
+              <div class="scanner-status-pill">
+                <span class="live-pulse-dot"></span>
+                <span class="pill-title">AI VISION SCANNER</span>
+                <span class="pill-divider">•</span>
+                <span class="pill-timer">{{ scanElapsedSeconds }}s</span>
+              </div>
+              <button type="button" class="btn-minimize-icon" (click)="minimizeScan()" title="Minimize to background">
+                <span class="material-icons-outlined">remove</span>
+              </button>
+            </div>
+
+            <!-- Interactive Holographic Document & Laser Viewport -->
+            <div class="scanner-viewport">
+              <span class="reticle top-left"></span>
+              <span class="reticle top-right"></span>
+              <span class="reticle bottom-left"></span>
+              <span class="reticle bottom-right"></span>
+
+              <div class="sheet-preview-wrapper" [class.has-image]="!!scannedPreviewUrl">
+                @if (scannedPreviewUrl) {
+                  <img [src]="scannedPreviewUrl" class="real-sheet-preview" alt="Scanning Document" />
+                  <div class="real-sheet-overlay"></div>
+                } @else {
+                  <div class="sheet-mockup">
+                    <div class="sheet-head">
+                      <div class="sheet-badge"></div>
+                      <div class="sheet-lines">
+                        <div class="s-line full"></div>
+                        <div class="s-line half"></div>
+                      </div>
+                      <div class="sheet-code"></div>
+                    </div>
+
+                    <div class="sheet-lrn-row">
+                      @for (b of [1,2,3,4,5,6]; track b) {
+                        <div class="lrn-box"></div>
+                      }
+                    </div>
+
+                    <div class="sheet-bubble-cols">
+                      @for (col of [1,2,3]; track col) {
+                        <div class="sheet-col">
+                          @for (row of [1,2,3,4]; track row) {
+                            <div class="bubble-row">
+                              <span class="b-dot" [class.shaded]="(row + col) % 3 === 0"></span>
+                              <span class="b-dot" [class.shaded]="(row * col) % 4 === 1"></span>
+                              <span class="b-dot" [class.shaded]="(row + col) % 5 === 2"></span>
+                              <span class="b-dot" [class.shaded]="col % 2 === 0 && row === 2"></span>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Animated Moving Laser Scan Line -->
+              <div class="laser-scanner-beam">
+                <div class="laser-light"></div>
+                <div class="laser-glow-spread"></div>
+              </div>
+            </div>
+
+            <!-- Dynamic Telemetry & Phases -->
+            <div class="scanner-phase-info">
+              <div class="phase-header">
+                <div class="phase-icon-badge">
+                  <span class="material-icons-outlined phase-icon">{{ scanPhases[scanCurrentPhaseIndex].icon }}</span>
+                </div>
+                <div class="phase-text-block">
+                  <h4 class="phase-main-title">{{ scanPhases[scanCurrentPhaseIndex].title }}</h4>
+                  <p class="phase-sub-title">{{ scanPhases[scanCurrentPhaseIndex].desc }}</p>
+                </div>
+              </div>
+
+              <!-- Flowing Indeterminate Progress Bar -->
+              <div class="scanner-progress-track">
+                <div class="scanner-progress-bar"></div>
+              </div>
+
+              <!-- Step Indicators -->
+              <div class="scanner-steps-row">
+                @for (p of scanPhases; track p.title; let idx = $index) {
+                  <div class="scanner-step-node"
+                       [class.completed]="idx < scanCurrentPhaseIndex"
+                       [class.active]="idx === scanCurrentPhaseIndex">
+                    <span class="step-dot"></span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="modal-actions-alive">
+              <button type="button" class="btn-modal-minimize" (click)="minimizeScan()">
+                <span class="material-icons-outlined">minimize</span>
+                Minimize & Continue in Background
+              </button>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <!-- Standard modal for success/error -->
+        <div class="modal-content" (click)="$event.stopPropagation()" [class.modal-error]="modalType === 'error'">
+          <div class="modal-icon">
             <span class="material-icons-outlined">
               {{ modalType === 'success' ? 'check_circle' : 'error_outline' }}
             </span>
-          }
-        </div>
-        <h3 class="modal-title">{{ modalTitle }}</h3>
-        <p class="modal-message">{{ modalMessage }}</p>
-        <div class="modal-actions">
-          @if (modalType === 'loading') {
-            <button class="btn-modal-action btn-outline" (click)="minimizeScan()">
-              <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">minimize</span>
-              Minimize
-            </button>
-          } @else {
+          </div>
+          <h3 class="modal-title">{{ modalTitle }}</h3>
+          <p class="modal-message">{{ modalMessage }}</p>
+          <div class="modal-actions">
             @if (showGeneratePdf) {
               <button class="btn-modal-action btn-outline" (click)="printExam()">
                 <span class="material-icons-outlined" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">print</span>
@@ -786,9 +890,9 @@
               </button>
             }
             <button class="btn-modal-action" (click)="closeModal()">{{ modalType === 'success' ? 'Done' : 'Got it' }}</button>
-          }
+          </div>
         </div>
-      </div>
+      }
     </div>
   }
 

@@ -67,27 +67,98 @@
 
   <!-- Processing State -->
   @if (isLoading) {
-  <div class="state-card loading-state">
-    <div class="loading-visual">
-      <div class="pulse-ring"></div>
-      <span class="material-icons-outlined loading-icon">document_scanner</span>
-    </div>
-    <h3>Analyzing {{ pageCount > 1 ? pageCount + ' Pages' : 'Document' }}...</h3>
-    <p>Our system is reading bubbles and handwriting from your exam {{ pageCount > 1 ? 'sheets' : 'sheet' }}</p>
-    <div class="loading-steps">
-      <div class="step active">
-        <span class="material-icons-outlined">image</span>
-        Uploading
+  <div class="state-card loading-state alive-scan-card">
+    <div class="alive-scanner-container scan-results-version">
+      <!-- Top Status Bar -->
+      <div class="scanner-top-bar">
+        <div class="scanner-status-pill">
+          <span class="live-pulse-dot"></span>
+          <span class="pill-title">AI VISION OCR • {{ pageCount > 1 ? pageCount + ' PAGES' : '1 PAGE' }}</span>
+          <span class="pill-divider">•</span>
+          <span class="pill-timer">{{ scanElapsedSeconds }}s</span>
+        </div>
       </div>
-      <div class="step-line"></div>
-      <div class="step active">
-        <span class="material-icons-outlined">psychology</span>
-        Processing..
+
+      <!-- Holographic Document & Laser Viewport -->
+      <div class="scanner-viewport large-viewport">
+        <span class="reticle top-left"></span>
+        <span class="reticle top-right"></span>
+        <span class="reticle bottom-left"></span>
+        <span class="reticle bottom-right"></span>
+
+        <div class="sheet-preview-wrapper" [class.has-image]="imagePreviewUrls.length > 0">
+          @if (imagePreviewUrls.length > 0) {
+            <img [src]="imagePreviewUrls[0]" class="real-sheet-preview" alt="Student Sheet Scanning" />
+            <div class="real-sheet-overlay"></div>
+          } @else {
+            <div class="sheet-mockup">
+              <div class="sheet-head">
+                <div class="sheet-badge"></div>
+                <div class="sheet-lines">
+                  <div class="s-line full"></div>
+                  <div class="s-line half"></div>
+                </div>
+                <div class="sheet-code"></div>
+              </div>
+
+              <div class="sheet-lrn-row">
+                @for (b of [1,2,3,4,5,6]; track b) {
+                  <div class="lrn-box"></div>
+                }
+              </div>
+
+              <div class="sheet-bubble-cols">
+                @for (col of [1,2,3]; track col) {
+                  <div class="sheet-col">
+                    @for (row of [1,2,3,4]; track row) {
+                      <div class="bubble-row">
+                        <span class="b-dot" [class.shaded]="(row + col) % 3 === 0"></span>
+                        <span class="b-dot" [class.shaded]="(row * col) % 4 === 1"></span>
+                        <span class="b-dot" [class.shaded]="(row + col) % 5 === 2"></span>
+                        <span class="b-dot" [class.shaded]="col % 2 === 0 && row === 2"></span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Animated Moving Laser Scan Line -->
+        <div class="laser-scanner-beam">
+          <div class="laser-light"></div>
+          <div class="laser-glow-spread"></div>
+        </div>
       </div>
-      <div class="step-line"></div>
-      <div class="step">
-        <span class="material-icons-outlined">fact_check</span>
-        Done
+
+      <!-- Dynamic Telemetry & Phases -->
+      <div class="scanner-phase-info">
+        <div class="phase-header">
+          <div class="phase-icon-badge">
+            <span class="material-icons-outlined phase-icon">{{ scanPhases[scanCurrentPhaseIndex].icon }}</span>
+          </div>
+          <div class="phase-text-block">
+            <h4 class="phase-main-title">{{ scanPhases[scanCurrentPhaseIndex].title }}</h4>
+            <p class="phase-sub-title">{{ scanPhases[scanCurrentPhaseIndex].desc }}</p>
+          </div>
+        </div>
+
+        <!-- Flowing Indeterminate Progress Bar -->
+        <div class="scanner-progress-track">
+          <div class="scanner-progress-bar"></div>
+        </div>
+
+        <!-- Step Indicators -->
+        <div class="scanner-steps-row">
+          @for (p of scanPhases; track p.title; let idx = $index) {
+            <div class="scanner-step-node"
+                 [class.completed]="idx < scanCurrentPhaseIndex"
+                 [class.active]="idx === scanCurrentPhaseIndex">
+              <span class="step-dot"></span>
+            </div>
+          }
+        </div>
       </div>
     </div>
   </div>

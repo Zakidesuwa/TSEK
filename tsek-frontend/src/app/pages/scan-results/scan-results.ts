@@ -58,6 +58,46 @@ export class ScanResults implements OnInit, OnDestroy {
   gradeResult: any = null;
   selectedPreviewIndex = 0;
   
+  // Dynamic Live Scanner Animation State
+  scanElapsedSeconds = 0;
+  scanCurrentPhaseIndex = 0;
+  private scanTimerInterval: any = null;
+  readonly scanPhases = [
+    { title: 'Uploading Answer Sheet', desc: 'Enhancing document resolution & verifying page integrity', icon: 'cloud_upload' },
+    { title: 'Aligning OMR Template', desc: 'Detecting corner markers & LRN identifier boxes', icon: 'crop_free' },
+    { title: 'Scanning Shaded Bubbles', desc: 'Measuring optical density & identifying double shades', icon: 'radio_button_checked' },
+    { title: 'Transcribing Handwriting', desc: 'Reading student names and identification responses', icon: 'edit_note' },
+    { title: 'Finalizing Evaluation', desc: 'Validating data points & preparing grading view', icon: 'auto_awesome' }
+  ];
+
+  startScanTimer() {
+    this.stopScanTimer();
+    this.scanElapsedSeconds = 0;
+    this.scanCurrentPhaseIndex = 0;
+    this.scanTimerInterval = setInterval(() => {
+      this.scanElapsedSeconds++;
+      if (this.scanElapsedSeconds < 4) {
+        this.scanCurrentPhaseIndex = 0;
+      } else if (this.scanElapsedSeconds < 10) {
+        this.scanCurrentPhaseIndex = 1;
+      } else if (this.scanElapsedSeconds < 20) {
+        this.scanCurrentPhaseIndex = 2;
+      } else if (this.scanElapsedSeconds < 30) {
+        this.scanCurrentPhaseIndex = 3;
+      } else {
+        this.scanCurrentPhaseIndex = 4;
+      }
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  stopScanTimer() {
+    if (this.scanTimerInterval) {
+      clearInterval(this.scanTimerInterval);
+      this.scanTimerInterval = null;
+    }
+  }
+
   // Webcam scanner state
   showWebcamModal = false;
   videoStream: MediaStream | null = null;
@@ -120,6 +160,7 @@ export class ScanResults implements OnInit, OnDestroy {
 
     this.isStaging = false;
     this.isLoading = true;
+    this.startScanTimer();
 
     this.imagePreviewUrls = [...this.stagedPreviewUrls];
     this.pageCount = this.stagedFiles.length;
@@ -128,6 +169,7 @@ export class ScanResults implements OnInit, OnDestroy {
     // Send all images in one request
     this.scanService.scanImages(this.stagedFiles).subscribe({
       next: (response) => {
+        this.stopScanTimer();
         this.isLoading = false;
         this.rawText = response.rawText || { error: 'No data returned' };
         this.scannedImageUrl = response.imageUrl || null;
@@ -138,6 +180,7 @@ export class ScanResults implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
+        this.stopScanTimer();
         this.isLoading = false;
         const backendMessage = err.error?.error || err.error?.message || 'Failed to process image.';
         this.error = `Backend Error: ${backendMessage}`;
@@ -451,6 +494,7 @@ export class ScanResults implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.stopScanTimer();
     if (this.videoStream) {
       this.videoStream.getTracks().forEach(track => track.stop());
     }

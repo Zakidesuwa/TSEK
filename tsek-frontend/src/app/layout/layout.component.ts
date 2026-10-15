@@ -66,7 +66,11 @@ export class LayoutComponent {
   }
 
   onGlobalWidgetClick() {
-    if (this.scanService.scanReady.value || this.scanService.scanError.value) {
+    if (this.scanService.scanReady.value) {
+      this.scanService.triggerPopulateAnswers();
+      this.router.navigate(['/generate-exam']);
+    } else if (this.scanService.isScanningMasterKey.value || this.scanService.scanError.value) {
+      this.scanService.triggerOpenScanModal();
       this.router.navigate(['/generate-exam']);
     }
   }

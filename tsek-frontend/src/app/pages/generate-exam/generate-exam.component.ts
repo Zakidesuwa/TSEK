@@ -100,6 +100,47 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   isScanningMasterKey = false;
   scanReady = false;
   parsedScanAnswers: any = null;
+  scannedPreviewUrl: string | null = null;
+
+  // Dynamic Live Scanner Animation State
+  scanElapsedSeconds = 0;
+  scanCurrentPhaseIndex = 0;
+  private scanTimerInterval: any = null;
+  readonly scanPhases = [
+    { title: 'Uploading Master Key', desc: 'Pre-processing resolution & alignment markers', icon: 'cloud_upload' },
+    { title: 'Locating OMR Grid', desc: 'Detecting bubble matrices & section divisions', icon: 'crop_free' },
+    { title: 'Reading Optical Marks', desc: 'Analyzing shaded bubbles across all sections', icon: 'radio_button_checked' },
+    { title: 'Transcribing Identifications', desc: 'Digitizing handwritten items & answer texts', icon: 'edit_note' },
+    { title: 'Finalizing Answer Key', desc: 'Validating multiple choices & building structure', icon: 'auto_awesome' }
+  ];
+
+  startScanTimer() {
+    this.stopScanTimer();
+    this.scanElapsedSeconds = 0;
+    this.scanCurrentPhaseIndex = 0;
+    this.scanTimerInterval = setInterval(() => {
+      this.scanElapsedSeconds++;
+      if (this.scanElapsedSeconds < 4) {
+        this.scanCurrentPhaseIndex = 0;
+      } else if (this.scanElapsedSeconds < 10) {
+        this.scanCurrentPhaseIndex = 1;
+      } else if (this.scanElapsedSeconds < 20) {
+        this.scanCurrentPhaseIndex = 2;
+      } else if (this.scanElapsedSeconds < 30) {
+        this.scanCurrentPhaseIndex = 3;
+      } else {
+        this.scanCurrentPhaseIndex = 4;
+      }
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  stopScanTimer() {
+    if (this.scanTimerInterval) {
+      clearInterval(this.scanTimerInterval);
+      this.scanTimerInterval = null;
+    }
+  }
 
   modalTitle = '';
   modalMessage = '';
@@ -123,6 +164,11 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
   closeModal() {
     this.showModal = false;
+    this.stopScanTimer();
+    if (this.scannedPreviewUrl) {
+      URL.revokeObjectURL(this.scannedPreviewUrl);
+      this.scannedPreviewUrl = null;
+    }
     if (this.modalType === 'success' && this.modalMessage.includes('finalized')) {
       // Clear auto-saved draft since exam has been finalized
       this.clearDraftStorage();
@@ -236,6 +282,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
     this.scanSub.add(this.scanService.scanError.subscribe(err => {
       if (err && this.showModal && this.modalType === 'loading') {
+        this.stopScanTimer();
         this.modalTitle = 'Scan Failed';
         this.modalMessage = err;
         this.modalType = 'error';
@@ -243,6 +290,19 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     }));
+
+    // Listen for requests from the global floating widget
+    this.scanSub.add(this.scanService.requestOpenScanModal.subscribe(() => {
+      this.reopenScanModal();
+    }));
+
+    this.scanSub.add(this.scanService.requestPopulateAnswers.subscribe(() => {
+      this.applyScannedAnswers();
+    }));
+
+    if (this.scanService.isScanningMasterKey.value) {
+      this.startScanTimer();
+    }
 
     // Restore config if active scan
     if (this.scanService.isScanningMasterKey.value || this.scanService.scanReady.value) {
@@ -259,7 +319,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     }
 
     // If we land here and scan is already ready from a global click:
-    if (this.scanService.scanReady.value && this.scanService.showGlobalWidget.value && this.currentStep === 'configure') {
+    if (this.scanService.scanReady.value) {
        this.parsedScanAnswers = this.scanService.parsedScanAnswers.value;
        this.applyScannedAnswers();
     }
@@ -276,6 +336,11 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.stopScanTimer();
+    if (this.scannedPreviewUrl) {
+      URL.revokeObjectURL(this.scannedPreviewUrl);
+      this.scannedPreviewUrl = null;
+    }
     this.scanSub.unsubscribe();
     this.cancelPendingBubbleClick();
     if (this.draftSaveTimeout) {
@@ -1489,6 +1554,12 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     const files = Array.from(event.target.files) as File[];
     if (files.length === 0) return;
 
+    if (this.scannedPreviewUrl) {
+      URL.revokeObjectURL(this.scannedPreviewUrl);
+    }
+    this.scannedPreviewUrl = URL.createObjectURL(files[0]);
+    this.startScanTimer();
+
     // Cache the form state globally so we can restore it if the user navigates away and comes back
     this.scanService.examConfigCache = {
       examTitle: this.examTitle,
@@ -1512,14 +1583,57 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     event.target.value = '';
   }
 
+  reopenScanModal() {
+    if (this.isScanningMasterKey || this.scanService.isScanningMasterKey.value) {
+      this.modalTitle = 'Scanning Master Key...';
+      this.modalMessage = 'Please wait while the AI analyzes the answer sheet.';
+      this.modalType = 'loading';
+      this.showModal = true;
+      this.startScanTimer();
+      this.scanService.showGlobalWidget.next(false);
+      this.cdr.detectChanges();
+    } else if (this.scanReady || this.scanService.scanReady.value) {
+      this.applyScannedAnswers();
+    } else if (this.scanService.scanError.value) {
+      this.modalTitle = 'Scan Failed';
+      this.modalMessage = this.scanService.scanError.value;
+      this.modalType = 'error';
+      this.showGeneratePdf = false;
+      this.showModal = true;
+      this.scanService.showGlobalWidget.next(false);
+      this.cdr.detectChanges();
+    }
+  }
+
   applyScannedAnswers() {
-    if (this.parsedScanAnswers) {
-      this.autoconfigureFromMasterKey(this.parsedScanAnswers);
+    this.stopScanTimer();
+    if (this.scannedPreviewUrl) {
+      URL.revokeObjectURL(this.scannedPreviewUrl);
+      this.scannedPreviewUrl = null;
+    }
+    const answers = this.parsedScanAnswers || this.scanService.parsedScanAnswers.value;
+    if (answers) {
+      this.parsedScanAnswers = answers;
+
+      // Restore cached config to guarantee validation passes when moving to Answer Key
+      if (this.scanService.examConfigCache) {
+        const cache = this.scanService.examConfigCache;
+        if (!this.examTitle || this.examTitle.trim() === '') this.examTitle = cache.examTitle;
+        if (cache.paperSize) this.paperSize = cache.paperSize;
+        if (cache.examDate) this.examDate = cache.examDate;
+        if (cache.numberOfChoices) this.numberOfChoices = cache.numberOfChoices;
+        if ((!this.selectedClassIds || this.selectedClassIds.length === 0) && cache.selectedClassIds) {
+          this.selectedClassIds = [...cache.selectedClassIds];
+        }
+        if (cache.sections) this.sections = JSON.parse(JSON.stringify(cache.sections));
+        if (cache.savedPoints) this.savedPoints = JSON.parse(JSON.stringify(cache.savedPoints));
+      }
+
+      this.autoconfigureFromMasterKey(answers);
       this.proceedToAnswerKey();
-      this.populateAnswersFromMasterKey(this.parsedScanAnswers);
-      
+      this.populateAnswersFromMasterKey(answers);
       this.scanService.clearGlobalScanState();
-      this.showModal = false;
+      this.cdr.detectChanges();
     }
   }
 
