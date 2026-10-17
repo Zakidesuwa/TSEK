@@ -237,26 +237,27 @@ export class Exams implements OnInit {
     this.selectedExamFormat = null;
   }
 
-  getGridBlocks(count: number, type: 'mc' | 'id') {
+  getGridBlocks(count: number, type: 'mc' | 'id', startItem: number = 1) {
     const itemsPerColumn = type === 'mc' ? 10 : 15;
     const columnsPerBlock = type === 'mc' ? 3 : 2;
 
     const blocks: number[][][] = [];
-    let currentItem = 1;
+    let currentItem = startItem;
+    const endItem = startItem + count - 1;
 
-    while (currentItem <= count) {
+    while (currentItem <= endItem) {
       const block: number[][] = [];
       for (let c = 0; c < columnsPerBlock; c++) {
         const column: number[] = [];
         for (let r = 0; r < itemsPerColumn; r++) {
-          if (currentItem <= count) {
+          if (currentItem <= endItem) {
             column.push(currentItem);
             currentItem++;
           }
         }
         if (column.length > 0) block.push(column);
       }
-      blocks.push(block);
+      if (block.length > 0) blocks.push(block);
     }
     return blocks;
   }
@@ -272,10 +273,17 @@ export class Exams implements OnInit {
     const enumSection = this.selectedExamFormat.config.find(s => s.key === 'enumeration');
     const tfSection = this.selectedExamFormat.config.find(s => s.key === 'trueOrFalse');
 
-    const mcBlocks = mcSection && mcSection.enabled ? this.getGridBlocks(mcSection.selected, 'mc') : [];
-    const idBlocks = idSection && idSection.enabled ? this.getGridBlocks(idSection.selected, 'id') : [];
-    const enumBlocks = enumSection && enumSection.enabled ? this.getGridBlocks(enumSection.selected, 'id') : [];
-    const tfBlocks = tfSection && tfSection.enabled ? this.getGridBlocks(tfSection.selected, 'mc') : [];
+    let currentNum = 1;
+    const mcBlocks = mcSection && mcSection.enabled ? this.getGridBlocks(mcSection.selected, 'mc', currentNum) : [];
+    if (mcSection && mcSection.enabled) currentNum += mcSection.selected;
+
+    const idBlocks = idSection && idSection.enabled ? this.getGridBlocks(idSection.selected, 'id', currentNum) : [];
+    if (idSection && idSection.enabled) currentNum += idSection.selected;
+
+    const enumBlocks = enumSection && enumSection.enabled ? this.getGridBlocks(enumSection.selected, 'id', currentNum) : [];
+    if (enumSection && enumSection.enabled) currentNum += enumSection.selected;
+
+    const tfBlocks = tfSection && tfSection.enabled ? this.getGridBlocks(tfSection.selected, 'mc', currentNum) : [];
 
     let bodyHtml = '';
 

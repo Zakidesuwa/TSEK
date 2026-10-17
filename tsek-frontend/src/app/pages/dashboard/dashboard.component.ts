@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink, Router } from '@angular/router';
 import { ScanService } from '../../core/services/scan';
 import { environment } from '../../../environments/environment';
 import { driver, Driver } from 'driver.js';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 interface StatCard {
   title: string;
@@ -30,13 +31,37 @@ interface ClassBlock {
   standalone: true,
   imports: [RouterLink],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrl: './dashboard.component.css',
+  animations: [
+    trigger('modalFadeAnim', [
+      transition(':enter', [
+        style({ opacity: 0 }),
+        animate('250ms ease-out', style({ opacity: 1 }))
+      ]),
+      transition(':leave', [
+        animate('200ms ease-in', style({ opacity: 0 }))
+      ])
+    ]),
+    trigger('modalScaleAnim', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.95) translateY(10px)' }),
+        animate('350ms cubic-bezier(0.175, 0.885, 0.32, 1.1)', style({ opacity: 1, transform: 'scale(1) translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ opacity: 0, transform: 'scale(0.95) translateY(10px)' }))
+      ])
+    ])
+  ]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
   router = inject(Router);
   scanService = inject(ScanService);
+
+  showScanSourceModal = false;
+  showWebcamModal = false;
+  videoStream: MediaStream | null = null;
 
   statCards: StatCard[] = [];
   recentExams: RecentExam[] = [];
@@ -224,11 +249,97 @@ export class DashboardComponent implements OnInit {
     return p;
   }
 
+  openScanSourceModal() {
+    this.showScanSourceModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeScanSourceModal() {
+    this.showScanSourceModal = false;
+    this.cdr.detectChanges();
+  }
+
+  isMobileDevice(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+  }
+
+  chooseCamera(cameraInput: HTMLInputElement) {
+    this.closeScanSourceModal();
+    if (this.isMobileDevice()) {
+      cameraInput.click();
+    } else {
+      this.openWebcamModal();
+    }
+  }
+
+  chooseGallery(galleryInput: HTMLInputElement) {
+    this.closeScanSourceModal();
+    galleryInput.click();
+  }
+
+  openWebcamModal() {
+    this.showWebcamModal = true;
+    this.cdr.detectChanges();
+    setTimeout(async () => {
+      try {
+        const videoEl = document.getElementById('dashboard-webcam-video') as HTMLVideoElement;
+        this.videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        if (videoEl && this.videoStream) {
+          videoEl.srcObject = this.videoStream;
+        }
+      } catch (err) {
+        console.error('Error accessing webcam on dashboard:', err);
+        alert('Could not access camera. Please ensure camera permissions are granted or upload your file using Gallery.');
+        this.closeWebcamModal();
+      }
+    }, 100);
+  }
+
+  closeWebcamModal() {
+    this.showWebcamModal = false;
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach(track => track.stop());
+      this.videoStream = null;
+    }
+    this.cdr.detectChanges();
+  }
+
+  captureWebcamSnapshot() {
+    const videoEl = document.getElementById('dashboard-webcam-video') as HTMLVideoElement;
+    if (!videoEl) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 1280;
+    canvas.height = videoEl.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `dashboard-scan-${Date.now()}.png`, { type: 'image/png' });
+          this.scanService.setPendingFiles([file]);
+          this.closeWebcamModal();
+          this.router.navigate(['/scan-results']);
+        }
+      }, 'image/png');
+    }
+  }
+
   onFileSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
     if (files.length > 0) {
       this.scanService.setPendingFiles(files);
+      event.target.value = '';
       this.router.navigate(['/scan-results']);
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach(track => track.stop());
+      this.videoStream = null;
     }
   }
 }

@@ -162,9 +162,10 @@ router.delete('/api/exams/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Stream student scanned exam image on-demand (supports Base64 in DB and legacy URL redirects)
+// Stream student scanned exam image on-demand (supports Base64 in DB, JSON array multi-page, and legacy URL redirects)
 router.get('/api/exams/:examId/students/:studentId/image', authMiddleware, async (req, res) => {
   const { examId, studentId } = req.params;
+  const pageIndex = Math.max(0, parseInt(req.query.page || '0', 10));
   try {
     const result = await db.query(
       'SELECT scanned_image_url FROM exam_results WHERE exam_id = $1 AND student_id = $2',
@@ -175,10 +176,25 @@ router.get('/api/exams/:examId/students/:studentId/image', authMiddleware, async
       return res.status(404).send('Image not found');
     }
 
-    const base64Str = result.rows[0].scanned_image_url;
+    let base64Str = result.rows[0].scanned_image_url;
+
+    // Check if the stored string is a JSON array of multiple pages
+    if (typeof base64Str === 'string' && base64Str.trim().startsWith('[')) {
+      try {
+        const pages = JSON.parse(base64Str);
+        if (Array.isArray(pages) && pages.length > 0) {
+          if (req.query.info === 'true') {
+            return res.json({ totalPages: pages.length });
+          }
+          base64Str = pages[pageIndex] || pages[0];
+        }
+      } catch (e) {
+        console.error('Failed to parse multi-page JSON in image streaming', e);
+      }
+    }
 
     // Check if the stored string is a Base64 Data URI
-    if (base64Str.startsWith('data:')) {
+    if (base64Str && base64Str.startsWith('data:')) {
       const matches = base64Str.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.*)$/);
       if (matches) {
         const mimeType = matches[1];

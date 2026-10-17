@@ -43,8 +43,7 @@
   </div>
 
   <!-- TSEK NOW Mobile Button (Hidden on Desktop) -->
-  <input type="file" accept="image/*" capture="environment" multiple #fileInputMobile class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
-  <button class="tsek-now-btn mobile-only" (click)="fileInputMobile.click()">
+  <button class="tsek-now-btn mobile-only" (click)="openScanSourceModal()">
     <span class="material-icons-outlined">camera_alt</span>
     TSEK NOW
   </button>
@@ -184,14 +183,98 @@
       </div>
 
       <!-- TSEK NOW Desktop Button -->
-      <input type="file" accept="image/*" multiple #fileInputDesktop class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
-      <button class="tsek-now-btn sidebar-btn" (click)="fileInputDesktop.click()">
+      <button class="tsek-now-btn sidebar-btn" (click)="openScanSourceModal()">
         <span class="material-icons-outlined">camera_alt</span>
         TSEK NOW
       </button>
     </div>
   </div>
 </div>
+
+<!-- Hidden inputs for Camera vs Gallery scan triggering -->
+<input type="file" accept="image/*" capture="environment" #dashboardCameraInput class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+<input type="file" accept="image/*" multiple #dashboardGalleryInput class="hidden-file-input" (change)="onFileSelected($event)" style="display: none;">
+
+<!-- ===== SCAN SOURCE SELECTOR MODAL ===== -->
+@if (showScanSourceModal) {
+<div class="scan-source-overlay" @modalFadeAnim (click)="closeScanSourceModal()">
+  <div class="scan-source-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="scan-source-header">
+      <div class="scan-source-icon-badge">
+        <span class="material-icons-outlined">document_scanner</span>
+      </div>
+      <div class="scan-source-title-group">
+        <h2 class="scan-source-title">TSEK Exam Paper</h2>
+        <p class="scan-source-subtitle">Choose how you want to capture or upload the answer sheet</p>
+      </div>
+      <button class="scan-source-close-btn" (click)="closeScanSourceModal()" title="Close">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="scan-options-grid">
+      <!-- Camera Option -->
+      <button class="scan-option-card" (click)="chooseCamera(dashboardCameraInput)" type="button">
+        <div class="option-icon-circle camera-circle">
+          <span class="material-icons-outlined">photo_camera</span>
+        </div>
+        <div class="option-info">
+          <span class="option-title">Camera</span>
+          <span class="option-desc">Take a photo using your camera or webcam</span>
+        </div>
+        <span class="material-icons-outlined option-arrow">arrow_forward</span>
+      </button>
+
+      <!-- Gallery / Files Option -->
+      <button class="scan-option-card" (click)="chooseGallery(dashboardGalleryInput)" type="button">
+        <div class="option-icon-circle gallery-circle">
+          <span class="material-icons-outlined">photo_library</span>
+        </div>
+        <div class="option-info">
+          <span class="option-title">Gallery / Files</span>
+          <span class="option-desc">Choose existing photo(s) or files from device</span>
+        </div>
+        <span class="material-icons-outlined option-arrow">arrow_forward</span>
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ===== DASHBOARD WEBCAM MODAL ===== -->
+@if (showWebcamModal) {
+<div class="scan-source-overlay" @modalFadeAnim (click)="closeWebcamModal()">
+  <div class="webcam-modal-container" @modalScaleAnim (click)="$event.stopPropagation()">
+    <div class="scan-source-header">
+      <div class="scan-source-icon-badge camera-badge">
+        <span class="material-icons-outlined">photo_camera</span>
+      </div>
+      <div class="scan-source-title-group">
+        <h2 class="scan-source-title">Capture Answer Sheet</h2>
+        <p class="scan-source-subtitle">Align the exam page inside the camera frame and click "Take Snapshot"</p>
+      </div>
+      <button class="scan-source-close-btn" (click)="closeWebcamModal()" title="Close">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="webcam-viewport-wrapper">
+      <video id="dashboard-webcam-video" autoplay playsinline></video>
+      <div class="webcam-guide-overlay">
+        <span class="webcam-guide-hint">Align answer sheet within frame</span>
+      </div>
+    </div>
+
+    <div class="webcam-modal-actions">
+      <button class="btn-cancel" (click)="closeWebcamModal()" type="button">Cancel</button>
+      <button class="btn-snapshot" (click)="captureWebcamSnapshot()" type="button">
+        <span class="material-icons-outlined">camera</span>
+        Take Snapshot
+      </button>
+    </div>
+  </div>
+</div>
+}
 
 @if (showTourSkipModal) {
   <div class="tour-modal-overlay" (click)="continueTour()">

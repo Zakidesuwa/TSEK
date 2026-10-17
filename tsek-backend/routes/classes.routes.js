@@ -102,14 +102,16 @@ router.get('/api/classes/:id/students', authMiddleware, async (req, res) => {
         const { maxScore } = examMaxScores[i];
 
         const resultRes = await db.query(`
-          SELECT score, (scanned_image_url IS NOT NULL AND scanned_image_url != '') as has_image FROM exam_results WHERE exam_id = $1 AND student_id = $2
+          SELECT score, (scanned_image_url IS NOT NULL AND scanned_image_url != '') as has_image, page_count FROM exam_results WHERE exam_id = $1 AND student_id = $2
         `, [exam.id, student.id]);
         
         if (resultRes.rows.length > 0) {
           const hasImage = resultRes.rows[0].has_image;
+          const pageCount = resultRes.rows[0].page_count || 1;
           scores.push({
             value: `${resultRes.rows[0].score}/${maxScore}`,
-            imageUrl: hasImage ? `/api/exams/${exam.id}/students/${student.id}/image` : null
+            imageUrl: hasImage ? `/api/exams/${exam.id}/students/${student.id}/image` : null,
+            pageCount: pageCount
           });
         } else {
           scores.push({

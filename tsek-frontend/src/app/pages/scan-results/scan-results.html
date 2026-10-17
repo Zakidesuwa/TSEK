@@ -1,7 +1,11 @@
 <div class="scan-page">
-  <!-- Hidden file inputs -->
-  <input type="file" accept="image/*" multiple #scanInput class="hidden-input" (change)="onNewFileSelected($event)" style="display: none;">
-  <input type="file" accept="image/*" multiple #addMoreInput class="hidden-input" (change)="onAddMoreFiles($event)" style="display: none;">
+  <!-- Hidden file inputs for adding a page to staging -->
+  <input type="file" accept="image/*" capture="environment" #addPageCameraInput class="hidden-input" (change)="onAddPageCameraSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" multiple #addPageGalleryInput class="hidden-input" (change)="onAddMoreFiles($event)" style="display: none;">
+
+  <!-- Hidden file inputs for scanning another exam / new student -->
+  <input type="file" accept="image/*" capture="environment" #newScanCameraInput class="hidden-input" (change)="onNewCameraSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" multiple #newScanGalleryInput class="hidden-input" (change)="onNewFileSelected($event)" style="display: none;">
 
   <div class="scan-header">
     <button class="back-btn" (click)="router.navigate(['/dashboard'])">
@@ -38,16 +42,11 @@
         </div>
         }
 
-        <!-- Add More Card -->
-        <button class="staged-file-card add-card" (click)="addMoreInput.click()">
+        <!-- Add Page Card (Opens Source Selector Modal) -->
+        <button class="staged-file-card add-card" (click)="openScanSourceModal(true)" type="button">
           <span class="material-icons-outlined add-icon">add_photo_alternate</span>
           <span class="add-label">Add Page</span>
-        </button>
-
-        <!-- Webcam Capture Card -->
-        <button class="staged-file-card add-card camera-card" (click)="openWebcamModal()" style="border-color: #3b82f6; background: #eff6ff; color: #2563eb;">
-          <span class="material-icons-outlined add-icon" style="color: #2563eb;">photo_camera</span>
-          <span class="add-label">Capture via Webcam</span>
+          <span class="add-subtext">Camera or Gallery</span>
         </button>
       </div>
 
@@ -263,9 +262,28 @@
           <label class="form-label" for="examSelect">Exam Configuration</label>
           <select class="form-select" id="examSelect" [(ngModel)]="selectedExamId" [disabled]="exams.length === 0">
             @for (exam of exams; track exam.id) {
-            <option [value]="exam.id">{{ exam.name }} ({{ exam.subject }})</option>
+            <option [value]="exam.id">
+              {{ exam.name }} — {{ exam.subject || 'No Class' }} ({{ exam.total_items }} items · {{ exam.date | date:'mediumDate' }})
+            </option>
             }
           </select>
+
+          @if (autoMatchedExam && autoMatchedExam.id === selectedExamId) {
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #1e5a22; font-weight: 500;">
+              <span class="material-icons-outlined" style="font-size: 16px;">auto_awesome</span>
+              <span>Matched from answer sheet: <strong>{{ autoMatchedExam.name }}</strong> ({{ autoMatchedExam.total_items }} items)</span>
+            </div>
+          }
+
+          @if (isItemCountMismatch) {
+            <div style="margin-top: 10px; padding: 10px 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 6px; color: #856404; font-size: 12.5px; display: flex; align-items: flex-start; gap: 8px;">
+              <span class="material-icons-outlined" style="font-size: 18px; color: #856404; flex-shrink: 0;">warning</span>
+              <div>
+                <strong>Format Mismatch Warning:</strong> The selected exam expects <strong>{{ selectedExam.total_items }} items</strong>, but this scanned sheet contains <strong>{{ scannedItemCount }} items</strong>. Please verify you selected the correct exam version.
+              </div>
+            </div>
+          }
+
           @if (exams.length === 0) {
           <p class="no-exams-warning">
             <span class="material-icons-outlined">warning</span>
@@ -500,9 +518,9 @@
           {{ isSavingOverrides ? 'Saving...' : 'Save Overrides' }}
         </button>
       } @else {
-        <button class="btn-primary" (click)="scanInput.click()">
+        <button class="btn-primary" (click)="openScanSourceModal(false)" type="button">
           <span class="material-icons-outlined btn-icon">document_scanner</span>
-          Scan Another
+          TSEK Another
         </button>
       }
     </div>
@@ -573,6 +591,54 @@
           } @else {
             ENROLL STUDENT
           }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ===== SCAN SOURCE SELECTOR MODAL ===== -->
+  @if (showScanSourceModal) {
+  <div class="modal-overlay" @modalFadeAnim (click)="closeScanSourceModal()">
+    <div class="modal-container scan-source-modal-box" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="scan-source-modal-header">
+        <div class="modal-icon-wrapper" style="background: #eef5ed; color: #206a3d;">
+          <span class="material-icons-outlined">document_scanner</span>
+        </div>
+        <div style="flex: 1;">
+          <h2 class="modal-title" style="margin: 0; text-align: left; font-size: 1.25rem;">{{ isAddingPage ? 'Add Exam Page' : 'TSEK Another Exam' }}</h2>
+          <p class="modal-subtitle" style="margin: 4px 0 0 0; font-size: 13px; color: #5d715f; text-align: left;">
+            {{ isAddingPage ? 'Choose how you want to capture the next page' : 'Select how you want to scan the student paper' }}
+          </p>
+        </div>
+        <button class="source-close-btn" (click)="closeScanSourceModal()" title="Close">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="scan-source-options">
+        <!-- Camera Option -->
+        <button class="source-card-btn" (click)="chooseCamera(isAddingPage ? addPageCameraInput : newScanCameraInput)" type="button">
+          <div class="source-icon-circle camera-circle">
+            <span class="material-icons-outlined">photo_camera</span>
+          </div>
+          <div class="source-text-group">
+            <span class="source-option-title">Camera</span>
+            <span class="source-option-desc">Take a photo using camera or live webcam</span>
+          </div>
+          <span class="material-icons-outlined source-arrow">chevron_right</span>
+        </button>
+
+        <!-- Gallery / Files Option -->
+        <button class="source-card-btn" (click)="chooseGallery(isAddingPage ? addPageGalleryInput : newScanGalleryInput)" type="button">
+          <div class="source-icon-circle gallery-circle">
+            <span class="material-icons-outlined">photo_library</span>
+          </div>
+          <div class="source-text-group">
+            <span class="source-option-title">Gallery / Files</span>
+            <span class="source-option-desc">Choose existing photo(s) from device storage</span>
+          </div>
+          <span class="material-icons-outlined source-arrow">chevron_right</span>
         </button>
       </div>
     </div>

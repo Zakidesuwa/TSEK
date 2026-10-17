@@ -45,6 +45,10 @@ export class ScanResults implements OnInit, OnDestroy {
   stagedFiles: File[] = [];
   stagedPreviewUrls: string[] = [];
 
+  // Source selector modal state
+  showScanSourceModal = false;
+  isAddingPage = false;
+
   isLoading = false;
   isGrading = false;
   error: string | null = null;
@@ -54,9 +58,71 @@ export class ScanResults implements OnInit, OnDestroy {
 
   exams: any[] = [];
   selectedExamId: number | null = null;
+  autoMatchedExam: any = null;
   scannedImageUrl: string | null = null;
   gradeResult: any = null;
   selectedPreviewIndex = 0;
+
+  get selectedExam(): any {
+    return this.exams.find(e => e.id === Number(this.selectedExamId)) || null;
+  }
+
+  get scannedItemCount(): number {
+    return this.rawText?.answers ? Object.keys(this.rawText.answers).length : 0;
+  }
+
+  get isItemCountMismatch(): boolean {
+    if (!this.selectedExam || !this.scannedItemCount) return false;
+    return Number(this.selectedExam.total_items) !== this.scannedItemCount;
+  }
+
+  matchExamFromScan() {
+    if (!this.exams || this.exams.length === 0 || !this.rawText) return;
+
+    const scannedTitle = String(this.rawText.examTitle || '').toLowerCase().trim();
+    const scannedAnswers = this.rawText.answers || {};
+    const scannedCount = Object.keys(scannedAnswers).length;
+
+    if (scannedTitle) {
+      // 1. Try finding an exam matching title AND item count
+      const exactMatch = this.exams.find(e => {
+        const title = String(e.name || '').toLowerCase().trim();
+        const matchesTitle = title.includes(scannedTitle) || scannedTitle.includes(title);
+        return matchesTitle && (scannedCount === 0 || Number(e.total_items) === scannedCount);
+      });
+
+      if (exactMatch) {
+        this.selectedExamId = exactMatch.id;
+        this.autoMatchedExam = exactMatch;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // 2. Try matching title alone
+      const titleMatch = this.exams.find(e => {
+        const title = String(e.name || '').toLowerCase().trim();
+        return title.includes(scannedTitle) || scannedTitle.includes(title);
+      });
+
+      if (titleMatch) {
+        this.selectedExamId = titleMatch.id;
+        this.autoMatchedExam = titleMatch;
+        this.cdr.detectChanges();
+        return;
+      }
+    }
+
+    // 3. Fallback: match by item count if only one exam matches that count
+    if (scannedCount > 0) {
+      const countMatches = this.exams.filter(e => Number(e.total_items) === scannedCount);
+      if (countMatches.length === 1) {
+        this.selectedExamId = countMatches[0].id;
+        this.autoMatchedExam = countMatches[0];
+        this.cdr.detectChanges();
+        return;
+      }
+    }
+  }
   
   // Dynamic Live Scanner Animation State
   scanElapsedSeconds = 0;
@@ -177,6 +243,7 @@ export class ScanResults implements OnInit, OnDestroy {
         if (this.rawText && this.rawText.pagesMatchStudent === false) {
           this.error = 'Verification Warning: Scanned pages do not appear to belong to the same student. Please verify handwriting, names, and page order.';
         }
+        this.matchExamFromScan();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -197,6 +264,7 @@ export class ScanResults implements OnInit, OnDestroy {
         if (this.exams.length > 0) {
           this.selectedExamId = this.exams[0].id;
         }
+        this.matchExamFromScan();
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Failed to load exams', err)
@@ -290,34 +358,83 @@ export class ScanResults implements OnInit, OnDestroy {
     this.processBubbles();
   }
 
+  openScanSourceModal(addingPage: boolean = false) {
+    this.isAddingPage = addingPage;
+    this.showScanSourceModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeScanSourceModal() {
+    this.showScanSourceModal = false;
+    this.cdr.detectChanges();
+  }
+
+  isMobileDevice(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+  }
+
+  chooseCamera(cameraInput: HTMLInputElement) {
+    this.closeScanSourceModal();
+    if (this.isMobileDevice()) {
+      cameraInput.click();
+    } else {
+      this.openWebcamModal();
+    }
+  }
+
+  chooseGallery(galleryInput: HTMLInputElement) {
+    this.closeScanSourceModal();
+    galleryInput.click();
+  }
+
+  resetToStaging(files: File[]) {
+    // Reset everything and go back to staging
+    this.gradeResult = null;
+    this.error = null;
+    this.rawText = null;
+    this.isLoading = false;
+    this.overrides.clear();
+    this.overrideSaved = false;
+
+    // Revoke old preview URLs
+    for (const url of this.imagePreviewUrls) {
+      URL.revokeObjectURL(url);
+    }
+    for (const url of this.stagedPreviewUrls) {
+      URL.revokeObjectURL(url);
+    }
+
+    // Reset staged state with new files
+    this.stagedFiles = [];
+    this.stagedPreviewUrls = [];
+    this.imagePreviewUrls = [];
+    this.isStaging = true;
+    this.addStagedFiles(files);
+    this.cdr.detectChanges();
+  }
+
   onNewFileSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
     if (files.length > 0) {
-      // Reset everything and go back to staging
-      this.gradeResult = null;
-      this.error = null;
-      this.rawText = null;
-      this.isLoading = false;
-      this.overrides.clear();
-      this.overrideSaved = false;
-
-      // Revoke old preview URLs
-      for (const url of this.imagePreviewUrls) {
-        URL.revokeObjectURL(url);
-      }
-      for (const url of this.stagedPreviewUrls) {
-        URL.revokeObjectURL(url);
-      }
-
-      // Reset staged state with new files
-      this.stagedFiles = [];
-      this.stagedPreviewUrls = [];
-      this.imagePreviewUrls = [];
-      this.isStaging = true;
-      this.addStagedFiles(files);
-
-      event.target.value = '';
+      this.resetToStaging(files);
     }
+    event.target.value = '';
+  }
+
+  onNewCameraSelected(event: any) {
+    const files = Array.from(event.target.files) as File[];
+    if (files.length > 0) {
+      this.resetToStaging(files);
+    }
+    event.target.value = '';
+  }
+
+  onAddPageCameraSelected(event: any) {
+    const files = Array.from(event.target.files) as File[];
+    if (files.length > 0) {
+      this.addStagedFiles(files);
+    }
+    event.target.value = '';
   }
   // --- Computed properties ---
 
@@ -400,32 +517,32 @@ export class ScanResults implements OnInit, OnDestroy {
     if (!this.gradeResult || !this.hasOverrides) return;
     this.isSavingOverrides = true;
 
+    // Permanently update the gradeResult details first so we can persist the full item breakdown
+    for (const itemKey of this.overrides) {
+      const detail = this.gradeResult.details[itemKey];
+      if (detail) {
+        detail.isCorrect = true;
+        detail.pointsAwarded = detail.maxPoints || 1;
+      }
+    }
+    const finalScore = this.adjustedScore;
+    this.gradeResult.score = finalScore;
+
     // If student was found, update their score in the DB
     const payload = {
       exam_id: this.selectedExamId,
       studentId: this.rawText?.studentId,
-      adjustedScore: this.adjustedScore,
+      adjustedScore: finalScore,
       overriddenItems: Array.from(this.overrides),
-      page_count: this.pageCount
+      details: this.gradeResult.details,
+      page_count: this.pageCount,
+      scanned_image_url: this.scannedImageUrl || null
     };
 
     this.http.post(`${environment.apiUrl}/api/scan/grade/override`, payload).subscribe({
       next: () => {
         this.isSavingOverrides = false;
         this.overrideSaved = true;
-
-        // Capture the adjusted score BEFORE modifying details
-        const finalScore = this.adjustedScore;
-
-        // Permanently update the gradeResult details so the UI stays correct
-        for (const itemKey of this.overrides) {
-          const detail = this.gradeResult.details[itemKey];
-          if (detail) {
-            detail.isCorrect = true;
-            detail.pointsAwarded = detail.maxPoints || 1;
-          }
-        }
-        this.gradeResult.score = finalScore;
         this.overrides.clear();
         this.cdr.detectChanges();
       },
@@ -480,13 +597,11 @@ export class ScanResults implements OnInit, OnDestroy {
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `webcam-scan-${Date.now()}.png`, { type: 'image/png' });
-          this.stagedFiles.push(file);
-          const reader = new FileReader();
-          reader.onload = (e: any) => {
-            this.stagedPreviewUrls.push(e.target.result);
-            this.cdr.detectChanges();
-          };
-          reader.readAsDataURL(file);
+          if (this.isAddingPage) {
+            this.addStagedFiles([file]);
+          } else {
+            this.resetToStaging([file]);
+          }
         }
       }, 'image/png');
     }

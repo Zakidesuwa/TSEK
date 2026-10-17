@@ -110,7 +110,7 @@
                               <button
                                 type="button"
                                 class="score-badge clickable"
-                                (click)="viewScan(score.imageUrl)"
+                                (click)="viewScan(score.imageUrl, score.pageCount || 1)"
                                 title="Click to view scanned exam image">
                                 <span class="material-icons-outlined score-icon">visibility</span>
                                 {{ score.value }}
@@ -198,11 +198,28 @@
 @if (showScanModal && selectedScanUrl) {
 <div class="modal-overlay" (click)="closeScanModal()">
   <div class="modal-container scan-modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Scanned Exam Page</h3>
-      <button class="close-btn" (click)="closeScanModal()">
-        <span class="material-icons-outlined">close</span>
-      </button>
+    <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <h3 style="margin: 0;">Scanned Exam Paper</h3>
+        @if (totalScanPages > 1) {
+          <span class="page-badge-counter" style="background: #eef2ed; color: #206a3d; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+            Page {{ currentScanPage + 1 }} of {{ totalScanPages }}
+          </span>
+        }
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        @if (totalScanPages > 1) {
+          <button class="btn-outline" (click)="prevScanPage()" [disabled]="currentScanPage === 0" style="padding: 4px 10px; font-size: 12px; display: flex; align-items: center; gap: 2px; border: 1px solid #c2d6be; border-radius: 6px; background: #fff; cursor: pointer;" [style.opacity]="currentScanPage === 0 ? '0.5' : '1'">
+            <span class="material-icons-outlined" style="font-size: 16px;">chevron_left</span> Prev
+          </button>
+          <button class="btn-outline" (click)="nextScanPage()" [disabled]="currentScanPage >= totalScanPages - 1" style="padding: 4px 10px; font-size: 12px; display: flex; align-items: center; gap: 2px; border: 1px solid #c2d6be; border-radius: 6px; background: #fff; cursor: pointer;" [style.opacity]="currentScanPage >= totalScanPages - 1 ? '0.5' : '1'">
+            Next <span class="material-icons-outlined" style="font-size: 16px;">chevron_right</span>
+          </button>
+        }
+        <button class="close-btn" (click)="closeScanModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
     </div>
     <div class="modal-body scan-modal-body">
       <img [src]="selectedScanUrl" alt="Scanned Exam" class="scanned-image" />

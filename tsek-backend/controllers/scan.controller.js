@@ -91,17 +91,19 @@ CRITICAL SECURITY CHECK:
   - IMPORTANT: If a page's field is blank or illegible, do not guess or hallucinate digits.
   - Use the clearly readable value shared by the pages for studentId. If repeated page values conflict, set "pagesMatchStudent" to false and studentId to null.
 
-3. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
-4. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+3. Identify the Exam / Quiz Title printed at the top of page 1 (for example, "Quiz #1: Cells"). Return it in "examTitle". If blank or not found, return null.
+4. If there is a name field (handwritten or printed) on page 1, identify the student's full name. If it is blank, return null or "".
+5. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
    - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
    - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), return ALL shaded letters separated by a comma in alphabetical order (e.g., "A, B" or "A, C"). Do NOT guess or hallucinate unshaded bubbles.
-5. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+6. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
-6. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
-7. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
+7. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
+8. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
+  "examTitle": "Quiz #1: Cells",
   "studentIdReasoning": "Briefly state the LRN/Student ID found on each page and whether the repeated values match.",
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
@@ -120,16 +122,18 @@ Look carefully at the provided student answer sheet image.
 1. Identify the Learner Reference Number (LRN) / Student ID. This will be hand-written in a box/line. Read the numbers clearly.
    - IMPORTANT: If the field is blank or illegible, you MUST return studentId as null. Do NOT guess or hallucinate any digits.
 
-2. If there is a name field (handwritten or printed), identify the student's full name. If it is blank, return null or "".
-3. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
+2. Identify the Exam / Quiz Title printed at the top of the answer sheet (for example, "Quiz #1: Cells"). Return it in "examTitle". If blank or not found, return null.
+3. If there is a name field (handwritten or printed), identify the student's full name. If it is blank, return null or "".
+4. For multiple-choice and true/false questions, read the shaded bubbles. Pay attention to the letters printed inside the bubbles (A, B, C, D, E, or T, F). Record the exact letter that is shaded.
    - STRICT BLANK HANDLING: If a question bubble is NOT shaded or filled, it is completely BLANK. You MUST return its value as null. Do NOT guess, hallucinate, or infer any answer.
    - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), return ALL shaded letters separated by a comma in alphabetical order (e.g., "A, B" or "A, C"). Do NOT guess or hallucinate unshaded bubbles.
-4. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
+5. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
-5. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
+6. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
+  "examTitle": "Quiz #1: Cells",
   "studentIdReasoning": "Briefly state where you found the LRN and what it says to ensure accuracy.",
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
@@ -181,20 +185,25 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
       });
     }
 
-    // Convert the first page image buffer directly into a Base64 string for DB storage
+    // Convert all page image buffers directly into Base64 strings for DB storage
     let imageUrl = null;
+    let imageUrls = [];
     if (files.length > 0) {
-      const file = files[0];
-      const base64Data = file.buffer.toString('base64');
-      const mimeType = file.mimetype || 'image/jpeg';
-      imageUrl = `data:${mimeType};base64,${base64Data}`;
+      imageUrls = files.map(file => {
+        const base64Data = file.buffer.toString('base64');
+        const mimeType = file.mimetype || 'image/jpeg';
+        return `data:${mimeType};base64,${base64Data}`;
+      });
+      // If multi-page, store as a JSON array string; if single page, store as standard data URI
+      imageUrl = imageUrls.length > 1 ? JSON.stringify(imageUrls) : imageUrls[0];
     }
 
     res.status(200).json({
       message: 'Scanning complete',
       rawText: parsedJson,
       pageCount: files.length,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      imageUrls: imageUrls
     });
 
   } catch (error) {
@@ -239,7 +248,21 @@ exports.gradeExam = async (req, res) => {
     let enumerationStart = null;
     let enumerationSection = null;
 
-    parsedConfig.filter(s => s.enabled).forEach(section => {
+    // Ensure sections follow the standard printed layout order:
+    // Multiple Choice -> Identification -> Enumeration -> True or False
+    const SECTION_ORDER = ['multipleChoice', 'identification', 'enumeration', 'trueOrFalse'];
+    const activeSections = (Array.isArray(parsedConfig) ? parsedConfig : [])
+      .filter(s => s && s.enabled)
+      .sort((a, b) => {
+        const idxA = SECTION_ORDER.indexOf(a.key);
+        const idxB = SECTION_ORDER.indexOf(b.key);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return 0;
+      });
+
+    activeSections.forEach(section => {
       if (section.key === 'enumeration') {
         enumerationStart = currentGlobalNum;
         enumerationSection = section;
@@ -531,7 +554,7 @@ exports.gradeExam = async (req, res) => {
 };
 
 exports.saveOverride = async (req, res) => {
-  const { exam_id, studentId, adjustedScore, overriddenItems, page_count } = req.body;
+  const { exam_id, studentId, adjustedScore, overriddenItems, details, page_count, scanned_image_url } = req.body;
 
   if (!exam_id || adjustedScore === undefined) {
     return res.status(400).json({ message: 'exam_id and adjustedScore are required.' });
@@ -547,23 +570,48 @@ exports.saveOverride = async (req, res) => {
       if (studentQuery.rows.length > 0) {
         const studentDbId = studentQuery.rows[0].id;
 
-        // Update existing exam_result or insert if not exists
+        // Fetch existing exam_result to preserve full item breakdown if details was omitted
         const existing = await db.query(
-          'SELECT id FROM exam_results WHERE exam_id = $1 AND student_id = $2',
+          'SELECT id, graded_items FROM exam_results WHERE exam_id = $1 AND student_id = $2',
           [exam_id, studentDbId]
         );
 
+        let finalGradedItems = details;
+        if (!finalGradedItems && existing.rows.length > 0) {
+          try {
+            const raw = existing.rows[0].graded_items;
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              finalGradedItems = { ...parsed };
+              if (Array.isArray(overriddenItems)) {
+                overriddenItems.forEach(itemKey => {
+                  if (finalGradedItems[itemKey]) {
+                    finalGradedItems[itemKey].isCorrect = true;
+                    finalGradedItems[itemKey].pointsAwarded = finalGradedItems[itemKey].maxPoints || 1;
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse existing graded_items:', e);
+          }
+        }
+
+        if (!finalGradedItems) {
+          finalGradedItems = overriddenItems;
+        }
+
         if (existing.rows.length > 0) {
           await db.query(
-            'UPDATE exam_results SET score = $1, graded_items = $4, page_count = COALESCE($5, exam_results.page_count) WHERE exam_id = $2 AND student_id = $3',
-            [adjustedScore, exam_id, studentDbId, JSON.stringify(overriddenItems), page_count || 1]
+            'UPDATE exam_results SET score = $1, graded_items = $4, page_count = COALESCE($5, exam_results.page_count), scanned_image_url = COALESCE($6, exam_results.scanned_image_url) WHERE exam_id = $2 AND student_id = $3',
+            [adjustedScore, exam_id, studentDbId, JSON.stringify(finalGradedItems), page_count || 1, scanned_image_url || null]
           );
         } else {
           await db.query(`
-            INSERT INTO exam_results (exam_id, student_id, score, graded_items, page_count) 
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4, page_count = COALESCE($5, exam_results.page_count)
-          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(overriddenItems), page_count || 1]);
+            INSERT INTO exam_results (exam_id, student_id, score, graded_items, page_count, scanned_image_url) 
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4, page_count = COALESCE($5, exam_results.page_count), scanned_image_url = COALESCE($6, exam_results.scanned_image_url)
+          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(finalGradedItems), page_count || 1, scanned_image_url || null]);
         }
 
         return res.status(200).json({

@@ -8,7 +8,7 @@ import { environment } from '../../../environments/environment';
 interface StudentRow {
   name: string;
   number: string;
-  scores: Array<{ value: string; imageUrl: string | null }>;
+  scores: Array<{ value: string; imageUrl: string | null; pageCount?: number }>;
 }
 
 interface ClassInfo {
@@ -43,6 +43,9 @@ export class ClassDetailComponent implements OnInit {
   errorMessage = '';
   showScanModal = false;
   selectedScanUrl: string | null = null;
+  currentScanBaseUrl: string | null = null;
+  currentScanPage = 0;
+  totalScanPages = 1;
   showExportDropdown = false;
 
   // Statistics Modal
@@ -141,20 +144,38 @@ export class ClassDetailComponent implements OnInit {
     this.postContent = '';
   }
 
-  viewScan(url: string) {
-    if (url.startsWith('blob:') || url.startsWith('data:')) {
-      this.selectedScanUrl = url;
+  viewScan(url: string, pageCount: number = 1) {
+    this.currentScanBaseUrl = url;
+    this.currentScanPage = 0;
+    this.totalScanPages = pageCount || 1;
+    this.loadScanPage(0);
+  }
+
+  loadScanPage(pageIndex: number) {
+    if (!this.currentScanBaseUrl) return;
+    this.currentScanPage = pageIndex;
+
+    if (this.selectedScanUrl && this.selectedScanUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.selectedScanUrl);
+      this.selectedScanUrl = null;
+    }
+
+    if (this.currentScanBaseUrl.startsWith('blob:') || this.currentScanBaseUrl.startsWith('data:')) {
+      this.selectedScanUrl = this.currentScanBaseUrl;
       this.showScanModal = true;
       this.cdr.detectChanges();
       return;
     }
 
-    let fetchUrl = url;
-    if (url.startsWith('/')) {
-      fetchUrl = `${environment.apiUrl}${url}`;
-    } else if (url.startsWith('http://tsek-backend.onrender.com') || url.startsWith('http://tsek.onrender.com')) {
-      fetchUrl = url.replace('http://', 'https://');
+    let fetchUrl = this.currentScanBaseUrl;
+    if (fetchUrl.startsWith('/')) {
+      fetchUrl = `${environment.apiUrl}${fetchUrl}`;
+    } else if (fetchUrl.startsWith('http://tsek-backend.onrender.com') || fetchUrl.startsWith('http://tsek.onrender.com')) {
+      fetchUrl = fetchUrl.replace('http://', 'https://');
     }
+
+    const separator = fetchUrl.includes('?') ? '&' : '?';
+    fetchUrl = `${fetchUrl}${separator}page=${pageIndex}`;
 
     // Fetch securely to include auth headers
     this.http.get(fetchUrl, { responseType: 'blob' }).subscribe({
@@ -170,12 +191,25 @@ export class ClassDetailComponent implements OnInit {
     });
   }
 
+  nextScanPage() {
+    if (this.currentScanPage < this.totalScanPages - 1) {
+      this.loadScanPage(this.currentScanPage + 1);
+    }
+  }
+
+  prevScanPage() {
+    if (this.currentScanPage > 0) {
+      this.loadScanPage(this.currentScanPage - 1);
+    }
+  }
+
   closeScanModal() {
     this.showScanModal = false;
     if (this.selectedScanUrl && this.selectedScanUrl.startsWith('blob:')) {
       URL.revokeObjectURL(this.selectedScanUrl);
     }
     this.selectedScanUrl = null;
+    this.currentScanBaseUrl = null;
     this.cdr.detectChanges();
   }
 
