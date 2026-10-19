@@ -46,9 +46,12 @@ router.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
     const classesRes = await db.query('SELECT COUNT(*) FROM classes WHERE instructor_id = $1', [instructorId]);
     
     const accuracyStr = accuracyNum > 0 ? accuracyNum.toFixed(1) + '%' : '0.0%';
+    const totalStudentsChecked = statsRes.rows.length;
 
     res.json({
-      totalSheets: totalSheets,
+      totalStudentsChecked: totalStudentsChecked,
+      totalStudents: totalStudentsChecked,
+      totalSheets: totalStudentsChecked,
       accuracy: accuracyStr,
       activeExams: parseInt(examsRes.rows[0].count, 10),
       classesCount: parseInt(classesRes.rows[0].count, 10)

@@ -82,8 +82,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Fetch dashboard stats
     this.http.get<any>(`${environment.apiUrl}/api/dashboard/stats`).subscribe(data => {
+      const studentsChecked = (data.totalStudentsChecked ?? data.totalStudents ?? data.totalSheets ?? 0).toString();
       this.statCards = [
-        { title: 'TOTAL SHEETS CHECKED', value: data.totalSheets.toString(), subtitle: 'You have scanned ' + data.totalSheets.toString() + ' sheets', icon: 'fact_check' },
+        { title: 'TOTAL STUDENTS CHECKED', value: studentsChecked, subtitle: 'You have checked ' + studentsChecked + ' students', icon: 'fact_check' },
         { title: 'STUDENT PERFORMANCE', value: data.accuracy, subtitle: 'Average grade is ' + data.accuracy, icon: 'verified' },
         { title: 'ACTIVE EXAMS', value: data.activeExams.toString(), subtitle: 'You have ' + data.activeExams.toString() + ' active exams', icon: 'assignment' },
         { title: 'CLASSES', value: data.classesCount.toString(), subtitle: 'You have ' + data.classesCount.toString() + ' total classes', icon: 'school' }
