@@ -170,8 +170,7 @@
 
         </div>
 
-        <!-- Hidden File Inputs -->
-        <input type="file" accept="image/*" #masterKeyInput class="hidden-input" (change)="scanMasterKey($event)" style="display: none;" multiple>
+        <!-- Hidden JSON Input -->
         <input type="file" accept=".json" #jsonKeyInput class="hidden-input" (change)="importJsonKey($event)" style="display: none;">
 
         @if (!usedMasterKey) {
@@ -301,7 +300,7 @@
                 IMPORT JSON KEY
               </button>
               <button type="button" class="btn-outline generate-btn" 
-                      (click)="isScanningMasterKey ? reopenScanModal() : (scanReady ? applyScannedAnswers() : masterKeyInput.click())" 
+                      (click)="isScanningMasterKey ? reopenScanModal() : (scanReady ? applyScannedAnswers() : openMasterKeySourceModal())" 
                       style="flex: 1; background: white;"
                       [class.scan-active-btn]="isScanningMasterKey"
                       [class.scan-ready-btn]="scanReady">
@@ -355,7 +354,7 @@
             </div>
 
             <div style="display: flex; gap: 12px; margin-top: 16px;">
-              <button type="button" class="btn-outline generate-btn" (click)="masterKeyInput.click()" style="flex: 1; background: white;">
+              <button type="button" class="btn-outline generate-btn" (click)="openMasterKeySourceModal()" style="flex: 1; background: white;">
                 <span class="material-icons-outlined btn-icon">document_scanner</span>
                 RE-SCAN KEY
               </button>
@@ -955,6 +954,88 @@
     </div>
   }
 
+  <!-- ===== SCAN SOURCE SELECTOR MODAL ===== -->
+  @if (showScanSourceModal) {
+  <input type="file" accept="image/*" capture="environment" #masterKeyCameraInput class="hidden-input" (change)="onMasterKeyFilesSelected($event)" style="display: none;">
+  <input type="file" accept="image/*" multiple #masterKeyGalleryInput class="hidden-input" (change)="onMasterKeyFilesSelected($event)" style="display: none;">
+  <div class="scan-source-overlay" @modalFadeAnim (click)="closeScanSourceModal()">
+    <div class="scan-source-modal" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="scan-source-header">
+        <div class="scan-source-icon-badge">
+          <span class="material-icons-outlined">document_scanner</span>
+        </div>
+        <div class="scan-source-title-group">
+          <h2 class="scan-source-title">Scan Master Key</h2>
+          <p class="scan-source-subtitle">Choose how you want to capture or upload the master answer sheet</p>
+        </div>
+        <button class="scan-source-close-btn" (click)="closeScanSourceModal()" title="Close">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="scan-options-grid">
+        <!-- Camera Option -->
+        <button class="scan-option-card" (click)="chooseCamera(masterKeyCameraInput)" type="button">
+          <div class="option-icon-circle camera-circle">
+            <span class="material-icons-outlined">photo_camera</span>
+          </div>
+          <div class="option-info">
+            <span class="option-title">Camera</span>
+            <span class="option-desc">Take a photo using your camera or webcam</span>
+          </div>
+          <span class="material-icons-outlined option-arrow">arrow_forward</span>
+        </button>
+
+        <!-- Gallery / Files Option -->
+        <button class="scan-option-card" (click)="chooseGallery(masterKeyGalleryInput)" type="button">
+          <div class="option-icon-circle gallery-circle">
+            <span class="material-icons-outlined">photo_library</span>
+          </div>
+          <div class="option-info">
+            <span class="option-title">Gallery / Files</span>
+            <span class="option-desc">Choose existing photo(s) or files from device</span>
+          </div>
+          <span class="material-icons-outlined option-arrow">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- ===== MASTER KEY WEBCAM MODAL ===== -->
+  @if (showWebcamModal) {
+  <div class="scan-source-overlay" @modalFadeAnim (click)="closeWebcamModal()">
+    <div class="webcam-modal-container" @modalScaleAnim (click)="$event.stopPropagation()">
+      <div class="scan-source-header">
+        <div class="scan-source-icon-badge camera-badge">
+          <span class="material-icons-outlined">photo_camera</span>
+        </div>
+        <div class="scan-source-title-group">
+          <h2 class="scan-source-title">Capture Master Key</h2>
+          <p class="scan-source-subtitle">Align the master answer key inside the camera frame and click "Take Snapshot"</p>
+        </div>
+        <button class="scan-source-close-btn" (click)="closeWebcamModal()" title="Close">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="webcam-viewport-wrapper">
+        <video id="master-key-webcam-video" autoplay playsinline></video>
+        <div class="webcam-guide-overlay">
+          <span class="webcam-guide-hint">Align answer sheet within frame</span>
+        </div>
+      </div>
+
+      <div class="webcam-modal-actions">
+        <button class="btn-cancel" (click)="closeWebcamModal()" type="button">Cancel</button>
+        <button class="btn-snapshot" (click)="captureWebcamSnapshot()" type="button">
+          <span class="material-icons-outlined">camera</span>
+          Take Snapshot
+        </button>
+      </div>
+    </div>
+  </div>
+  }
 
 </div>
 
