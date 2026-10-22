@@ -955,9 +955,9 @@
   }
 
   <!-- ===== SCAN SOURCE SELECTOR MODAL ===== -->
-  @if (showScanSourceModal) {
   <input type="file" accept="image/*" capture="environment" #masterKeyCameraInput class="hidden-input" (change)="onMasterKeyFilesSelected($event)" style="display: none;">
   <input type="file" accept="image/*" multiple #masterKeyGalleryInput class="hidden-input" (change)="onMasterKeyFilesSelected($event)" style="display: none;">
+  @if (showScanSourceModal) {
   <div class="scan-source-overlay" @modalFadeAnim (click)="closeScanSourceModal()">
     <div class="scan-source-modal" @modalScaleAnim (click)="$event.stopPropagation()">
       <div class="scan-source-header">
