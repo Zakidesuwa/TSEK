@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -75,6 +75,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   http = inject(HttpClient);
   cdr = inject(ChangeDetectorRef);
   scanService = inject(ScanService);
+  router = inject(Router);
 
   private scanSub: Subscription = new Subscription();
 
@@ -99,6 +100,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
   isScanningMasterKey = false;
   scanReady = false;
+  usedMasterKey = false;
   parsedScanAnswers: any = null;
   scannedPreviewUrl: string | null = null;
 
@@ -203,6 +205,9 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       this.answers = {};
       this.textAnswers = {};
       this.answerTabs = [];
+      this.usedMasterKey = false;
+      this.cdr.detectChanges();
+      this.router.navigate(['/exams']);
     }
   }
 
@@ -503,6 +508,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
         timestamp: Date.now(),
         currentStep: this.currentStep,
         activeAnswerTab: this.activeAnswerTab,
+        usedMasterKey: this.usedMasterKey,
         examTitle: this.examTitle,
         paperSize: this.paperSize,
         examDate: this.examDate,
@@ -533,6 +539,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       const draft = JSON.parse(raw);
       if (!draft) return false;
 
+      if (draft.usedMasterKey !== undefined) this.usedMasterKey = !!draft.usedMasterKey;
       if (draft.examTitle !== undefined) this.examTitle = draft.examTitle;
       if (draft.paperSize) this.paperSize = draft.paperSize;
       if (draft.examDate) this.examDate = draft.examDate;
@@ -623,6 +630,7 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
 
     // Full reset of the form and state
     this.currentStep = 'configure';
+    this.usedMasterKey = false;
     this.examTitle = '';
     this.paperSize = 'A4';
     this.examDate = new Date().toISOString().substring(0, 10);
@@ -772,6 +780,27 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       const section = this.sections.find(s => s.key === pt.key);
       return total + (section ? section.selected * pt.pointsPerItem : 0);
     }, 0);
+  }
+
+  get enabledSections(): ExamSection[] {
+    return this.sections.filter(s => s.enabled);
+  }
+
+  resetMasterKeyStructure(): void {
+    this.usedMasterKey = false;
+    this.parsedScanAnswers = null;
+    this.onConfigChange();
+    this.cdr.detectChanges();
+  }
+
+  onTabPointsChange(tab: AnswerTabConfig): void {
+    this.savedPoints[tab.key] = tab.pointsPerItem;
+    const section = this.sections.find(s => s.key === tab.key);
+    if (section) {
+      section.defaultPoints = tab.pointsPerItem;
+    }
+    this.autoSaveDraft(true);
+    this.cdr.detectChanges();
   }
 
   toggleSection(section: ExamSection) {
@@ -1488,55 +1517,129 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  autoconfigureFromMasterKey(parsedAnswers: any) {
-    let mcCount = 0;
-    let tfCount = 0;
-    let textCount = 0;
-
-    for (const key of Object.keys(parsedAnswers)) {
-      const val = String(parsedAnswers[key]).trim().toUpperCase();
-      if (!val || val === 'NULL' || val === 'UNDEFINED') continue;
-      
-      const parts = val.split(',').map(s => s.trim()).filter(Boolean);
-      const isMc = parts.length > 0 && parts.every(p => ['A', 'B', 'C', 'D', 'E', 'INVALID_MULTIPLE'].includes(p));
-      const isTf = parts.length > 0 && parts.every(p => ['T', 'F'].includes(p));
-
-      if (isMc) {
-        mcCount++;
-      } else if (isTf) {
-        tfCount++;
-      } else {
-        textCount++;
-      }
-    }
+  autoconfigureFromMasterKey(scanData: any) {
+    const parsedAnswers = scanData?.answers || scanData || {};
+    const rawSections = scanData?.sections || [];
 
     const mcSection = this.sections.find(s => s.key === 'multipleChoice');
     const idSection = this.sections.find(s => s.key === 'identification');
     const enumSection = this.sections.find(s => s.key === 'enumeration');
     const tfSection = this.sections.find(s => s.key === 'trueOrFalse');
 
-    if (mcSection) { 
-       mcSection.enabled = mcCount > 0; 
-       mcSection.selected = mcCount > 0 ? mcCount : 10; 
+    // 1. If explicit sections were detected from printed headers (e.g., PART II: IDENTIFICATION, PART III: ENUMERATION)
+    if (Array.isArray(rawSections) && rawSections.length > 0) {
+      const mcSec = rawSections.find((s: any) => s.key === 'multipleChoice' || String(s.key || '').toLowerCase().includes('multiple'));
+      const idSec = rawSections.find((s: any) => s.key === 'identification' || String(s.key || '').toLowerCase().includes('ident'));
+      const enumSec = rawSections.find((s: any) => s.key === 'enumeration' || String(s.key || '').toLowerCase().includes('enum'));
+      const tfSec = rawSections.find((s: any) => s.key === 'trueOrFalse' || String(s.key || '').toLowerCase().includes('true'));
+
+      const getCount = (sec: any) => {
+        if (!sec) return 0;
+        if (typeof sec.itemCount === 'number' && sec.itemCount > 0) return sec.itemCount;
+        if (typeof sec.count === 'number' && sec.count > 0) return sec.count;
+        if (typeof sec.endItem === 'number' && typeof sec.startItem === 'number' && sec.endItem >= sec.startItem) {
+          return sec.endItem - sec.startItem + 1;
+        }
+        return 0;
+      };
+
+      const mcCount = getCount(mcSec);
+      const idCount = getCount(idSec);
+      const enumCount = getCount(enumSec);
+      const tfCount = getCount(tfSec);
+
+      if (mcSection) {
+        mcSection.enabled = mcCount > 0;
+        if (mcCount > 0) mcSection.selected = mcCount;
+      }
+      if (idSection) {
+        idSection.enabled = idCount > 0;
+        if (idCount > 0) idSection.selected = idCount;
+      }
+      if (enumSection) {
+        enumSection.enabled = enumCount > 0;
+        if (enumCount > 0) {
+          enumSection.selected = enumCount;
+          enumSection.groups = [{ size: enumCount, strictOrder: false }];
+        }
+      }
+      if (tfSection) {
+        tfSection.enabled = tfCount > 0;
+        if (tfCount > 0) tfSection.selected = tfCount;
+      }
+    } else {
+      // 2. Fallback: Parse from answers map
+      let mcCount = 0;
+      let tfCount = 0;
+      let textCount = 0;
+
+      for (const key of Object.keys(parsedAnswers)) {
+        const val = String(parsedAnswers[key]).trim().toUpperCase();
+        if (!val || val === 'NULL' || val === 'UNDEFINED') continue;
+        
+        const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+        const isMc = parts.length > 0 && parts.every(p => ['A', 'B', 'C', 'D', 'E', 'INVALID_MULTIPLE'].includes(p));
+        const isTf = parts.length > 0 && parts.every(p => ['T', 'F'].includes(p));
+
+        if (isMc) {
+          mcCount++;
+        } else if (isTf) {
+          tfCount++;
+        } else {
+          textCount++;
+        }
+      }
+
+      if (mcSection) { 
+        mcSection.enabled = mcCount > 0; 
+        mcSection.selected = mcCount > 0 ? mcCount : 10; 
+      }
+      if (tfSection) { 
+        tfSection.enabled = tfCount > 0; 
+        tfSection.selected = tfCount > 0 ? tfCount : 10; 
+      }
+
+      if (textCount > 0) {
+        // If both identification and enumeration were active, divide between them instead of merging all into identification
+        if (idSection?.enabled && enumSection?.enabled) {
+          const totalPlanned = (idSection.selected || 5) + (enumSection.selected || 5);
+          const idShare = Math.round((idSection.selected / totalPlanned) * textCount);
+          const finalId = Math.max(1, Math.min(idShare, textCount - 1));
+          const finalEnum = textCount - finalId;
+
+          idSection.enabled = true;
+          idSection.selected = finalId;
+
+          enumSection.enabled = true;
+          enumSection.selected = finalEnum;
+          enumSection.groups = [{ size: finalEnum, strictOrder: false }];
+        } else if (enumSection?.enabled && !idSection?.enabled) {
+          enumSection.selected = textCount;
+          enumSection.groups = [{ size: textCount, strictOrder: false }];
+        } else {
+          if (idSection) {
+            idSection.enabled = true;
+            idSection.selected = textCount;
+          }
+          if (enumSection) {
+            enumSection.enabled = false;
+          }
+        }
+      } else {
+        if (idSection) idSection.enabled = false;
+        if (enumSection) enumSection.enabled = false;
+      }
     }
-    if (idSection) { 
-       idSection.enabled = textCount > 0; 
-       idSection.selected = textCount > 0 ? textCount : 10; 
-    }
-    if (enumSection) { 
-       enumSection.enabled = false; 
-    }
-    if (tfSection) { 
-       tfSection.enabled = tfCount > 0; 
-       tfSection.selected = tfCount > 0 ? tfCount : 10; 
-    }
-    
+
+    // Fallback: at least one section enabled
     if (!mcSection?.enabled && !idSection?.enabled && !enumSection?.enabled && !tfSection?.enabled) {
-       if (mcSection) {
-         mcSection.enabled = true;
-         mcSection.selected = 10;
-       }
+      if (mcSection) {
+        mcSection.enabled = true;
+        mcSection.selected = 10;
+      }
     }
+
+    this.onConfigChange();
     this.cdr.detectChanges();
   }
 
@@ -1611,11 +1714,13 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
       URL.revokeObjectURL(this.scannedPreviewUrl);
       this.scannedPreviewUrl = null;
     }
-    const answers = this.parsedScanAnswers || this.scanService.parsedScanAnswers.value;
+    const scanResult = this.scanService.parsedScanResult.value;
+    const answers = scanResult?.answers || this.parsedScanAnswers || this.scanService.parsedScanAnswers.value;
     if (answers) {
       this.parsedScanAnswers = answers;
+      this.usedMasterKey = true;
 
-      // Restore cached config to guarantee validation passes when moving to Answer Key
+      // Restore form metadata from cache (examTitle, paperSize, etc.) but DO NOT overwrite sections structure with pre-scan cache!
       if (this.scanService.examConfigCache) {
         const cache = this.scanService.examConfigCache;
         if (!this.examTitle || this.examTitle.trim() === '') this.examTitle = cache.examTitle;
@@ -1625,11 +1730,12 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
         if ((!this.selectedClassIds || this.selectedClassIds.length === 0) && cache.selectedClassIds) {
           this.selectedClassIds = [...cache.selectedClassIds];
         }
-        if (cache.sections) this.sections = JSON.parse(JSON.stringify(cache.sections));
-        if (cache.savedPoints) this.savedPoints = JSON.parse(JSON.stringify(cache.savedPoints));
+        if (cache.savedPoints) {
+          this.savedPoints = { ...this.savedPoints, ...cache.savedPoints };
+        }
       }
 
-      this.autoconfigureFromMasterKey(answers);
+      this.autoconfigureFromMasterKey(scanResult || answers);
       this.proceedToAnswerKey();
       this.populateAnswersFromMasterKey(answers);
       this.scanService.clearGlobalScanState();

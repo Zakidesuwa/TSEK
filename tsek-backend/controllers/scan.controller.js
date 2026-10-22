@@ -98,8 +98,17 @@ CRITICAL SECURITY CHECK:
    - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), return ALL shaded letters separated by a comma in alphabetical order (e.g., "A, B" or "A, C"). Do NOT guess or hallucinate unshaded bubbles.
 6. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
-7. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
-8. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
+7. Identify all exam parts/segments printed on the answer sheet (such as "PART I: MULTIPLE CHOICE", "PART II: IDENTIFICATION", "PART III: ENUMERATION", "PART IV: TRUE OR FALSE", etc.).
+   - Distinguish carefully between IDENTIFICATION and ENUMERATION:
+     * Questions under "IDENTIFICATION" are single-answer concept questions.
+     * Questions under "ENUMERATION" are listing/enumeration items (which often follow identification).
+   - For each section present on the sheet, include an entry in the "sections" array with:
+     * "key": "multipleChoice" | "identification" | "enumeration" | "trueOrFalse"
+     * "startItem": the starting global item number (integer)
+     * "endItem": the ending global item number (integer)
+     * "itemCount": total number of items in this section (integer)
+8. IMPORTANT: Combine ALL answers from ALL pages into a single "answers" object. The item numbers continue sequentially across pages. Make sure to read every item from every page.
+9. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
@@ -108,6 +117,11 @@ Return the result STRICTLY as a valid, stringified JSON object using the followi
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
   "pagesMatchStudent": true,
+  "sections": [
+    { "key": "multipleChoice", "startItem": 1, "endItem": 20, "itemCount": 20 },
+    { "key": "identification", "startItem": 21, "endItem": 24, "itemCount": 4 },
+    { "key": "enumeration", "startItem": 25, "endItem": 27, "itemCount": 3 }
+  ],
   "answers": {
     "1": "A",
     "2": "C",
@@ -129,7 +143,16 @@ Look carefully at the provided student answer sheet image.
    - MULTIPLE SHADES: If you detect MORE THAN ONE shaded bubble for a single question (e.g., both A and B are shaded), return ALL shaded letters separated by a comma in alphabetical order (e.g., "A, B" or "A, C"). Do NOT guess or hallucinate unshaded bubbles.
 5. For identification or enumeration questions, read the handwritten text written on the lines next to the item numbers.
    - STRICT BLANK HANDLING: If a line has no handwriting on it, it is completely BLANK. You MUST return its value as null or "". Do NOT guess, hallucinate, or infer any answer.
-6. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
+6. Identify all exam parts/segments printed on the answer sheet (such as "PART I: MULTIPLE CHOICE", "PART II: IDENTIFICATION", "PART III: ENUMERATION", "PART IV: TRUE OR FALSE", etc.).
+   - Distinguish carefully between IDENTIFICATION and ENUMERATION:
+     * Questions under "IDENTIFICATION" are single-answer concept questions.
+     * Questions under "ENUMERATION" are listing/enumeration items (which often follow identification).
+   - For each section present on the sheet, include an entry in the "sections" array with:
+     * "key": "multipleChoice" | "identification" | "enumeration" | "trueOrFalse"
+     * "startItem": the starting global item number (integer)
+     * "endItem": the ending global item number (integer)
+     * "itemCount": total number of items in this section (integer)
+7. DO NOT HALLUCINATE: Accuracy is critical. Double check if any shading or pen stroke actually exists before returning a value. If the entire sheet is empty, return nulls for all questions.
 
 Return the result STRICTLY as a valid, stringified JSON object using the following exact format:
 {
@@ -137,6 +160,11 @@ Return the result STRICTLY as a valid, stringified JSON object using the followi
   "studentIdReasoning": "Briefly state where you found the LRN and what it says to ensure accuracy.",
   "studentId": "123456789012",
   "studentName": "JOHN DOE",
+  "sections": [
+    { "key": "multipleChoice", "startItem": 1, "endItem": 20, "itemCount": 20 },
+    { "key": "identification", "startItem": 21, "endItem": 24, "itemCount": 4 },
+    { "key": "enumeration", "startItem": 25, "endItem": 27, "itemCount": 3 }
+  ],
   "answers": {
     "1": "A",
     "2": "C",

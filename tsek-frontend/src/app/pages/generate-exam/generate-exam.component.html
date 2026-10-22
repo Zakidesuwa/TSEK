@@ -170,157 +170,206 @@
 
         </div>
 
-        <!-- Structure Setup -->
-        <div class="card">
-          <h2 class="card-section-title">STRUCTURE SETUP</h2>
+        <!-- Hidden File Inputs -->
+        <input type="file" accept="image/*" #masterKeyInput class="hidden-input" (change)="scanMasterKey($event)" style="display: none;" multiple>
+        <input type="file" accept=".json" #jsonKeyInput class="hidden-input" (change)="importJsonKey($event)" style="display: none;">
 
-          @for (section of sections; track section.key) {
-            <div class="section-block" [class.disabled]="!section.enabled">
-              <div class="section-header">
-                <span class="section-label">{{ section.label }}</span>
-                <button
-                  class="toggle-btn"
-                  [class.active]="section.enabled"
-                  (click)="toggleSection(section)"
-                >
-                  <span class="toggle-knob"></span>
-                </button>
-              </div>
+        @if (!usedMasterKey) {
+          <!-- Structure Setup -->
+          <div class="card">
+            <h2 class="card-section-title">STRUCTURE SETUP</h2>
 
-              @if (section.key === 'multipleChoice') {
-                <div class="choices-row">
-                  <span class="form-label">NO. OF CHOICES:</span>
-                  <select class="form-select mini-select" [(ngModel)]="numberOfChoices" (ngModelChange)="onConfigChange()">
-                    <option [value]="2">2</option>
-                    <option [value]="3">3</option>
-                    <option [value]="4">4</option>
-                    <option [value]="5">5</option>
-                  </select>
+            @for (section of sections; track section.key) {
+              <div class="section-block" [class.disabled]="!section.enabled">
+                <div class="section-header">
+                  <span class="section-label">{{ section.label }}</span>
+                  <button
+                    class="toggle-btn"
+                    [class.active]="section.enabled"
+                    (click)="toggleSection(section)"
+                  >
+                    <span class="toggle-knob"></span>
+                  </button>
                 </div>
-              }
-              @if (section.key === 'enumeration' && section.enabled && section.groups) {
-                <div class="subgroups-container" style="margin-top: 14px; padding: 12px; background: #f3f8f1; border-radius: 8px; border: 1px solid #d4e2d0;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span style="font-size: 13px; font-weight: 700; color: #2c4a21;">ENUMERATION GROUPS</span>
-                    <button
-                      class="btn-outline mini-btn"
-                      style="padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid #4a6741; color: #4a6741; cursor: pointer; background: transparent; font-weight: 600;"
-                      (click)="addEnumerationGroup()"
-                      [disabled]="section.groups.length >= section.selected"
-                    >
-                      + Add Group
-                    </button>
+
+                @if (section.key === 'multipleChoice') {
+                  <div class="choices-row">
+                    <span class="form-label">NO. OF CHOICES:</span>
+                    <select class="form-select mini-select" [(ngModel)]="numberOfChoices" (ngModelChange)="onConfigChange()">
+                      <option [value]="2">2</option>
+                      <option [value]="3">3</option>
+                      <option [value]="4">4</option>
+                      <option [value]="5">5</option>
+                    </select>
                   </div>
+                }
+                @if (section.key === 'enumeration' && section.enabled && section.groups) {
+                  <div class="subgroups-container" style="margin-top: 14px; padding: 12px; background: #f3f8f1; border-radius: 8px; border: 1px solid #d4e2d0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                      <span style="font-size: 13px; font-weight: 700; color: #2c4a21;">ENUMERATION GROUPS</span>
+                      <button
+                        class="btn-outline mini-btn"
+                        style="padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid #4a6741; color: #4a6741; cursor: pointer; background: transparent; font-weight: 600;"
+                        (click)="addEnumerationGroup()"
+                        [disabled]="section.groups.length >= section.selected"
+                      >
+                        + Add Group
+                      </button>
+                    </div>
 
-                  @for (group of section.groups; track $index; let idx = $index) {
-                    <div class="subgroup-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4e2d0;">
-                      <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 12px; font-weight: 600; color: #3d5a2f;">Group {{ idx + 1 }}</span>
-                        <span style="font-size: 11px; color: #667560;">{{ getGroupRangeText(idx) }}</span>
-                      </div>
-
-                      <div style="display: flex; align-items: center; gap: 12px;">
-                        <!-- Size Adjuster -->
-                        <div style="display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #c2d6be; border-radius: 6px; padding: 2px 6px;">
-                          <button 
-                            style="border: none; background: none; font-size: 14px; font-weight: 700; color: #4a6741; cursor: pointer; padding: 0 4px;"
-                            (click)="adjustGroupSize(idx, -1)"
-                            [disabled]="group.size <= 1"
-                          >-</button>
-                          <span style="font-size: 12px; font-weight: 700; color: #2c4a21; min-width: 16px; text-align: center;">{{ group.size }}</span>
-                          <button 
-                            style="border: none; background: none; font-size: 14px; font-weight: 700; color: #4a6741; cursor: pointer; padding: 0 4px;"
-                            (click)="adjustGroupSize(idx, 1)"
-                            [disabled]="section.groups.length <= 1 || group.size >= section.selected"
-                          >+</button>
+                    @for (group of section.groups; track $index; let idx = $index) {
+                      <div class="subgroup-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d4e2d0;">
+                        <div style="display: flex; flex-direction: column;">
+                          <span style="font-size: 12px; font-weight: 600; color: #3d5a2f;">Group {{ idx + 1 }}</span>
+                          <span style="font-size: 11px; color: #667560;">{{ getGroupRangeText(idx) }}</span>
                         </div>
 
-                        <!-- Strict Toggle -->
-                        <div style="display: flex; align-items: center; gap: 4px;">
-                          <span style="font-size: 10px; font-weight: 600; color: #667560;">Strict:</span>
-                          <button
-                            class="toggle-btn"
-                            [class.active]="group.strictOrder"
-                            (click)="toggleSubgroupStrictOrder(group)"
-                            style="transform: scale(0.75); margin: 0;"
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                          <!-- Size Adjuster -->
+                          <div style="display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #c2d6be; border-radius: 6px; padding: 2px 6px;">
+                            <button 
+                              style="border: none; background: none; font-size: 14px; font-weight: 700; color: #4a6741; cursor: pointer; padding: 0 4px;"
+                              (click)="adjustGroupSize(idx, -1)"
+                              [disabled]="group.size <= 1"
+                            >-</button>
+                            <span style="font-size: 12px; font-weight: 700; color: #2c4a21; min-width: 16px; text-align: center;">{{ group.size }}</span>
+                            <button 
+                              style="border: none; background: none; font-size: 14px; font-weight: 700; color: #4a6741; cursor: pointer; padding: 0 4px;"
+                              (click)="adjustGroupSize(idx, 1)"
+                              [disabled]="section.groups.length <= 1 || group.size >= section.selected"
+                            >+</button>
+                          </div>
+
+                          <!-- Strict Toggle -->
+                          <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="font-size: 10px; font-weight: 600; color: #667560;">Strict:</span>
+                            <button
+                              class="toggle-btn"
+                              [class.active]="group.strictOrder"
+                              (click)="toggleSubgroupStrictOrder(group)"
+                              style="transform: scale(0.75); margin: 0;"
+                            >
+                              <span class="toggle-knob"></span>
+                            </button>
+                          </div>
+
+                          <!-- Delete Button -->
+                          <button 
+                            style="border: none; background: none; color: #d32f2f; cursor: pointer; padding: 2px; display: flex; align-items: center;"
+                            (click)="removeEnumerationGroup(idx)"
+                            [disabled]="section.groups.length <= 1"
                           >
-                            <span class="toggle-knob"></span>
+                            <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
                           </button>
                         </div>
-
-                        <!-- Delete Button -->
-                        <button 
-                          style="border: none; background: none; color: #d32f2f; cursor: pointer; padding: 2px; display: flex; align-items: center;"
-                          (click)="removeEnumerationGroup(idx)"
-                          [disabled]="section.groups.length <= 1"
-                        >
-                          <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
-                        </button>
                       </div>
-                    </div>
-                  }
-                </div>
-              }
-
-              <div class="option-pills" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                @for (opt of section.options; track opt) {
-                  <button
-                    class="pill"
-                    [class.selected]="section.selected === opt && section.enabled"
-                    [disabled]="!section.enabled"
-                    (click)="selectOption(section, opt)"
-                  >
-                    {{ opt }}
-                  </button>
+                    }
+                  </div>
                 }
-                
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 11px; font-weight: 600; color: #555;">Custom:</span>
-                  <input
-                    type="number"
-                    [disabled]="!section.enabled"
-                    [(ngModel)]="section.selected"
-                    (ngModelChange)="onCustomItemsChange(section)"
-                    style="width: 70px; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: #fff;"
-                    min="1"
-                    max="100"
-                  />
+
+                <div class="option-pills" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  @for (opt of section.options; track opt) {
+                    <button
+                      class="pill"
+                      [class.selected]="section.selected === opt && section.enabled"
+                      [disabled]="!section.enabled"
+                      (click)="selectOption(section, opt)"
+                    >
+                      {{ opt }}
+                    </button>
+                  }
+                  
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 11px; font-weight: 600; color: #555;">Custom:</span>
+                    <input
+                      type="number"
+                      [disabled]="!section.enabled"
+                      [(ngModel)]="section.selected"
+                      (ngModelChange)="onCustomItemsChange(section)"
+                      style="width: 70px; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: #fff;"
+                      min="1"
+                      max="100"
+                    />
+                  </div>
                 </div>
               </div>
+            }
+
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button type="button" class="btn-outline generate-btn" (click)="jsonKeyInput.click()" style="flex: 1; background: white;">
+                <span class="material-icons-outlined btn-icon">upload_file</span>
+                IMPORT JSON KEY
+              </button>
+              <button type="button" class="btn-outline generate-btn" 
+                      (click)="isScanningMasterKey ? reopenScanModal() : (scanReady ? applyScannedAnswers() : masterKeyInput.click())" 
+                      style="flex: 1; background: white;"
+                      [class.scan-active-btn]="isScanningMasterKey"
+                      [class.scan-ready-btn]="scanReady">
+                <span class="material-icons-outlined btn-icon" [class.spin-animation]="isScanningMasterKey" [style.color]="scanReady ? 'var(--color-primary)' : ''">
+                  {{ scanReady ? 'check_circle' : (isScanningMasterKey ? 'autorenew' : 'document_scanner') }}
+                </span>
+                {{ scanReady ? 'POPULATE ANSWERS' : (isScanningMasterKey ? 'VIEW SCANNING...' : 'SCAN MASTER KEY') }}
+              </button>
             </div>
-          }
 
-          <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <input type="file" accept="image/*" #masterKeyInput class="hidden-input" (change)="scanMasterKey($event)" style="display: none;" multiple>
-            <input type="file" accept=".json" #jsonKeyInput class="hidden-input" (change)="importJsonKey($event)" style="display: none;">
-
-            <button type="button" class="btn-outline generate-btn" (click)="jsonKeyInput.click()" style="flex: 1; background: white;">
-              <span class="material-icons-outlined btn-icon">upload_file</span>
-              IMPORT JSON KEY
-            </button>
-            <button type="button" class="btn-outline generate-btn" 
-                    (click)="isScanningMasterKey ? reopenScanModal() : (scanReady ? applyScannedAnswers() : masterKeyInput.click())" 
-                    style="flex: 1; background: white;"
-                    [class.scan-active-btn]="isScanningMasterKey"
-                    [class.scan-ready-btn]="scanReady">
-              <span class="material-icons-outlined btn-icon" [class.spin-animation]="isScanningMasterKey" [style.color]="scanReady ? 'var(--color-primary)' : ''">
-                {{ scanReady ? 'check_circle' : (isScanningMasterKey ? 'autorenew' : 'document_scanner') }}
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button class="btn-outline generate-btn" (click)="openPrintPreview()" style="flex: 1;">
+                <span class="material-icons-outlined btn-icon">visibility</span>
+                PREVIEW LAYOUT
+              </button>
+              <button class="btn-primary generate-btn" (click)="proceedToAnswerKey()" style="flex: 2;">
+                <span class="material-icons-outlined btn-icon">arrow_forward</span>
+                PROCEED TO ANSWER KEY
+              </button>
+            </div>
+          </div>
+        } @else {
+          <!-- Structure Defined by Scanned Master Key -->
+          <div class="card master-key-structure-card" style="border: 1.5px solid #2e7d32; background: linear-gradient(180deg, #f9fdf8 0%, #ffffff 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-icons-outlined" style="color: #2e7d32; font-size: 22px;">verified</span>
+                <h2 class="card-section-title" style="margin: 0; color: #1b5e20;">STRUCTURE DEFINED BY MASTER KEY</h2>
+              </div>
+              <span style="font-size: 11px; font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 4px 10px; border-radius: 12px; border: 1px solid #c8e6c9;">
+                SCANNED KEY ACTIVE
               </span>
-              {{ scanReady ? 'POPULATE ANSWERS' : (isScanningMasterKey ? 'VIEW SCANNING...' : 'SCAN MASTER KEY') }}
-            </button>
-          </div>
+            </div>
 
-          <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button class="btn-outline generate-btn" (click)="openPrintPreview()" style="flex: 1;">
-              <span class="material-icons-outlined btn-icon">visibility</span>
-              PREVIEW LAYOUT
-            </button>
-            <button class="btn-primary generate-btn" (click)="proceedToAnswerKey()" style="flex: 2;">
-              <span class="material-icons-outlined btn-icon">arrow_forward</span>
-              PROCEED TO ANSWER KEY
-            </button>
+            <p style="font-size: 13px; color: #4b6354; margin: 0 0 16px 0; line-height: 1.5;">
+              The exam structure and item counts were automatically configured from your scanned master key. Manual structure controls are hidden.
+            </p>
+
+            <div class="scanned-sections-summary" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+              @for (s of enabledSections; track s.key) {
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f1f8f0; border-radius: 8px; border: 1px solid #d0e7ce;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons-outlined" style="font-size: 18px; color: #2e7d32;">check_circle</span>
+                    <span style="font-size: 13px; font-weight: 600; color: #1b5e20;">{{ s.label }}</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #2e7d32;">{{ s.selected }} {{ s.selected === 1 ? 'item' : 'items' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <button type="button" class="btn-outline generate-btn" (click)="masterKeyInput.click()" style="flex: 1; background: white;">
+                <span class="material-icons-outlined btn-icon">document_scanner</span>
+                RE-SCAN KEY
+              </button>
+              <button type="button" class="btn-outline generate-btn" (click)="resetMasterKeyStructure()" style="flex: 1; border-color: #d32f2f; color: #d32f2f; background: white;">
+                <span class="material-icons-outlined btn-icon" style="color: #d32f2f;">refresh</span>
+                RESET STRUCTURE
+              </button>
+              <button class="btn-primary generate-btn" (click)="proceedToAnswerKey()" style="flex: 2;">
+                <span class="material-icons-outlined btn-icon">arrow_forward</span>
+                PROCEED TO ANSWER KEY
+              </button>
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <!-- Right Column -->
@@ -685,7 +734,17 @@
             <div class="points-display">
               <div class="points-left">
                 <span class="points-label">POINTS PER ITEM</span>
-                <span class="points-value">{{ currentAnswerTab.pointsPerItem.toFixed(1) }} PTS/ITEM</span>
+                <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                  <input
+                    type="number"
+                    style="width: 64px; padding: 4px 8px; border: 1px solid #c2d6be; border-radius: 6px; font-weight: 700; font-size: 14px; color: var(--color-primary); background: #fff;"
+                    [(ngModel)]="currentAnswerTab.pointsPerItem"
+                    (ngModelChange)="onTabPointsChange(currentAnswerTab)"
+                    step="0.5"
+                    min="0"
+                  />
+                  <span style="font-size: 11px; font-weight: 600; color: #667560;">PTS</span>
+                </div>
               </div>
               <div class="points-divider"></div>
               <div class="points-right">

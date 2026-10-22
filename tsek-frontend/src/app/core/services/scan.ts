@@ -17,6 +17,7 @@ export class ScanService {
   public isScanningMasterKey = new BehaviorSubject<boolean>(false);
   public scanReady = new BehaviorSubject<boolean>(false);
   public parsedScanAnswers = new BehaviorSubject<any>(null);
+  public parsedScanResult = new BehaviorSubject<any>(null);
   public scanError = new BehaviorSubject<string | null>(null);
   public showGlobalWidget = new BehaviorSubject<boolean>(false);
   public examConfigCache: any = null;
@@ -37,6 +38,7 @@ export class ScanService {
     this.isScanningMasterKey.next(true);
     this.scanReady.next(false);
     this.parsedScanAnswers.next(null);
+    this.parsedScanResult.next(null);
     this.scanError.next(null);
 
     this.scanImages(files).subscribe({
@@ -44,6 +46,7 @@ export class ScanService {
         const parsedAnswers = res.rawText?.answers;
         if (parsedAnswers) {
           this.parsedScanAnswers.next(parsedAnswers);
+          this.parsedScanResult.next(res.rawText);
           this.isScanningMasterKey.next(false);
           this.scanReady.next(true);
         } else {
@@ -62,6 +65,7 @@ export class ScanService {
     this.isScanningMasterKey.next(false);
     this.scanReady.next(false);
     this.parsedScanAnswers.next(null);
+    this.parsedScanResult.next(null);
     this.scanError.next(null);
     this.showGlobalWidget.next(false);
     this.examConfigCache = null;
