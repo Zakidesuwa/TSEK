@@ -1,4 +1,57 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const crypto = require('crypto');
+
+const pendingScanStore = new Map();
+const examConfigCache = new Map();
+const SCAN_CACHE_TTL_MS = 15 * 60 * 1000;
+const EXAM_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function cleanupExpiredEntries(store) {
+  const now = Date.now();
+  for (const [key, value] of store.entries()) {
+    if (!value || !value.expiresAt || value.expiresAt <= now) {
+      store.delete(key);
+    }
+  }
+}
+
+const cacheCleanupTimer = setInterval(() => {
+  cleanupExpiredEntries(pendingScanStore);
+  cleanupExpiredEntries(examConfigCache);
+}, 60 * 1000);
+
+if (typeof cacheCleanupTimer.unref === 'function') {
+  cacheCleanupTimer.unref();
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+    })
+  ]);
+}
+
+function getScanPayload(scanId) {
+  if (!scanId) return null;
+  const item = pendingScanStore.get(scanId);
+  if (!item) return null;
+  if (item.expiresAt <= Date.now()) {
+    pendingScanStore.delete(scanId);
+    return null;
+  }
+  return item.payload;
+}
+
+function setScanPayload(payload) {
+  const scanId = crypto.randomUUID();
+  pendingScanStore.set(scanId, {
+    payload,
+    expiresAt: Date.now() + SCAN_CACHE_TTL_MS
+  });
+  return scanId;
+}
 
 function levenshteinDistance(s1, s2) {
   const m = s1.length;
@@ -51,7 +104,30 @@ function calculateSimilarity(str1, str2) {
   return Math.max(levSim, wordSim * 0.8);
 }
 
+const db = require('../db');
+
+async function getExamMetadata(examId) {
+  const cacheKey = String(examId);
+  const cached = examConfigCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.payload;
+  }
+
+  const examResult = await db.query('SELECT config, answer_key, class_id FROM exams WHERE id = $1', [examId]);
+  if (examResult.rows.length === 0) {
+    return null;
+  }
+
+  const payload = examResult.rows[0];
+  examConfigCache.set(cacheKey, {
+    payload,
+    expiresAt: Date.now() + EXAM_CACHE_TTL_MS
+  });
+  return payload;
+}
+
 exports.scanImage = async (req, res) => {
+  const startedAt = Date.now();
   try {
     // Support both single file (legacy) and multiple files
     const files = req.files || (req.file ? [req.file] : []);
@@ -68,10 +144,15 @@ exports.scanImage = async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     // Build image parts for all pages
-    const imageParts = files.map((file, index) => ({
+    const encodedPages = files.map(file => ({
+      mimeType: file.mimetype,
+      base64Data: file.buffer.toString("base64")
+    }));
+
+    const imageParts = encodedPages.map((page) => ({
       inlineData: {
-        data: file.buffer.toString("base64"),
-        mimeType: file.mimetype
+        data: page.base64Data,
+        mimeType: page.mimeType
       }
     }));
 
@@ -176,8 +257,13 @@ Return the result STRICTLY as a valid, stringified JSON object using the followi
 Do not include any markdown code blocks (like \`\`\`json) or any conversational text. Return ONLY the raw JSON object.`;
 
     let responseText;
+    const geminiTimeoutMs = Number(process.env.GEMINI_TIMEOUT_MS || 45000);
     try {
-      const result = await model.generateContent([prompt, ...imageParts]);
+      const result = await withTimeout(
+        model.generateContent([prompt, ...imageParts]),
+        geminiTimeoutMs,
+        'Gemini scan request'
+      );
       responseText = result.response.text();
     } catch (apiError) {
       // If we hit a rate limit (429) or 503, fallback to the second API key
@@ -192,7 +278,11 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
 
         const fallbackGenAI = new GoogleGenerativeAI(fallbackKey);
         const fallbackModel = fallbackGenAI.getGenerativeModel({ model: "gemini-flash-latest" });
-        const fallbackResult = await fallbackModel.generateContent([prompt, ...imageParts]);
+        const fallbackResult = await withTimeout(
+          fallbackModel.generateContent([prompt, ...imageParts]),
+          geminiTimeoutMs,
+          'Gemini fallback scan request'
+        );
         responseText = fallbackResult.response.text();
       } else {
         throw apiError; // Throw other errors normally
@@ -213,25 +303,21 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
       });
     }
 
-    // Convert all page image buffers directly into Base64 strings for DB storage
-    let imageUrl = null;
-    let imageUrls = [];
-    if (files.length > 0) {
-      imageUrls = files.map(file => {
-        const base64Data = file.buffer.toString('base64');
-        const mimeType = file.mimetype || 'image/jpeg';
-        return `data:${mimeType};base64,${base64Data}`;
-      });
-      // If multi-page, store as a JSON array string; if single page, store as standard data URI
-      imageUrl = imageUrls.length > 1 ? JSON.stringify(imageUrls) : imageUrls[0];
-    }
+    const imageUrls = encodedPages.map(page => `data:${page.mimeType || 'image/jpeg'};base64,${page.base64Data}`);
+    const scannedImagePayload = imageUrls.length > 1 ? JSON.stringify(imageUrls) : (imageUrls[0] || null);
+    const scanId = setScanPayload({
+      scanned_image_url: scannedImagePayload,
+      page_count: files.length,
+      createdAt: new Date().toISOString()
+    });
+
+    console.log(`[scan] completed in ${Date.now() - startedAt}ms for ${files.length} page(s)`);
 
     res.status(200).json({
       message: 'Scanning complete',
       rawText: parsedJson,
       pageCount: files.length,
-      imageUrl: imageUrl,
-      imageUrls: imageUrls
+      scanId
     });
 
   } catch (error) {
@@ -243,10 +329,9 @@ Do not include any markdown code blocks (like \`\`\`json) or any conversational 
   }
 };
 
-const db = require('../db');
-
 exports.gradeExam = async (req, res) => {
-  const { exam_id, studentId, answers, scanned_image_url, page_count } = req.body;
+  const startedAt = Date.now();
+  const { exam_id, studentId, answers, scanned_image_url, page_count, scanId } = req.body;
 
   if (!exam_id || !answers) {
     return res.status(400).json({ message: 'exam_id and answers are required.' });
@@ -254,12 +339,12 @@ exports.gradeExam = async (req, res) => {
 
   try {
     // 1. Fetch Exam Config and Answer Key
-    const examResult = await db.query('SELECT config, answer_key FROM exams WHERE id = $1', [exam_id]);
-    if (examResult.rows.length === 0) {
+    const examMetadata = await getExamMetadata(exam_id);
+    if (!examMetadata) {
       return res.status(404).json({ message: 'Exam not found.' });
     }
 
-    const { config, answer_key } = examResult.rows[0];
+    const { config, answer_key, class_id: classIdFromExam } = examMetadata;
 
     if (!answer_key) {
       return res.status(400).json({ message: 'This exam does not have an answer key configured.' });
@@ -492,12 +577,11 @@ exports.gradeExam = async (req, res) => {
     let studentDbId = null;
     let isEnrolled = false;
     let studentExists = false;
-    let classId = null;
+    let classId = classIdFromExam || null;
 
-    const examInfo = await db.query('SELECT class_id FROM exams WHERE id = $1', [exam_id]);
-    if (examInfo.rows.length > 0) {
-      classId = examInfo.rows[0].class_id;
-    }
+    const scanPayload = getScanPayload(scanId);
+    const finalScannedImageUrl = scanned_image_url || scanPayload?.scanned_image_url || null;
+    const finalPageCount = page_count || scanPayload?.page_count || 1;
 
     if (studentId && classId) {
       const studentQuery = await db.query('SELECT id FROM students WHERE student_id_number::text = $1', [String(studentId).trim()]);
@@ -521,7 +605,7 @@ exports.gradeExam = async (req, res) => {
             VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT ON CONSTRAINT unique_exam_student 
             DO UPDATE SET score = $3, graded_items = $4, scanned_image_url = COALESCE($5, exam_results.scanned_image_url), page_count = COALESCE($6, exam_results.page_count)
-          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems), scanned_image_url || null, page_count || 1]);
+          `, [exam_id, studentDbId, totalScore, JSON.stringify(gradedItems), finalScannedImageUrl, finalPageCount]);
         }
       }
     }
@@ -561,6 +645,8 @@ exports.gradeExam = async (req, res) => {
       }
     }
 
+    console.log(`[grade] completed in ${Date.now() - startedAt}ms for exam ${exam_id}`);
+
     res.status(200).json({
       message: isEnrolled ? 'Grading complete' : 'Student not enrolled in this class',
       score: totalScore,
@@ -582,13 +668,17 @@ exports.gradeExam = async (req, res) => {
 };
 
 exports.saveOverride = async (req, res) => {
-  const { exam_id, studentId, adjustedScore, overriddenItems, details, page_count, scanned_image_url } = req.body;
+  const { exam_id, studentId, adjustedScore, overriddenItems, details, page_count, scanned_image_url, scanId } = req.body;
 
   if (!exam_id || adjustedScore === undefined) {
     return res.status(400).json({ message: 'exam_id and adjustedScore are required.' });
   }
 
   try {
+    const scanPayload = getScanPayload(scanId);
+    const finalScannedImageUrl = scanned_image_url || scanPayload?.scanned_image_url || null;
+    const finalPageCount = page_count || scanPayload?.page_count || 1;
+
     if (studentId) {
       const studentQuery = await db.query(
         'SELECT id FROM students WHERE student_id_number::text = $1',
@@ -632,14 +722,14 @@ exports.saveOverride = async (req, res) => {
         if (existing.rows.length > 0) {
           await db.query(
             'UPDATE exam_results SET score = $1, graded_items = $4, page_count = COALESCE($5, exam_results.page_count), scanned_image_url = COALESCE($6, exam_results.scanned_image_url) WHERE exam_id = $2 AND student_id = $3',
-            [adjustedScore, exam_id, studentDbId, JSON.stringify(finalGradedItems), page_count || 1, scanned_image_url || null]
+            [adjustedScore, exam_id, studentDbId, JSON.stringify(finalGradedItems), finalPageCount, finalScannedImageUrl]
           );
         } else {
           await db.query(`
             INSERT INTO exam_results (exam_id, student_id, score, graded_items, page_count, scanned_image_url) 
             VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT ON CONSTRAINT unique_exam_student DO UPDATE SET score = $3, graded_items = $4, page_count = COALESCE($5, exam_results.page_count), scanned_image_url = COALESCE($6, exam_results.scanned_image_url)
-          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(finalGradedItems), page_count || 1, scanned_image_url || null]);
+          `, [exam_id, studentDbId, adjustedScore, JSON.stringify(finalGradedItems), finalPageCount, finalScannedImageUrl]);
         }
 
         return res.status(200).json({

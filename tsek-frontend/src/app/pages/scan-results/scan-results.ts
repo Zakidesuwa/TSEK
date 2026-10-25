@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ScanService } from '../../core/services/scan';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { trigger, transition, style, animate } from '@angular/animations';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-scan-results',
@@ -55,13 +56,16 @@ export class ScanResults implements OnInit, OnDestroy {
   rawText: any = null;
   imagePreviewUrls: string[] = [];
   pageCount = 1;
+  uploadProgress = 0;
+  uploadProgressLabel = 'Preparing images...';
 
   exams: any[] = [];
   selectedExamId: number | null = null;
   autoMatchedExam: any = null;
-  scannedImageUrl: string | null = null;
+  scanId: string | null = null;
   gradeResult: any = null;
   selectedPreviewIndex = 0;
+  private scanUploadSub: Subscription | null = null;
 
   get selectedExam(): any {
     return this.exams.find(e => e.id === Number(this.selectedExamId)) || null;
@@ -193,6 +197,13 @@ export class ScanResults implements OnInit, OnDestroy {
   // --- Staging methods ---
 
   addStagedFiles(files: File[]) {
+    const validationError = this.scanService.validateFiles([...this.stagedFiles, ...files]);
+    if (validationError) {
+      this.error = validationError;
+      this.cdr.detectChanges();
+      return;
+    }
+
     for (const file of files) {
       this.stagedFiles.push(file);
       this.stagedPreviewUrls.push(URL.createObjectURL(file));
@@ -224,8 +235,17 @@ export class ScanResults implements OnInit, OnDestroy {
   startScanning() {
     if (this.stagedFiles.length === 0) return;
 
+    const validationError = this.scanService.validateFiles(this.stagedFiles);
+    if (validationError) {
+      this.error = validationError;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.isStaging = false;
     this.isLoading = true;
+    this.uploadProgress = 0;
+    this.uploadProgressLabel = 'Preparing images...';
     this.startScanTimer();
 
     this.imagePreviewUrls = [...this.stagedPreviewUrls];
@@ -233,28 +253,59 @@ export class ScanResults implements OnInit, OnDestroy {
     this.selectedPreviewIndex = 0;
 
     // Send all images in one request
-    this.scanService.scanImages(this.stagedFiles).subscribe({
-      next: (response) => {
-        this.stopScanTimer();
-        this.isLoading = false;
-        this.rawText = response.rawText || { error: 'No data returned' };
-        this.scannedImageUrl = response.imageUrl || null;
-
-        if (this.rawText && this.rawText.pagesMatchStudent === false) {
-          this.error = 'Verification Warning: Scanned pages do not appear to belong to the same student. Please verify handwriting, names, and page order.';
+    this.scanUploadSub = this.scanService.scanImagesWithProgress(this.stagedFiles).subscribe({
+      next: (event) => {
+        if (event.type === HttpEventType.Sent) {
+          this.uploadProgress = 1;
+          this.uploadProgressLabel = 'Uploading pages...';
         }
-        this.matchExamFromScan();
-        this.cdr.detectChanges();
+
+        if (event.type === HttpEventType.UploadProgress) {
+          const total = event.total || 1;
+          this.uploadProgress = Math.min(99, Math.round((event.loaded / total) * 100));
+          this.uploadProgressLabel = `Uploading pages... ${this.uploadProgress}%`;
+        }
+
+        if (event.type === HttpEventType.Response) {
+          const response = event.body;
+          this.stopScanTimer();
+          this.isLoading = false;
+          this.uploadProgress = 100;
+          this.uploadProgressLabel = 'Upload complete';
+          this.rawText = response?.rawText || { error: 'No data returned' };
+          this.scanId = response?.scanId || null;
+
+          if (this.rawText && this.rawText.pagesMatchStudent === false) {
+            this.error = 'Verification Warning: Scanned pages do not appear to belong to the same student. Please verify handwriting, names, and page order.';
+          }
+          this.matchExamFromScan();
+          this.scanUploadSub = null;
+          this.cdr.detectChanges();
+        }
       },
       error: (err) => {
         this.stopScanTimer();
         this.isLoading = false;
-        const backendMessage = err.error?.error || err.error?.message || 'Failed to process image.';
+        const backendMessage = err?.error?.error || err?.error?.message || err?.message || 'Failed to process image.';
         this.error = `Backend Error: ${backendMessage}`;
+        this.scanUploadSub = null;
         console.error('Scan Error:', err);
         this.cdr.detectChanges();
       }
     });
+  }
+
+  cancelScanning() {
+    if (this.scanUploadSub) {
+      this.scanUploadSub.unsubscribe();
+      this.scanUploadSub = null;
+    }
+    this.stopScanTimer();
+    this.isLoading = false;
+    this.isStaging = true;
+    this.uploadProgress = 0;
+    this.uploadProgressLabel = 'Scan canceled';
+    this.cdr.detectChanges();
   }
 
   fetchExams() {
@@ -281,7 +332,7 @@ export class ScanResults implements OnInit, OnDestroy {
       studentId: this.rawText.studentId,
       studentName: this.rawText.studentName || '',
       answers: this.rawText.answers,
-      scanned_image_url: this.scannedImageUrl || null,
+      scanId: this.scanId,
       page_count: this.pageCount
     };
 
@@ -536,7 +587,7 @@ export class ScanResults implements OnInit, OnDestroy {
       overriddenItems: Array.from(this.overrides),
       details: this.gradeResult.details,
       page_count: this.pageCount,
-      scanned_image_url: this.scannedImageUrl || null
+      scanId: this.scanId
     };
 
     this.http.post(`${environment.apiUrl}/api/scan/grade/override`, payload).subscribe({
@@ -609,6 +660,10 @@ export class ScanResults implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.scanUploadSub) {
+      this.scanUploadSub.unsubscribe();
+      this.scanUploadSub = null;
+    }
     this.stopScanTimer();
     if (this.videoStream) {
       this.videoStream.getTracks().forEach(track => track.stop());

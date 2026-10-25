@@ -1768,6 +1768,17 @@ export class GenerateExamComponent implements OnInit, OnDestroy {
   processMasterKeyFiles(files: File[]) {
     if (files.length === 0) return;
 
+    const validationError = this.scanService.validateFiles(files);
+    if (validationError) {
+      this.modalTitle = 'Scan Failed';
+      this.modalMessage = validationError;
+      this.modalType = 'error';
+      this.showGeneratePdf = false;
+      this.showModal = true;
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (this.scannedPreviewUrl) {
       URL.revokeObjectURL(this.scannedPreviewUrl);
     }

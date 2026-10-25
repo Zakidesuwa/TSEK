@@ -331,6 +331,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onFileSelected(event: any) {
     const files = Array.from(event.target.files) as File[];
     if (files.length > 0) {
+      const validationError = this.scanService.validateFiles(files);
+      if (validationError) {
+        alert(validationError);
+        event.target.value = '';
+        return;
+      }
       this.scanService.setPendingFiles(files);
       event.target.value = '';
       this.router.navigate(['/scan-results']);

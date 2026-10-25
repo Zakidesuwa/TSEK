@@ -148,6 +148,17 @@
           <div class="scanner-progress-bar"></div>
         </div>
 
+        <div class="upload-progress-text">
+          <strong>{{ uploadProgress }}%</strong> {{ uploadProgressLabel }}
+        </div>
+
+        <div class="staging-actions" style="margin-top: 12px;">
+          <button class="btn-outline" (click)="cancelScanning()" type="button">
+            <span class="material-icons-outlined btn-icon">close</span>
+            Cancel Scan
+          </button>
+        </div>
+
         <!-- Step Indicators -->
         <div class="scanner-steps-row">
           @for (p of scanPhases; track p.title; let idx = $index) {

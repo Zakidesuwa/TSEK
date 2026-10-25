@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, Subject } from 'rxjs';
+import { HttpClient, HttpEvent, HttpEventType } from '@angular/common/http';
+import { Observable, BehaviorSubject, Subject, from } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { environment } from '../../../environments/environment';
 
@@ -9,6 +11,8 @@ import { environment } from '../../../environments/environment';
 })
 export class ScanService {
   private http = inject(HttpClient);
+  readonly maxFiles = 5;
+  readonly maxFileSizeBytes = 10 * 1024 * 1024;
   
   // Store files temporarily when selected from the dashboard
   private pendingScanFiles: File[] = [];
@@ -35,6 +39,14 @@ export class ScanService {
   }
 
   startGlobalScan(files: File[]) {
+    const validationError = this.validateFiles(files);
+    if (validationError) {
+      this.isScanningMasterKey.next(false);
+      this.scanReady.next(false);
+      this.scanError.next(validationError);
+      return;
+    }
+
     this.isScanningMasterKey.next(true);
     this.scanReady.next(false);
     this.parsedScanAnswers.next(null);
@@ -56,7 +68,7 @@ export class ScanService {
       },
       error: (err) => {
         this.isScanningMasterKey.next(false);
-        this.scanError.next(err.error?.error || err.error?.message || 'Failed to process image.');
+        this.scanError.next(err?.error?.error || err?.error?.message || err?.message || 'Failed to process image.');
       }
     });
   }
@@ -99,15 +111,110 @@ export class ScanService {
 
   // Scan multiple images in one API call
   scanImages(files: File[]): Observable<any> {
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append('images', file);
-    }
-    return this.http.post(`${environment.apiUrl}/api/scan`, formData);
+    return this.scanImagesWithProgress(files).pipe(
+      filter((event: HttpEvent<any>) => event.type === HttpEventType.Response),
+      map((event: any) => event.body)
+    );
+  }
+
+  scanImagesWithProgress(files: File[]): Observable<HttpEvent<any>> {
+    return from(this.prepareFilesForUpload(files)).pipe(
+      switchMap((preparedFiles) => {
+        const formData = new FormData();
+        for (const file of preparedFiles) {
+          formData.append('images', file);
+        }
+        return this.http.post<any>(`${environment.apiUrl}/api/scan`, formData, {
+          observe: 'events',
+          reportProgress: true
+        });
+      })
+    );
   }
 
   // Legacy single-image scan (still uses the new multi endpoint)
   scanImage(file: File): Observable<any> {
     return this.scanImages([file]);
+  }
+
+  validateFiles(files: File[]): string | null {
+    if (!files || files.length === 0) {
+      return 'Please select at least one image.';
+    }
+
+    if (files.length > this.maxFiles) {
+      return `You can upload up to ${this.maxFiles} pages per scan.`;
+    }
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) {
+        return `Unsupported file type: ${file.name}`;
+      }
+      if (file.size > this.maxFileSizeBytes) {
+        return `${file.name} exceeds the 10MB limit.`;
+      }
+    }
+
+    return null;
+  }
+
+  private async prepareFilesForUpload(files: File[]): Promise<File[]> {
+    const compressedFiles: File[] = [];
+    for (const file of files) {
+      compressedFiles.push(await this.compressImage(file));
+    }
+    return compressedFiles;
+  }
+
+  private async compressImage(file: File): Promise<File> {
+    if (!file.type.startsWith('image/')) {
+      return file;
+    }
+
+    const image = await this.loadImage(file);
+    const maxDimension = 1600;
+    const ratio = Math.min(1, maxDimension / Math.max(image.width, image.height));
+    const targetWidth = Math.max(1, Math.round(image.width * ratio));
+    const targetHeight = Math.max(1, Math.round(image.height * ratio));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return file;
+    }
+
+    ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/jpeg', 0.78);
+    });
+
+    if (!blob) {
+      return file;
+    }
+
+    if (blob.size >= file.size) {
+      return file;
+    }
+
+    const compressedName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], compressedName, { type: 'image/jpeg' });
+  }
+
+  private loadImage(file: File): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error(`Failed to load image: ${file.name}`));
+      };
+      image.src = objectUrl;
+    });
   }
 }
